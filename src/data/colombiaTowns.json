@@ -1,0 +1,2706 @@
+{
+ "generatedAt": "2026-10-14T17:13:16.841Z",
+ "source": "OpenStreetMap (Overpass API) © OpenStreetMap contributors; altitudes faltantes: Open-Elevation",
+ "towns": [
+  {
+   "id": "node/671806634",
+   "name": "Bogotá",
+   "lat": 4.65338,
+   "lon": -74.08363,
+   "place": "city",
+   "elevation": 2555,
+   "popularity": 11.913
+  },
+  {
+   "id": "node/344799743",
+   "name": "Medellín",
+   "lat": 6.24434,
+   "lon": -75.57355,
+   "place": "city",
+   "elevation": 1405,
+   "popularity": 11.388
+  },
+  {
+   "id": "node/274021463",
+   "name": "Cali",
+   "lat": 3.452,
+   "lon": -76.53253,
+   "place": "city",
+   "elevation": 1070,
+   "popularity": 11.359
+  },
+  {
+   "id": "node/5399542329",
+   "name": "Barranquilla",
+   "lat": 10.99386,
+   "lon": -74.79261,
+   "place": "city",
+   "elevation": 34,
+   "popularity": 11.123
+  },
+  {
+   "id": "node/266642215",
+   "name": "Cartagena de Indias",
+   "lat": 10.42656,
+   "lon": -75.54417,
+   "place": "city",
+   "elevation": 6,
+   "popularity": 11.012
+  },
+  {
+   "id": "node/311484945",
+   "name": "Soacha",
+   "lat": 4.58269,
+   "lon": -74.21178,
+   "place": "city",
+   "elevation": 2557,
+   "popularity": 10.92
+  },
+  {
+   "id": "node/703166743",
+   "name": "Cúcuta",
+   "lat": 7.89715,
+   "lon": -72.50804,
+   "place": "city",
+   "elevation": 320,
+   "popularity": 10.89
+  },
+  {
+   "id": "node/1282585464",
+   "name": "Bucaramanga",
+   "lat": 7.12746,
+   "lon": -73.11913,
+   "place": "city",
+   "elevation": 959,
+   "popularity": 10.795
+  },
+  {
+   "id": "node/703166714",
+   "name": "Villavicencio",
+   "lat": 4.13476,
+   "lon": -73.62015,
+   "place": "city",
+   "elevation": 467,
+   "popularity": 10.742
+  },
+  {
+   "id": "node/3306812051",
+   "name": "Bello",
+   "lat": 6.335,
+   "lon": -75.55827,
+   "place": "city",
+   "elevation": 1444,
+   "popularity": 10.727
+  },
+  {
+   "id": "node/9863038666",
+   "name": "Ibagué",
+   "lat": 4.4386,
+   "lon": -75.21089,
+   "place": "city",
+   "elevation": 1285,
+   "popularity": 10.724
+  },
+  {
+   "id": "node/298024011",
+   "name": "Santa Marta",
+   "lat": 11.23209,
+   "lon": -74.19509,
+   "place": "city",
+   "elevation": 15,
+   "popularity": 10.699
+  },
+  {
+   "id": "node/312257491",
+   "name": "Valledupar",
+   "lat": 10.46517,
+   "lon": -73.25295,
+   "place": "city",
+   "elevation": 169,
+   "popularity": 10.69
+  },
+  {
+   "id": "node/8448168093",
+   "name": "Pereira",
+   "lat": 4.81432,
+   "lon": -75.69468,
+   "place": "city",
+   "elevation": 1421,
+   "popularity": 10.679
+  },
+  {
+   "id": "node/284074373",
+   "name": "Manizales",
+   "lat": 5.06689,
+   "lon": -75.50667,
+   "place": "city",
+   "elevation": 2153,
+   "popularity": 10.661
+  },
+  {
+   "id": "node/676777722",
+   "name": "Montería",
+   "lat": 8.75094,
+   "lon": -75.87868,
+   "place": "city",
+   "elevation": 19,
+   "popularity": 10.657
+  },
+  {
+   "id": "node/309303769",
+   "name": "Pasto",
+   "lat": 1.21403,
+   "lon": -77.27851,
+   "place": "city",
+   "elevation": 2527,
+   "popularity": 10.594
+  },
+  {
+   "id": "node/703168221",
+   "name": "Buenaventura",
+   "lat": 3.88819,
+   "lon": -77.07383,
+   "place": "city",
+   "elevation": 7,
+   "popularity": 10.563
+  },
+  {
+   "id": "node/3377581135",
+   "name": "Neiva",
+   "lat": 2.9257,
+   "lon": -75.28939,
+   "place": "city",
+   "elevation": 454,
+   "popularity": 10.559
+  },
+  {
+   "id": "node/4323485991",
+   "name": "Palmira",
+   "lat": 3.53084,
+   "lon": -76.2988,
+   "place": "city",
+   "elevation": 1001,
+   "popularity": 10.543
+  },
+  {
+   "id": "node/299736407",
+   "name": "Popayán",
+   "lat": 2.44223,
+   "lon": -76.60724,
+   "place": "city",
+   "elevation": 1742,
+   "popularity": 10.503
+  },
+  {
+   "id": "node/293168610",
+   "name": "Armenia",
+   "lat": 4.53631,
+   "lon": -75.67238,
+   "place": "city",
+   "elevation": 1551,
+   "popularity": 10.501
+  },
+  {
+   "id": "node/9632105989",
+   "name": "Arauca",
+   "lat": 7.0852,
+   "lon": -70.75778,
+   "place": "city",
+   "elevation": 132,
+   "popularity": 10.469
+  },
+  {
+   "id": "node/1834139017",
+   "name": "Riohacha",
+   "lat": 11.54494,
+   "lon": -72.91505,
+   "place": "city",
+   "elevation": 6,
+   "popularity": 10.458
+  },
+  {
+   "id": "node/285481028",
+   "name": "Sincelejo",
+   "lat": 9.29734,
+   "lon": -75.39266,
+   "place": "city",
+   "elevation": 213,
+   "popularity": 10.444
+  },
+  {
+   "id": "node/306361598",
+   "name": "Barrancabermeja",
+   "lat": 7.06733,
+   "lon": -73.85256,
+   "place": "city",
+   "elevation": 75,
+   "popularity": 10.303
+  },
+  {
+   "id": "node/5548746213",
+   "name": "Tunja",
+   "lat": 5.53243,
+   "lon": -73.3616,
+   "place": "city",
+   "elevation": 2783,
+   "popularity": 10.301
+  },
+  {
+   "id": "node/703168249",
+   "name": "Tuluá",
+   "lat": 4.08567,
+   "lon": -76.19728,
+   "place": "city",
+   "elevation": 977,
+   "popularity": 10.299
+  },
+  {
+   "id": "node/703166719",
+   "name": "Florencia",
+   "lat": 1.61587,
+   "lon": -75.6143,
+   "place": "city",
+   "elevation": 270,
+   "popularity": 10.226
+  },
+  {
+   "id": "node/703176077",
+   "name": "Apartadó",
+   "lat": 7.8849,
+   "lon": -76.62275,
+   "place": "city",
+   "elevation": 30,
+   "popularity": 10.161
+  },
+  {
+   "id": "node/3481839540",
+   "name": "Sogamoso",
+   "lat": 5.71483,
+   "lon": -72.92793,
+   "place": "city",
+   "elevation": 2569,
+   "popularity": 10.137
+  },
+  {
+   "id": "node/703168127",
+   "name": "Pitalito",
+   "lat": 1.84471,
+   "lon": -76.04569,
+   "place": "city",
+   "elevation": 1271,
+   "popularity": 10.133
+  },
+  {
+   "id": "node/703168436",
+   "name": "Cartago",
+   "lat": 4.74655,
+   "lon": -75.91212,
+   "place": "city",
+   "elevation": 916,
+   "popularity": 10.132
+  },
+  {
+   "id": "node/309872332",
+   "name": "Yopal",
+   "lat": 5.33567,
+   "lon": -72.39369,
+   "place": "city",
+   "elevation": 336,
+   "popularity": 10.125
+  },
+  {
+   "id": "node/703177370",
+   "name": "Rionegro",
+   "lat": 6.15362,
+   "lon": -75.37417,
+   "place": "city",
+   "elevation": 2080,
+   "popularity": 10.114
+  },
+  {
+   "id": "node/310197569",
+   "name": "Turbo",
+   "lat": 8.0953,
+   "lon": -76.729,
+   "place": "city",
+   "elevation": 4,
+   "popularity": 10.1
+  },
+  {
+   "id": "node/352662331",
+   "name": "Ciénaga",
+   "lat": 11.01079,
+   "lon": -74.25164,
+   "place": "city",
+   "elevation": 3,
+   "popularity": 10.074
+  },
+  {
+   "id": "node/443814800",
+   "name": "Quibdó",
+   "lat": 5.69128,
+   "lon": -76.65313,
+   "place": "city",
+   "elevation": 43,
+   "popularity": 10.065
+  },
+  {
+   "id": "node/2978290242",
+   "name": "Girardot",
+   "lat": 4.30464,
+   "lon": -74.80307,
+   "place": "city",
+   "elevation": 289,
+   "popularity": 10.051
+  },
+  {
+   "id": "node/2820423900",
+   "name": "Aguachica",
+   "lat": 8.30942,
+   "lon": -73.6037,
+   "place": "city",
+   "elevation": 162,
+   "popularity": 10.04
+  },
+  {
+   "id": "node/703167829",
+   "name": "Tumaco",
+   "lat": 1.80629,
+   "lon": -78.76498,
+   "place": "city",
+   "elevation": 1,
+   "popularity": 10.025
+  },
+  {
+   "id": "node/703169538",
+   "name": "Magangué",
+   "lat": 9.24121,
+   "lon": -74.75674,
+   "place": "city",
+   "elevation": 18,
+   "popularity": 9.995
+  },
+  {
+   "id": "node/11177573513",
+   "name": "Chía",
+   "lat": 4.86128,
+   "lon": -74.0602,
+   "place": "city",
+   "elevation": 2558,
+   "popularity": 9.991
+  },
+  {
+   "id": "node/600829273",
+   "name": "Tierralta",
+   "lat": 8.17179,
+   "lon": -76.06013,
+   "place": "city",
+   "elevation": 52,
+   "popularity": 9.965
+  },
+  {
+   "id": "node/703169290",
+   "name": "Ocaña",
+   "lat": 8.23541,
+   "lon": -73.35385,
+   "place": "city",
+   "elevation": 1202,
+   "popularity": 9.954
+  },
+  {
+   "id": "node/703194925",
+   "name": "Caucasia",
+   "lat": 7.98776,
+   "lon": -75.19837,
+   "place": "city",
+   "elevation": 150,
+   "popularity": 9.946
+  },
+  {
+   "id": "node/703169253",
+   "name": "Montelíbano",
+   "lat": 7.98005,
+   "lon": -75.41672,
+   "place": "city",
+   "elevation": 48,
+   "popularity": 9.912
+  },
+  {
+   "id": "node/703169565",
+   "name": "El Carmen de Bolívar",
+   "lat": 9.71694,
+   "lon": -75.12218,
+   "place": "city",
+   "elevation": 157,
+   "popularity": 9.898
+  },
+  {
+   "id": "node/8109824087",
+   "name": "El Banco",
+   "lat": 9.00492,
+   "lon": -73.97385,
+   "place": "city",
+   "elevation": 25,
+   "popularity": 9.858
+  },
+  {
+   "id": "node/703208388",
+   "name": "Baranoa",
+   "lat": 10.79354,
+   "lon": -74.91521,
+   "place": "city",
+   "elevation": 118,
+   "popularity": 9.857
+  },
+  {
+   "id": "node/339990106",
+   "name": "Corozal",
+   "lat": 9.31924,
+   "lon": -75.29473,
+   "place": "city",
+   "elevation": 158,
+   "popularity": 9.828
+  },
+  {
+   "id": "node/703470767",
+   "name": "Fundación",
+   "lat": 10.51557,
+   "lon": -74.19011,
+   "place": "city",
+   "elevation": 43,
+   "popularity": 9.822
+  },
+  {
+   "id": "node/7985775004",
+   "name": "Leticia",
+   "lat": -4.21292,
+   "lon": -69.9426,
+   "place": "city",
+   "elevation": 80,
+   "popularity": 9.82
+  },
+  {
+   "id": "node/703169922",
+   "name": "Agustín Codazzi",
+   "lat": 10.03749,
+   "lon": -73.2387,
+   "place": "city",
+   "elevation": 133,
+   "popularity": 9.819
+  },
+  {
+   "id": "node/306366616",
+   "name": "Santa Cruz de Mompox",
+   "lat": 9.24149,
+   "lon": -74.42515,
+   "place": "city",
+   "elevation": 10,
+   "popularity": 9.793
+  },
+  {
+   "id": "node/347183701",
+   "name": "Plato",
+   "lat": 9.79042,
+   "lon": -74.782,
+   "place": "city",
+   "elevation": 24,
+   "popularity": 9.791
+  },
+  {
+   "id": "node/1037712072",
+   "name": "Soledad",
+   "lat": 10.91496,
+   "lon": -74.78211,
+   "place": "town",
+   "elevation": 26,
+   "popularity": 9.765
+  },
+  {
+   "id": "node/703169425",
+   "name": "San Marcos",
+   "lat": 8.66186,
+   "lon": -75.13076,
+   "place": "city",
+   "elevation": 26,
+   "popularity": 9.761
+  },
+  {
+   "id": "node/6033536727",
+   "name": "Tibú",
+   "lat": 8.63714,
+   "lon": -72.73446,
+   "place": "city",
+   "elevation": 60,
+   "popularity": 9.729
+  },
+  {
+   "id": "node/554374965",
+   "name": "San José del Guaviare",
+   "lat": 2.57161,
+   "lon": -72.64265,
+   "place": "city",
+   "elevation": 186,
+   "popularity": 9.723
+  },
+  {
+   "id": "node/306381625",
+   "name": "San Andrés",
+   "lat": 12.58301,
+   "lon": -81.69757,
+   "place": "city",
+   "elevation": 6,
+   "popularity": 9.722
+  },
+  {
+   "id": "node/703170145",
+   "name": "Pamplona",
+   "lat": 7.37638,
+   "lon": -72.64826,
+   "place": "city",
+   "elevation": 2297,
+   "popularity": 9.699
+  },
+  {
+   "id": "node/703169918",
+   "name": "Bosconia",
+   "lat": 9.97304,
+   "lon": -73.8861,
+   "place": "city",
+   "elevation": 200,
+   "popularity": 9.602
+  },
+  {
+   "id": "node/358363174",
+   "name": "Curumaní",
+   "lat": 9.19953,
+   "lon": -73.54406,
+   "place": "city",
+   "elevation": 57,
+   "popularity": 9.573
+  },
+  {
+   "id": "node/703169698",
+   "name": "Pivijay",
+   "lat": 10.4654,
+   "lon": -74.61696,
+   "place": "city",
+   "elevation": 9,
+   "popularity": 9.572
+  },
+  {
+   "id": "node/703169497",
+   "name": "San Antero",
+   "lat": 9.37302,
+   "lon": -75.75951,
+   "place": "city",
+   "elevation": 45,
+   "popularity": 9.53
+  },
+  {
+   "id": "node/281861721",
+   "name": "Santiago de Tolú",
+   "lat": 9.52411,
+   "lon": -75.58418,
+   "place": "city",
+   "elevation": 0,
+   "popularity": 9.517
+  },
+  {
+   "id": "node/703169292",
+   "name": "Santa Rosa del Sur",
+   "lat": 7.96352,
+   "lon": -74.05064,
+   "place": "city",
+   "elevation": 629,
+   "popularity": 9.514
+  },
+  {
+   "id": "node/468625164",
+   "name": "Mitú",
+   "lat": 1.25873,
+   "lon": -70.23664,
+   "place": "city",
+   "elevation": 171,
+   "popularity": 9.453
+  },
+  {
+   "id": "node/263298764",
+   "name": "Honda",
+   "lat": 5.21042,
+   "lon": -74.73619,
+   "place": "city",
+   "elevation": 219,
+   "popularity": 9.429
+  },
+  {
+   "id": "node/468686404",
+   "name": "Inírida",
+   "lat": 3.86504,
+   "lon": -67.92598,
+   "place": "city",
+   "elevation": 99,
+   "popularity": 9.418
+  },
+  {
+   "id": "node/311485508",
+   "name": "Floridablanca",
+   "lat": 7.06258,
+   "lon": -73.08588,
+   "place": "town",
+   "elevation": 925,
+   "popularity": 9.405
+  },
+  {
+   "id": "node/703177218",
+   "name": "Itagüí",
+   "lat": 6.17244,
+   "lon": -75.60933,
+   "place": "town",
+   "elevation": 1567,
+   "popularity": 9.378
+  },
+  {
+   "id": "node/6086769710",
+   "name": "Dosquebradas",
+   "lat": 4.83396,
+   "lon": -75.6713,
+   "place": "town",
+   "elevation": 1444,
+   "popularity": 9.337
+  },
+  {
+   "id": "node/703177385",
+   "name": "Envigado",
+   "lat": 6.17013,
+   "lon": -75.58741,
+   "place": "town",
+   "elevation": 1573,
+   "popularity": 9.31
+  },
+  {
+   "id": "node/474938031",
+   "name": "San Luis de Palenque",
+   "lat": 5.42204,
+   "lon": -71.73144,
+   "place": "town",
+   "elevation": 173,
+   "popularity": 9.301
+  },
+  {
+   "id": "node/357917955",
+   "name": "Chinácota",
+   "lat": 7.60841,
+   "lon": -72.60027,
+   "place": "city",
+   "elevation": 1222,
+   "popularity": 9.237
+  },
+  {
+   "id": "node/3797489181",
+   "name": "Ipiales",
+   "lat": 0.82365,
+   "lon": -77.63486,
+   "place": "town",
+   "elevation": 2900,
+   "popularity": 9.23
+  },
+  {
+   "id": "node/1729701611",
+   "name": "Uribia",
+   "lat": 11.71486,
+   "lon": -72.26578,
+   "place": "town",
+   "elevation": 22,
+   "popularity": 9.213
+  },
+  {
+   "id": "node/311483479",
+   "name": "Jamundí",
+   "lat": 3.26156,
+   "lon": -76.54091,
+   "place": "town",
+   "elevation": 869,
+   "popularity": 9.204
+  },
+  {
+   "id": "node/310714964",
+   "name": "Puerto Carreño",
+   "lat": 6.19092,
+   "lon": -67.48419,
+   "place": "city",
+   "elevation": 51,
+   "popularity": 9.197
+  },
+  {
+   "id": "node/286290951",
+   "name": "Girón",
+   "lat": 7.06907,
+   "lon": -73.17003,
+   "place": "town",
+   "elevation": 698,
+   "popularity": 9.183
+  },
+  {
+   "id": "node/299739428",
+   "name": "Buga",
+   "lat": 3.90006,
+   "lon": -76.30201,
+   "place": "town",
+   "elevation": 974,
+   "popularity": 9.132
+  },
+  {
+   "id": "node/703168565",
+   "name": "Fusagasugá",
+   "lat": 4.34495,
+   "lon": -74.36742,
+   "place": "town",
+   "elevation": 1728,
+   "popularity": 9.12
+  },
+  {
+   "id": "node/2674622291",
+   "name": "Malambo",
+   "lat": 10.86534,
+   "lon": -74.77462,
+   "place": "town",
+   "elevation": 16,
+   "popularity": 9.108
+  },
+  {
+   "id": "node/277838403",
+   "name": "Facatativá",
+   "lat": 4.80973,
+   "lon": -74.35418,
+   "place": "town",
+   "elevation": 2587,
+   "popularity": 9.096
+  },
+  {
+   "id": "node/703170222",
+   "name": "Maicao",
+   "lat": 11.37731,
+   "lon": -72.23876,
+   "place": "town",
+   "elevation": 54,
+   "popularity": 9.093
+  },
+  {
+   "id": "node/1885014452",
+   "name": "Piedecuesta",
+   "lat": 6.98748,
+   "lon": -73.05041,
+   "place": "town",
+   "elevation": 1005,
+   "popularity": 9.064
+  },
+  {
+   "id": "node/310195666",
+   "name": "Lorica",
+   "lat": 9.23946,
+   "lon": -75.81398,
+   "place": "town",
+   "elevation": 13,
+   "popularity": 9.057
+  },
+  {
+   "id": "node/338607680",
+   "name": "Villa del Rosario",
+   "lat": 7.83189,
+   "lon": -72.47172,
+   "place": "town",
+   "elevation": 440,
+   "popularity": 9.055
+  },
+  {
+   "id": "node/703168214",
+   "name": "Santander de Quilichao",
+   "lat": 3.00758,
+   "lon": -76.48565,
+   "place": "town",
+   "elevation": 1063,
+   "popularity": 9.043
+  },
+  {
+   "id": "node/703169439",
+   "name": "Sahagún",
+   "lat": 8.9473,
+   "lon": -75.4435,
+   "place": "town",
+   "elevation": 85,
+   "popularity": 9.032
+  },
+  {
+   "id": "node/703169409",
+   "name": "Cereté",
+   "lat": 8.88523,
+   "lon": -75.79224,
+   "place": "town",
+   "elevation": 14,
+   "popularity": 9.025
+  },
+  {
+   "id": "node/703169669",
+   "name": "Turbaco",
+   "lat": 10.33059,
+   "lon": -75.41273,
+   "place": "town",
+   "elevation": 180,
+   "popularity": 9.024
+  },
+  {
+   "id": "node/703168803",
+   "name": "Zipaquirá",
+   "lat": 5.02347,
+   "lon": -74.00398,
+   "place": "town",
+   "elevation": 2613,
+   "popularity": 9.015
+  },
+  {
+   "id": "node/703208231",
+   "name": "Sabanalarga",
+   "lat": 10.63072,
+   "lon": -74.92094,
+   "place": "town",
+   "elevation": 99,
+   "popularity": 8.97
+  },
+  {
+   "id": "node/323307684",
+   "name": "Candelaria",
+   "lat": 3.40905,
+   "lon": -76.34738,
+   "place": "town",
+   "elevation": 980,
+   "popularity": 8.963
+  },
+  {
+   "id": "node/703170186",
+   "name": "Los Patios",
+   "lat": 7.83422,
+   "lon": -72.50591,
+   "place": "town",
+   "elevation": 401,
+   "popularity": 8.95
+  },
+  {
+   "id": "node/703168370",
+   "name": "Acacías",
+   "lat": 3.98873,
+   "lon": -73.76743,
+   "place": "town",
+   "elevation": 498,
+   "popularity": 8.945
+  },
+  {
+   "id": "node/313909383",
+   "name": "Manaure",
+   "lat": 11.77711,
+   "lon": -72.44694,
+   "place": "town",
+   "elevation": 1,
+   "popularity": 8.919
+  },
+  {
+   "id": "node/703177110",
+   "name": "Sabaneta",
+   "lat": 6.15153,
+   "lon": -75.61537,
+   "place": "town",
+   "elevation": 1593,
+   "popularity": 8.916
+  },
+  {
+   "id": "node/703168627",
+   "name": "Funza",
+   "lat": 4.71775,
+   "lon": -74.20315,
+   "place": "town",
+   "elevation": 2548,
+   "popularity": 8.903
+  },
+  {
+   "id": "node/703179488",
+   "name": "Copacabana",
+   "lat": 6.3461,
+   "lon": -75.50803,
+   "place": "town",
+   "elevation": 1421,
+   "popularity": 8.891
+  },
+  {
+   "id": "node/703168608",
+   "name": "Madrid",
+   "lat": 4.73673,
+   "lon": -74.26547,
+   "place": "town",
+   "elevation": 2549,
+   "popularity": 8.89
+  },
+  {
+   "id": "node/263295783",
+   "name": "La Dorada",
+   "lat": 5.44577,
+   "lon": -74.66185,
+   "place": "town",
+   "elevation": 176,
+   "popularity": 8.882
+  },
+  {
+   "id": "node/703168998",
+   "name": "Cumaribo",
+   "lat": 4.44715,
+   "lon": -69.79758,
+   "place": "town",
+   "elevation": 158,
+   "popularity": 8.861
+  },
+  {
+   "id": "node/703168192",
+   "name": "Garzón",
+   "lat": 2.19601,
+   "lon": -75.62748,
+   "place": "town",
+   "elevation": 827,
+   "popularity": 8.86
+  },
+  {
+   "id": "node/703222138",
+   "name": "El Espinal",
+   "lat": 4.1503,
+   "lon": -74.88459,
+   "place": "town",
+   "elevation": 323,
+   "popularity": 8.848
+  },
+  {
+   "id": "node/3159363873",
+   "name": "Marinilla",
+   "lat": 6.17364,
+   "lon": -75.33465,
+   "place": "town",
+   "elevation": 2089,
+   "popularity": 8.844
+  },
+  {
+   "id": "node/282916376",
+   "name": "Arjona",
+   "lat": 10.25346,
+   "lon": -75.34272,
+   "place": "town",
+   "elevation": 62,
+   "popularity": 8.842
+  },
+  {
+   "id": "node/6141180690",
+   "name": "Santa Rosa de Cabal",
+   "lat": 4.86507,
+   "lon": -75.62116,
+   "place": "town",
+   "elevation": 1696,
+   "popularity": 8.839
+  },
+  {
+   "id": "node/703168345",
+   "name": "Granada",
+   "lat": 3.54826,
+   "lon": -73.70512,
+   "place": "town",
+   "elevation": 338,
+   "popularity": 8.838
+  },
+  {
+   "id": "node/6456982022",
+   "name": "Chiquinquirá",
+   "lat": 5.62349,
+   "lon": -73.82095,
+   "place": "town",
+   "elevation": 2646,
+   "popularity": 8.821
+  },
+  {
+   "id": "node/3308587742",
+   "name": "Sevilla",
+   "lat": 4.26451,
+   "lon": -75.9344,
+   "place": "town",
+   "elevation": 1621,
+   "popularity": 8.813
+  },
+  {
+   "id": "node/703167871",
+   "name": "Puerto Asís",
+   "lat": 0.49798,
+   "lon": -76.49514,
+   "place": "town",
+   "elevation": 256,
+   "popularity": 8.812
+  },
+  {
+   "id": "node/321633105",
+   "name": "Ciénaga de Oro",
+   "lat": 8.87468,
+   "lon": -75.621,
+   "place": "town",
+   "elevation": 14,
+   "popularity": 8.808
+  },
+  {
+   "id": "node/703169255",
+   "name": "Planeta Rica",
+   "lat": 8.40767,
+   "lon": -75.58405,
+   "place": "town",
+   "elevation": 88,
+   "popularity": 8.808
+  },
+  {
+   "id": "node/703168193",
+   "name": "La Plata",
+   "lat": 2.38942,
+   "lon": -75.89262,
+   "place": "town",
+   "elevation": 1025,
+   "popularity": 8.786
+  },
+  {
+   "id": "node/3206373774",
+   "name": "Calarcá",
+   "lat": 4.53059,
+   "lon": -75.64063,
+   "place": "town",
+   "elevation": 1541,
+   "popularity": 8.767
+  },
+  {
+   "id": "node/703168207",
+   "name": "Florida",
+   "lat": 3.3256,
+   "lon": -76.23701,
+   "place": "town",
+   "elevation": 1044,
+   "popularity": 8.759
+  },
+  {
+   "id": "node/703168239",
+   "name": "El Cerrito",
+   "lat": 3.68292,
+   "lon": -76.30715,
+   "place": "town",
+   "elevation": 995,
+   "popularity": 8.752
+  },
+  {
+   "id": "node/703166711",
+   "name": "Mocoa",
+   "lat": 1.14663,
+   "lon": -76.64823,
+   "place": "town",
+   "elevation": 609,
+   "popularity": 8.751
+  },
+  {
+   "id": "node/588130543",
+   "name": "Villamaría",
+   "lat": 5.04497,
+   "lon": -75.51513,
+   "place": "town",
+   "elevation": 1890,
+   "popularity": 8.75
+  },
+  {
+   "id": "node/268142709",
+   "name": "San Gil",
+   "lat": 6.55529,
+   "lon": -73.13124,
+   "place": "town",
+   "elevation": 1114,
+   "popularity": 8.748
+  },
+  {
+   "id": "node/703167902",
+   "name": "Barbacoas",
+   "lat": 1.6741,
+   "lon": -78.1365,
+   "place": "town",
+   "elevation": 63,
+   "popularity": 8.745
+  },
+  {
+   "id": "node/1914215419",
+   "name": "Saravena",
+   "lat": 6.95649,
+   "lon": -71.87547,
+   "place": "town",
+   "elevation": 226,
+   "popularity": 8.745
+  },
+  {
+   "id": "node/306358928",
+   "name": "Puerto Boyacá",
+   "lat": 5.97564,
+   "lon": -74.58828,
+   "place": "town",
+   "elevation": 144,
+   "popularity": 8.743
+  },
+  {
+   "id": "node/703177578",
+   "name": "Guarne",
+   "lat": 6.28002,
+   "lon": -75.44269,
+   "place": "town",
+   "elevation": 2141,
+   "popularity": 8.741
+  },
+  {
+   "id": "node/317348776",
+   "name": "Riosucio",
+   "lat": 5.42095,
+   "lon": -75.70306,
+   "place": "town",
+   "elevation": 1772,
+   "popularity": 8.734
+  },
+  {
+   "id": "node/703177304",
+   "name": "La Ceja",
+   "lat": 6.03095,
+   "lon": -75.43162,
+   "place": "town",
+   "elevation": 2150,
+   "popularity": 8.732
+  },
+  {
+   "id": "node/703168129",
+   "name": "El Tambo",
+   "lat": 2.45119,
+   "lon": -76.81174,
+   "place": "town",
+   "elevation": 1734,
+   "popularity": 8.732
+  },
+  {
+   "id": "node/703169009",
+   "name": "Riosucio",
+   "lat": 7.43656,
+   "lon": -77.11226,
+   "place": "town",
+   "elevation": 2,
+   "popularity": 8.728
+  },
+  {
+   "id": "node/703319439",
+   "name": "Tuchín",
+   "lat": 9.18654,
+   "lon": -75.55514,
+   "place": "town",
+   "elevation": 48,
+   "popularity": 8.721
+  },
+  {
+   "id": "node/424725068",
+   "name": "Chinchiná",
+   "lat": 4.98302,
+   "lon": -75.60541,
+   "place": "town",
+   "elevation": 1377,
+   "popularity": 8.715
+  },
+  {
+   "id": "node/703179520",
+   "name": "Girardota",
+   "lat": 6.37738,
+   "lon": -75.44598,
+   "place": "town",
+   "elevation": 1404,
+   "popularity": 8.713
+  },
+  {
+   "id": "node/404732744",
+   "name": "San Vicente del Caguán",
+   "lat": 2.11312,
+   "lon": -74.76973,
+   "place": "town",
+   "elevation": 266,
+   "popularity": 8.705
+  },
+  {
+   "id": "node/703219870",
+   "name": "Chaparral",
+   "lat": 3.72459,
+   "lon": -75.48516,
+   "place": "town",
+   "elevation": 860,
+   "popularity": 8.702
+  },
+  {
+   "id": "node/281868041",
+   "name": "San Onofre",
+   "lat": 9.73863,
+   "lon": -75.52342,
+   "place": "town",
+   "elevation": 0,
+   "popularity": 8.696
+  },
+  {
+   "id": "node/703169501",
+   "name": "San Andrés de Sotavento",
+   "lat": 9.14577,
+   "lon": -75.50908,
+   "place": "town",
+   "elevation": 110,
+   "popularity": 8.687
+  },
+  {
+   "id": "node/703168220",
+   "name": "Dagua",
+   "lat": 3.65816,
+   "lon": -76.6894,
+   "place": "town",
+   "elevation": 883,
+   "popularity": 8.685
+  },
+  {
+   "id": "node/3297689961",
+   "name": "Chinú",
+   "lat": 9.10636,
+   "lon": -75.3989,
+   "place": "town",
+   "elevation": 117,
+   "popularity": 8.68
+  },
+  {
+   "id": "node/703168216",
+   "name": "Pradera",
+   "lat": 3.41967,
+   "lon": -76.24244,
+   "place": "town",
+   "elevation": 1060,
+   "popularity": 8.678
+  },
+  {
+   "id": "node/703177361",
+   "name": "El Carmen de Viboral",
+   "lat": 6.08331,
+   "lon": -75.33535,
+   "place": "town",
+   "elevation": 2151,
+   "popularity": 8.672
+  },
+  {
+   "id": "node/703169252",
+   "name": "Ayapel",
+   "lat": 8.31167,
+   "lon": -75.1445,
+   "place": "town",
+   "elevation": 27,
+   "popularity": 8.672
+  },
+  {
+   "id": "node/703169650",
+   "name": "María la Baja",
+   "lat": 9.98405,
+   "lon": -75.30195,
+   "place": "town",
+   "elevation": 14,
+   "popularity": 8.664
+  },
+  {
+   "id": "node/703176567",
+   "name": "Andes",
+   "lat": 5.65561,
+   "lon": -75.87768,
+   "place": "town",
+   "elevation": 1360,
+   "popularity": 8.636
+  },
+  {
+   "id": "node/333500666",
+   "name": "Fonseca",
+   "lat": 10.88618,
+   "lon": -72.83801,
+   "place": "town",
+   "elevation": 178,
+   "popularity": 8.631
+  },
+  {
+   "id": "node/536971730",
+   "name": "Puerto Colombia",
+   "lat": 10.98913,
+   "lon": -74.95541,
+   "place": "town",
+   "elevation": 12,
+   "popularity": 8.63
+  },
+  {
+   "id": "node/703179605",
+   "name": "Barbosa",
+   "lat": 6.43702,
+   "lon": -75.33138,
+   "place": "town",
+   "elevation": 1297,
+   "popularity": 8.629
+  },
+  {
+   "id": "node/430210272",
+   "name": "Cajibío",
+   "lat": 2.62317,
+   "lon": -76.56935,
+   "place": "town",
+   "elevation": 1825,
+   "popularity": 8.623
+  },
+  {
+   "id": "node/356654422",
+   "name": "Zarzal",
+   "lat": 4.39394,
+   "lon": -76.07065,
+   "place": "town",
+   "elevation": 921,
+   "popularity": 8.622
+  },
+  {
+   "id": "node/703168209",
+   "name": "Puerto Tejada",
+   "lat": 3.2289,
+   "lon": -76.41923,
+   "place": "town",
+   "elevation": 970,
+   "popularity": 8.619
+  },
+  {
+   "id": "node/703182529",
+   "name": "Yarumal",
+   "lat": 6.96259,
+   "lon": -75.41655,
+   "place": "town",
+   "elevation": 2298,
+   "popularity": 8.618
+  },
+  {
+   "id": "node/703168956",
+   "name": "Puerto Gaitán",
+   "lat": 4.31207,
+   "lon": -72.08295,
+   "place": "town",
+   "elevation": 155,
+   "popularity": 8.618
+  },
+  {
+   "id": "node/1584143606",
+   "name": "Lebrija",
+   "lat": 7.11384,
+   "lon": -73.21741,
+   "place": "town",
+   "elevation": 1014,
+   "popularity": 8.618
+  },
+  {
+   "id": "node/361404368",
+   "name": "Túquerres",
+   "lat": 1.0877,
+   "lon": -77.61882,
+   "place": "town",
+   "elevation": 3104,
+   "popularity": 8.609
+  },
+  {
+   "id": "node/703168163",
+   "name": "Caldono",
+   "lat": 2.79633,
+   "lon": -76.48365,
+   "place": "town",
+   "elevation": 1700,
+   "popularity": 8.601
+  },
+  {
+   "id": "node/309434921",
+   "name": "Aracataca",
+   "lat": 10.5906,
+   "lon": -74.18768,
+   "place": "town",
+   "elevation": 40,
+   "popularity": 8.601
+  },
+  {
+   "id": "node/703187316",
+   "name": "Puerto Berrío",
+   "lat": 6.48992,
+   "lon": -74.40206,
+   "place": "town",
+   "elevation": 116,
+   "popularity": 8.595
+  },
+  {
+   "id": "node/430208094",
+   "name": "Morales",
+   "lat": 2.75611,
+   "lon": -76.62985,
+   "place": "town",
+   "elevation": 1635,
+   "popularity": 8.589
+  },
+  {
+   "id": "node/703169476",
+   "name": "Sampués",
+   "lat": 9.18456,
+   "lon": -75.38024,
+   "place": "town",
+   "elevation": 152,
+   "popularity": 8.587
+  },
+  {
+   "id": "node/703192603",
+   "name": "Segovia",
+   "lat": 7.08168,
+   "lon": -74.70091,
+   "place": "town",
+   "elevation": 676,
+   "popularity": 8.579
+  },
+  {
+   "id": "node/313853954",
+   "name": "Orito",
+   "lat": 0.66863,
+   "lon": -76.87492,
+   "place": "town",
+   "elevation": 351,
+   "popularity": 8.577
+  },
+  {
+   "id": "node/298025062",
+   "name": "Dibulla",
+   "lat": 11.27225,
+   "lon": -73.31144,
+   "place": "town",
+   "elevation": 4,
+   "popularity": 8.577
+  },
+  {
+   "id": "node/703168156",
+   "name": "Silvia",
+   "lat": 2.61154,
+   "lon": -76.37842,
+   "place": "town",
+   "elevation": 2493,
+   "popularity": 8.572
+  },
+  {
+   "id": "node/703168132",
+   "name": "El Bordo",
+   "lat": 2.11229,
+   "lon": -76.98626,
+   "place": "town",
+   "elevation": 979,
+   "popularity": 8.568
+  },
+  {
+   "id": "node/317038534",
+   "name": "Aguazul",
+   "lat": 5.17084,
+   "lon": -72.55085,
+   "place": "town",
+   "elevation": 281,
+   "popularity": 8.567
+  },
+  {
+   "id": "node/2231939718",
+   "name": "San Juan Nepomuceno",
+   "lat": 9.95121,
+   "lon": -75.07945,
+   "place": "town",
+   "elevation": 169,
+   "popularity": 8.567
+  },
+  {
+   "id": "node/703167847",
+   "name": "Cumbal",
+   "lat": 0.90921,
+   "lon": -77.78891,
+   "place": "town",
+   "elevation": 3117,
+   "popularity": 8.567
+  },
+  {
+   "id": "node/7603964615",
+   "name": "Roldanillo",
+   "lat": 4.40912,
+   "lon": -76.15437,
+   "place": "town",
+   "elevation": 945,
+   "popularity": 8.566
+  },
+  {
+   "id": "node/703224410",
+   "name": "Líbano",
+   "lat": 4.92294,
+   "lon": -75.06477,
+   "place": "town",
+   "elevation": 1582,
+   "popularity": 8.566
+  },
+  {
+   "id": "node/703168430",
+   "name": "Montenegro",
+   "lat": 4.56642,
+   "lon": -75.75071,
+   "place": "town",
+   "elevation": 1283,
+   "popularity": 8.565
+  },
+  {
+   "id": "node/443818369",
+   "name": "Sonsón",
+   "lat": 5.71067,
+   "lon": -75.31035,
+   "place": "town",
+   "elevation": 2484,
+   "popularity": 8.56
+  },
+  {
+   "id": "node/1763821795",
+   "name": "Santa Rosa de Osos",
+   "lat": 6.64532,
+   "lon": -75.46146,
+   "place": "town",
+   "elevation": 2574,
+   "popularity": 8.56
+  },
+  {
+   "id": "node/703170074",
+   "name": "Paz de Ariporo",
+   "lat": 5.88154,
+   "lon": -71.89294,
+   "place": "town",
+   "elevation": 273,
+   "popularity": 8.56
+  },
+  {
+   "id": "node/703222970",
+   "name": "Melgar",
+   "lat": 4.20398,
+   "lon": -74.64295,
+   "place": "town",
+   "elevation": 321,
+   "popularity": 8.557
+  },
+  {
+   "id": "node/703170206",
+   "name": "Barrancas",
+   "lat": 10.95417,
+   "lon": -72.78886,
+   "place": "town",
+   "elevation": 154,
+   "popularity": 8.553
+  },
+  {
+   "id": "node/703169437",
+   "name": "Pueblo Nuevo",
+   "lat": 8.50094,
+   "lon": -75.50803,
+   "place": "town",
+   "elevation": 121,
+   "popularity": 8.552
+  },
+  {
+   "id": "node/12184590497",
+   "name": "Timbío",
+   "lat": 2.35284,
+   "lon": -76.68301,
+   "place": "town",
+   "elevation": 1786,
+   "popularity": 8.55
+  },
+  {
+   "id": "node/703167879",
+   "name": "Puerto Guzmán",
+   "lat": 0.9649,
+   "lon": -76.40783,
+   "place": "town",
+   "elevation": 277,
+   "popularity": 8.549
+  },
+  {
+   "id": "node/565473185",
+   "name": "Villanueva",
+   "lat": 4.61479,
+   "lon": -72.92538,
+   "place": "town",
+   "elevation": 289,
+   "popularity": 8.548
+  },
+  {
+   "id": "node/703168218",
+   "name": "Toribío",
+   "lat": 2.95547,
+   "lon": -76.26869,
+   "place": "town",
+   "elevation": 1701,
+   "popularity": 8.547
+  },
+  {
+   "id": "node/703168687",
+   "name": "Cota",
+   "lat": 4.80839,
+   "lon": -74.10368,
+   "place": "town",
+   "elevation": 2560,
+   "popularity": 8.544
+  },
+  {
+   "id": "node/703221920",
+   "name": "Ortega",
+   "lat": 3.93402,
+   "lon": -75.22127,
+   "place": "town",
+   "elevation": 395,
+   "popularity": 8.539
+  },
+  {
+   "id": "node/703169636",
+   "name": "Chimichagua",
+   "lat": 9.25767,
+   "lon": -73.81269,
+   "place": "town",
+   "elevation": 49,
+   "popularity": 8.534
+  },
+  {
+   "id": "node/317973127",
+   "name": "Anserma",
+   "lat": 5.22957,
+   "lon": -75.78784,
+   "place": "town",
+   "elevation": 1744,
+   "popularity": 8.532
+  },
+  {
+   "id": "node/1860480889",
+   "name": "La Unión",
+   "lat": 4.53188,
+   "lon": -76.10317,
+   "place": "town",
+   "elevation": 964,
+   "popularity": 8.531
+  },
+  {
+   "id": "node/703168572",
+   "name": "Sibaté",
+   "lat": 4.49163,
+   "lon": -74.25943,
+   "place": "town",
+   "elevation": 2578,
+   "popularity": 8.525
+  },
+  {
+   "id": "node/703168432",
+   "name": "La Tebaida",
+   "lat": 4.45122,
+   "lon": -75.78873,
+   "place": "town",
+   "elevation": 1195,
+   "popularity": 8.524
+  },
+  {
+   "id": "node/703168245",
+   "name": "Guacarí",
+   "lat": 3.76302,
+   "lon": -76.33449,
+   "place": "town",
+   "elevation": 974,
+   "popularity": 8.521
+  },
+  {
+   "id": "node/360216406",
+   "name": "Sabana de Torres",
+   "lat": 7.39394,
+   "lon": -73.49989,
+   "place": "town",
+   "elevation": 110,
+   "popularity": 8.519
+  },
+  {
+   "id": "node/703168120",
+   "name": "San Agustín",
+   "lat": 1.88208,
+   "lon": -76.2729,
+   "place": "town",
+   "elevation": 1641,
+   "popularity": 8.519
+  },
+  {
+   "id": "node/703169035",
+   "name": "Cimitarra",
+   "lat": 6.31454,
+   "lon": -73.94968,
+   "place": "town",
+   "elevation": 158,
+   "popularity": 8.518
+  },
+  {
+   "id": "node/703221953",
+   "name": "Guamo",
+   "lat": 4.03039,
+   "lon": -74.9679,
+   "place": "town",
+   "elevation": 321,
+   "popularity": 8.518
+  },
+  {
+   "id": "node/419127304",
+   "name": "Puerto Wilches",
+   "lat": 7.34802,
+   "lon": -73.89798,
+   "place": "town",
+   "elevation": 65,
+   "popularity": 8.516
+  },
+  {
+   "id": "node/703168641",
+   "name": "La Mesa",
+   "lat": 4.6323,
+   "lon": -74.4634,
+   "place": "town",
+   "elevation": 1271,
+   "popularity": 8.514
+  },
+  {
+   "id": "node/352660265",
+   "name": "Sabanagrande",
+   "lat": 10.78957,
+   "lon": -74.75592,
+   "place": "town",
+   "elevation": 87,
+   "popularity": 8.51
+  },
+  {
+   "id": "node/12652434036",
+   "name": "Puebloviejo",
+   "lat": 10.99388,
+   "lon": -74.2828,
+   "place": "town",
+   "elevation": 3,
+   "popularity": 8.508
+  },
+  {
+   "id": "node/10913268832",
+   "name": "Socorro",
+   "lat": 6.47052,
+   "lon": -73.26232,
+   "place": "town",
+   "elevation": 1300,
+   "popularity": 8.507
+  },
+  {
+   "id": "node/430200853",
+   "name": "Suárez",
+   "lat": 2.95435,
+   "lon": -76.69488,
+   "place": "town",
+   "elevation": 1093,
+   "popularity": 8.504
+  },
+  {
+   "id": "node/703168064",
+   "name": "La Unión",
+   "lat": 1.599,
+   "lon": -77.1306,
+   "place": "town",
+   "elevation": 1768,
+   "popularity": 8.503
+  },
+  {
+   "id": "node/703169288",
+   "name": "Ábrego",
+   "lat": 8.08189,
+   "lon": -73.22087,
+   "place": "town",
+   "elevation": 1393,
+   "popularity": 8.502
+  },
+  {
+   "id": "node/703168213",
+   "name": "Buenos Aires",
+   "lat": 3.01655,
+   "lon": -76.64068,
+   "place": "town",
+   "elevation": 1208,
+   "popularity": 8.497
+  },
+  {
+   "id": "node/703208150",
+   "name": "Luruaco",
+   "lat": 10.61041,
+   "lon": -75.14275,
+   "place": "town",
+   "elevation": 31,
+   "popularity": 8.497
+  },
+  {
+   "id": "node/703168212",
+   "name": "Miranda",
+   "lat": 3.25115,
+   "lon": -76.22916,
+   "place": "town",
+   "elevation": 1095,
+   "popularity": 8.496
+  },
+  {
+   "id": "node/703168198",
+   "name": "Campoalegre",
+   "lat": 2.6851,
+   "lon": -75.32632,
+   "place": "town",
+   "elevation": 535,
+   "popularity": 8.493
+  },
+  {
+   "id": "node/703225446",
+   "name": "Fresno",
+   "lat": 5.15166,
+   "lon": -75.03664,
+   "place": "town",
+   "elevation": 1479,
+   "popularity": 8.492
+  },
+  {
+   "id": "node/703169045",
+   "name": "Barbosa",
+   "lat": 5.9326,
+   "lon": -73.61244,
+   "place": "town",
+   "elevation": 1563,
+   "popularity": 8.492
+  },
+  {
+   "id": "node/6070766366",
+   "name": "San Pedro de Urabá",
+   "lat": 8.27789,
+   "lon": -76.38308,
+   "place": "town",
+   "elevation": 136,
+   "popularity": 8.49
+  },
+  {
+   "id": "node/703168435",
+   "name": "Quimbaya",
+   "lat": 4.62245,
+   "lon": -75.76313,
+   "place": "town",
+   "elevation": 1311,
+   "popularity": 8.488
+  },
+  {
+   "id": "node/1633233368",
+   "name": "Istmina",
+   "lat": 5.15931,
+   "lon": -76.68553,
+   "place": "town",
+   "elevation": 55,
+   "popularity": 8.488
+  },
+  {
+   "id": "node/703168170",
+   "name": "Cartagena del Chairá",
+   "lat": 1.33452,
+   "lon": -74.84141,
+   "place": "town",
+   "elevation": 222,
+   "popularity": 8.483
+  },
+  {
+   "id": "node/703168933",
+   "name": "Puerto López",
+   "lat": 4.08501,
+   "lon": -72.95847,
+   "place": "town",
+   "elevation": 184,
+   "popularity": 8.483
+  },
+  {
+   "id": "node/6150377924",
+   "name": "Amagá",
+   "lat": 6.0407,
+   "lon": -75.70307,
+   "place": "town",
+   "elevation": 1360,
+   "popularity": 8.48
+  },
+  {
+   "id": "node/703168206",
+   "name": "Caloto",
+   "lat": 3.0337,
+   "lon": -76.40852,
+   "place": "town",
+   "elevation": 1101,
+   "popularity": 8.48
+  },
+  {
+   "id": "node/703169930",
+   "name": "El Copey",
+   "lat": 10.14921,
+   "lon": -73.96117,
+   "place": "town",
+   "elevation": 140,
+   "popularity": 8.479
+  },
+  {
+   "id": "node/703173695",
+   "name": "Urrao",
+   "lat": 6.31687,
+   "lon": -76.1345,
+   "place": "town",
+   "elevation": 1812,
+   "popularity": 8.479
+  },
+  {
+   "id": "node/11177573514",
+   "name": "La Calera",
+   "lat": 4.72361,
+   "lon": -73.9689,
+   "place": "town",
+   "elevation": 2746,
+   "popularity": 8.475
+  },
+  {
+   "id": "node/703169389",
+   "name": "Moñitos",
+   "lat": 9.24604,
+   "lon": -76.1316,
+   "place": "town",
+   "elevation": 1,
+   "popularity": 8.475
+  },
+  {
+   "id": "node/703208489",
+   "name": "Santo Tomás",
+   "lat": 10.76024,
+   "lon": -74.75618,
+   "place": "town",
+   "elevation": 11,
+   "popularity": 8.475
+  },
+  {
+   "id": "node/703198014",
+   "name": "Tame",
+   "lat": 6.46152,
+   "lon": -71.73144,
+   "place": "town",
+   "elevation": 325,
+   "popularity": 8.474
+  },
+  {
+   "id": "node/602787501",
+   "name": "Sucre",
+   "lat": 8.81197,
+   "lon": -74.72097,
+   "place": "town",
+   "elevation": 19,
+   "popularity": 8.471
+  },
+  {
+   "id": "node/368218201",
+   "name": "Samaniego",
+   "lat": 1.33895,
+   "lon": -77.59338,
+   "place": "town",
+   "elevation": 1450,
+   "popularity": 8.469
+  },
+  {
+   "id": "node/703197544",
+   "name": "Arboletes",
+   "lat": 8.85283,
+   "lon": -76.42732,
+   "place": "town",
+   "elevation": 10,
+   "popularity": 8.467
+  },
+  {
+   "id": "node/703169322",
+   "name": "Puerto Escondido",
+   "lat": 9.01426,
+   "lon": -76.2626,
+   "place": "town",
+   "elevation": 6,
+   "popularity": 8.465
+  },
+  {
+   "id": "node/703191835",
+   "name": "Cáceres",
+   "lat": 7.57709,
+   "lon": -75.35144,
+   "place": "town",
+   "elevation": 96,
+   "popularity": 8.462
+  },
+  {
+   "id": "node/703208491",
+   "name": "Palmar de Varela",
+   "lat": 10.74101,
+   "lon": -74.75343,
+   "place": "town",
+   "elevation": 11,
+   "popularity": 8.461
+  },
+  {
+   "id": "node/310688443",
+   "name": "Inzá",
+   "lat": 2.55002,
+   "lon": -76.0644,
+   "place": "town",
+   "elevation": 1777,
+   "popularity": 8.461
+  },
+  {
+   "id": "node/356658395",
+   "name": "Caicedonia",
+   "lat": 4.33545,
+   "lon": -75.82665,
+   "place": "town",
+   "elevation": 1158,
+   "popularity": 8.46
+  },
+  {
+   "id": "node/602787011",
+   "name": "San Benito Abad",
+   "lat": 8.92936,
+   "lon": -75.02691,
+   "place": "town",
+   "elevation": 22,
+   "popularity": 8.457
+  },
+  {
+   "id": "node/317976418",
+   "name": "Supía",
+   "lat": 5.45566,
+   "lon": -75.6495,
+   "place": "town",
+   "elevation": 1184,
+   "popularity": 8.457
+  },
+  {
+   "id": "node/316224720",
+   "name": "Puerto Leguízamo",
+   "lat": -0.19499,
+   "lon": -74.7807,
+   "place": "town",
+   "elevation": 193,
+   "popularity": 8.454
+  },
+  {
+   "id": "node/703187206",
+   "name": "Remedios",
+   "lat": 7.02853,
+   "lon": -74.69519,
+   "place": "town",
+   "elevation": 716,
+   "popularity": 8.454
+  },
+  {
+   "id": "node/2682532862",
+   "name": "Flandes",
+   "lat": 4.2865,
+   "lon": -74.8137,
+   "place": "town",
+   "elevation": 285,
+   "popularity": 8.453
+  },
+  {
+   "id": "node/703168438",
+   "name": "Circasia",
+   "lat": 4.62007,
+   "lon": -75.63476,
+   "place": "town",
+   "elevation": 1776,
+   "popularity": 8.45
+  },
+  {
+   "id": "node/703168441",
+   "name": "La Virginia",
+   "lat": 4.8996,
+   "lon": -75.88257,
+   "place": "town",
+   "elevation": 900,
+   "popularity": 8.446
+  },
+  {
+   "id": "node/703273173",
+   "name": "La Paz",
+   "lat": 10.3866,
+   "lon": -73.171,
+   "place": "town",
+   "elevation": 155,
+   "popularity": 8.443
+  },
+  {
+   "id": "node/358363397",
+   "name": "Chiriguaná",
+   "lat": 9.36364,
+   "lon": -73.6017,
+   "place": "town",
+   "elevation": 34,
+   "popularity": 8.442
+  },
+  {
+   "id": "node/703169690",
+   "name": "Mahates",
+   "lat": 10.23426,
+   "lon": -75.18689,
+   "place": "town",
+   "elevation": 10,
+   "popularity": 8.442
+  },
+  {
+   "id": "node/703167929",
+   "name": "Guapi",
+   "lat": 2.57081,
+   "lon": -77.88262,
+   "place": "town",
+   "elevation": 5,
+   "popularity": 8.441
+  },
+  {
+   "id": "node/703169970",
+   "name": "Paipa",
+   "lat": 5.78127,
+   "lon": -73.11765,
+   "place": "town",
+   "elevation": 2525,
+   "popularity": 8.436
+  },
+  {
+   "id": "node/703169279",
+   "name": "San Pablo",
+   "lat": 7.47725,
+   "lon": -73.92348,
+   "place": "town",
+   "elevation": 63,
+   "popularity": 8.434
+  },
+  {
+   "id": "node/703169914",
+   "name": "Sitionuevo",
+   "lat": 10.777,
+   "lon": -74.7206,
+   "place": "town",
+   "elevation": 5,
+   "popularity": 8.433
+  },
+  {
+   "id": "node/443806481",
+   "name": "Ituango",
+   "lat": 7.17233,
+   "lon": -75.76409,
+   "place": "town",
+   "elevation": 1597,
+   "popularity": 8.433
+  },
+  {
+   "id": "node/468756001",
+   "name": "Pueblo Bello",
+   "lat": 10.41191,
+   "lon": -73.59096,
+   "place": "town",
+   "elevation": 1086,
+   "popularity": 8.431
+  },
+  {
+   "id": "node/703191852",
+   "name": "Tarazá",
+   "lat": 7.58048,
+   "lon": -75.39985,
+   "place": "town",
+   "elevation": 103,
+   "popularity": 8.431
+  },
+  {
+   "id": "node/703169393",
+   "name": "San Carlos",
+   "lat": 8.79617,
+   "lon": -75.69963,
+   "place": "town",
+   "elevation": 15,
+   "popularity": 8.431
+  },
+  {
+   "id": "node/703168204",
+   "name": "La Macarena",
+   "lat": 2.18338,
+   "lon": -73.78579,
+   "place": "town",
+   "elevation": 231,
+   "popularity": 8.43
+  },
+  {
+   "id": "node/260598008",
+   "name": "Villeta",
+   "lat": 5.01126,
+   "lon": -74.47023,
+   "place": "town",
+   "elevation": 800,
+   "popularity": 8.429
+  },
+  {
+   "id": "node/316239238",
+   "name": "Santa Bárbara",
+   "lat": 5.87438,
+   "lon": -75.56796,
+   "place": "town",
+   "elevation": 1804,
+   "popularity": 8.428
+  },
+  {
+   "id": "node/703168420",
+   "name": "San Martín",
+   "lat": 3.69439,
+   "lon": -73.69529,
+   "place": "town",
+   "elevation": 405,
+   "popularity": 8.427
+  },
+  {
+   "id": "node/358362218",
+   "name": "San Martín",
+   "lat": 8.00193,
+   "lon": -73.51215,
+   "place": "town",
+   "elevation": 113,
+   "popularity": 8.426
+  },
+  {
+   "id": "node/703169645",
+   "name": "Guamal",
+   "lat": 9.14403,
+   "lon": -74.22366,
+   "place": "town",
+   "elevation": 27,
+   "popularity": 8.425
+  },
+  {
+   "id": "node/703168186",
+   "name": "Puerto Rico",
+   "lat": 1.90939,
+   "lon": -75.1531,
+   "place": "town",
+   "elevation": 256,
+   "popularity": 8.424
+  },
+  {
+   "id": "node/703169271",
+   "name": "Rionegro",
+   "lat": 7.26463,
+   "lon": -73.15028,
+   "place": "town",
+   "elevation": 590,
+   "popularity": 8.422
+  },
+  {
+   "id": "node/703168321",
+   "name": "Palermo",
+   "lat": 2.8897,
+   "lon": -75.43466,
+   "place": "town",
+   "elevation": 551,
+   "popularity": 8.42
+  },
+  {
+   "id": "node/358361877",
+   "name": "San Alberto",
+   "lat": 7.76111,
+   "lon": -73.39328,
+   "place": "town",
+   "elevation": 118,
+   "popularity": 8.419
+  },
+  {
+   "id": "node/703208038",
+   "name": "Repelón",
+   "lat": 10.49501,
+   "lon": -75.12448,
+   "place": "town",
+   "elevation": 13,
+   "popularity": 8.418
+  },
+  {
+   "id": "node/703173597",
+   "name": "Ciudad Bolívar",
+   "lat": 5.85003,
+   "lon": -76.02087,
+   "place": "town",
+   "elevation": 1197,
+   "popularity": 8.417
+  },
+  {
+   "id": "node/703167945",
+   "name": "Timbiquí",
+   "lat": 2.77051,
+   "lon": -77.66431,
+   "place": "town",
+   "elevation": 5,
+   "popularity": 8.417
+  },
+  {
+   "id": "node/703185290",
+   "name": "Amalfi",
+   "lat": 6.90701,
+   "lon": -75.07359,
+   "place": "town",
+   "elevation": 1552,
+   "popularity": 8.414
+  },
+  {
+   "id": "node/703195337",
+   "name": "Nechí",
+   "lat": 8.09381,
+   "lon": -74.7752,
+   "place": "town",
+   "elevation": 32,
+   "popularity": 8.411
+  },
+  {
+   "id": "node/703168682",
+   "name": "Sopó",
+   "lat": 4.90792,
+   "lon": -73.94023,
+   "place": "town",
+   "elevation": 2572,
+   "popularity": 8.411
+  },
+  {
+   "id": "node/333501420",
+   "name": "San Juan del Cesar",
+   "lat": 10.77353,
+   "lon": -73.00192,
+   "place": "town",
+   "elevation": 214,
+   "popularity": 8.408
+  },
+  {
+   "id": "node/703169530",
+   "name": "Santa Ana",
+   "lat": 9.3229,
+   "lon": -74.56966,
+   "place": "town",
+   "elevation": 31,
+   "popularity": 8.405
+  },
+  {
+   "id": "node/3560499203",
+   "name": "Isnos",
+   "lat": 1.93011,
+   "lon": -76.21501,
+   "place": "town",
+   "elevation": 2075,
+   "popularity": 8.401
+  },
+  {
+   "id": "node/703170176",
+   "name": "Sardinata",
+   "lat": 8.0841,
+   "lon": -72.80007,
+   "place": "town",
+   "elevation": 320,
+   "popularity": 8.4
+  },
+  {
+   "id": "node/703168174",
+   "name": "Acevedo",
+   "lat": 1.80655,
+   "lon": -75.8897,
+   "place": "town",
+   "elevation": 1198,
+   "popularity": 8.394
+  },
+  {
+   "id": "node/703168500",
+   "name": "Belén de Umbría",
+   "lat": 5.20089,
+   "lon": -75.86899,
+   "place": "town",
+   "elevation": 1489,
+   "popularity": 8.393
+  },
+  {
+   "id": "node/703193025",
+   "name": "Zaragoza",
+   "lat": 7.49252,
+   "lon": -74.86823,
+   "place": "town",
+   "elevation": 66,
+   "popularity": 8.392
+  },
+  {
+   "id": "node/703168188",
+   "name": "Gigante",
+   "lat": 2.38817,
+   "lon": -75.54687,
+   "place": "town",
+   "elevation": 813,
+   "popularity": 8.391
+  },
+  {
+   "id": "node/459584400",
+   "name": "Totoró",
+   "lat": 2.51095,
+   "lon": -76.40115,
+   "place": "town",
+   "elevation": 2571,
+   "popularity": 8.39
+  },
+  {
+   "id": "node/703168828",
+   "name": "Pacho",
+   "lat": 5.13015,
+   "lon": -74.15831,
+   "place": "town",
+   "elevation": 1905,
+   "popularity": 8.388
+  },
+  {
+   "id": "node/703176778",
+   "name": "Fredonia",
+   "lat": 5.92706,
+   "lon": -75.67182,
+   "place": "town",
+   "elevation": 1817,
+   "popularity": 8.388
+  },
+  {
+   "id": "node/360214001",
+   "name": "Vélez",
+   "lat": 6.01236,
+   "lon": -73.67296,
+   "place": "town",
+   "elevation": 2050,
+   "popularity": 8.387
+  },
+  {
+   "id": "node/703209813",
+   "name": "Achí",
+   "lat": 8.56896,
+   "lon": -74.55576,
+   "place": "town",
+   "elevation": 24,
+   "popularity": 8.387
+  },
+  {
+   "id": "node/703168195",
+   "name": "Rivera",
+   "lat": 2.77764,
+   "lon": -75.25722,
+   "place": "town",
+   "elevation": 722,
+   "popularity": 8.386
+  },
+  {
+   "id": "node/703225497",
+   "name": "Mariquita",
+   "lat": 5.19742,
+   "lon": -74.89395,
+   "place": "town",
+   "elevation": 487,
+   "popularity": 8.385
+  },
+  {
+   "id": "node/703169585",
+   "name": "San Jacinto",
+   "lat": 9.82962,
+   "lon": -75.12186,
+   "place": "town",
+   "elevation": 240,
+   "popularity": 8.379
+  },
+  {
+   "id": "node/703167873",
+   "name": "Buesaco",
+   "lat": 1.3841,
+   "lon": -77.15662,
+   "place": "town",
+   "elevation": 1949,
+   "popularity": 8.379
+  },
+  {
+   "id": "node/703168612",
+   "name": "El Colegio",
+   "lat": 4.58026,
+   "lon": -74.44237,
+   "place": "town",
+   "elevation": 993,
+   "popularity": 8.378
+  },
+  {
+   "id": "node/355782971",
+   "name": "Ponedera",
+   "lat": 10.6396,
+   "lon": -74.75017,
+   "place": "town",
+   "elevation": 13,
+   "popularity": 8.377
+  },
+  {
+   "id": "node/703167881",
+   "name": "Villagarzón",
+   "lat": 1.03067,
+   "lon": -76.61691,
+   "place": "town",
+   "elevation": 425,
+   "popularity": 8.375
+  },
+  {
+   "id": "node/703221606",
+   "name": "Purificación",
+   "lat": 3.85821,
+   "lon": -74.93082,
+   "place": "town",
+   "elevation": 311,
+   "popularity": 8.372
+  },
+  {
+   "id": "node/703168964",
+   "name": "Tauramena",
+   "lat": 5.01341,
+   "lon": -72.75071,
+   "place": "town",
+   "elevation": 460,
+   "popularity": 8.372
+  },
+  {
+   "id": "node/316244521",
+   "name": "El Retiro",
+   "lat": 6.05727,
+   "lon": -75.50261,
+   "place": "town",
+   "elevation": 2173,
+   "popularity": 8.371
+  },
+  {
+   "id": "node/703174788",
+   "name": "Dabeiba",
+   "lat": 7.00152,
+   "lon": -76.26662,
+   "place": "town",
+   "elevation": 414,
+   "popularity": 8.363
+  },
+  {
+   "id": "node/2640966743",
+   "name": "Los Palmitos",
+   "lat": 9.38055,
+   "lon": -75.26813,
+   "place": "town",
+   "elevation": 181,
+   "popularity": 8.359
+  },
+  {
+   "id": "node/703208109",
+   "name": "Campo de la Cruz",
+   "lat": 10.38013,
+   "lon": -74.88106,
+   "place": "town",
+   "elevation": 8,
+   "popularity": 8.359
+  },
+  {
+   "id": "node/588078552",
+   "name": "Aguadas",
+   "lat": 5.61311,
+   "lon": -75.45759,
+   "place": "town",
+   "elevation": 2174,
+   "popularity": 8.358
+  },
+  {
+   "id": "node/703168242",
+   "name": "Ginebra",
+   "lat": 3.7237,
+   "lon": -76.2688,
+   "place": "town",
+   "elevation": 1033,
+   "popularity": 8.357
+  },
+  {
+   "id": "node/703169528",
+   "name": "Sincé",
+   "lat": 9.24401,
+   "lon": -75.1474,
+   "place": "town",
+   "elevation": 138,
+   "popularity": 8.355
+  },
+  {
+   "id": "node/6791442776",
+   "name": "Moniquirá",
+   "lat": 5.87631,
+   "lon": -73.57321,
+   "place": "town",
+   "elevation": 1673,
+   "popularity": 8.354
+  },
+  {
+   "id": "node/583281973",
+   "name": "Yolombó",
+   "lat": 6.59812,
+   "lon": -75.01081,
+   "place": "town",
+   "elevation": 1461,
+   "popularity": 8.353
+  },
+  {
+   "id": "node/703169695",
+   "name": "El Piñón",
+   "lat": 10.40429,
+   "lon": -74.82431,
+   "place": "town",
+   "elevation": 11,
+   "popularity": 8.353
+  },
+  {
+   "id": "node/703167935",
+   "name": "El Charco",
+   "lat": 2.47982,
+   "lon": -78.11079,
+   "place": "town",
+   "elevation": 2,
+   "popularity": 8.352
+  },
+  {
+   "id": "node/703169776",
+   "name": "Calamar",
+   "lat": 10.25261,
+   "lon": -74.91467,
+   "place": "town",
+   "elevation": 10,
+   "popularity": 8.352
+  },
+  {
+   "id": "node/703168250",
+   "name": "Andalucía",
+   "lat": 4.16942,
+   "lon": -76.16706,
+   "place": "town",
+   "elevation": 958,
+   "popularity": 8.351
+  },
+  {
+   "id": "node/703169309",
+   "name": "Morales",
+   "lat": 8.27639,
+   "lon": -73.86803,
+   "place": "town",
+   "elevation": 40,
+   "popularity": 8.348
+  },
+  {
+   "id": "node/703179568",
+   "name": "San Pedro de los Milagros",
+   "lat": 6.46181,
+   "lon": -75.55606,
+   "place": "town",
+   "elevation": 2464,
+   "popularity": 8.341
+  }
+ ]
+}

@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Locus: planifica tu viaje con un itinerario optimizado." />
+    <title>Locus · Planifica tu viaje</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <script>
+      // overpass-api.de (datos de lugares) rechaza peticiones que vienen de
+      // dominios *.web.app. Firebase Hosting publica el MISMO sitio también en
+      // *.firebaseapp.com, donde sí responde: redirigimos antes de cargar la app.
+      if (/\.web\.app$/.test(location.hostname)) {
+        location.replace(
+          location.protocol + '//' + location.hostname.replace(/\.web\.app$/, '.firebaseapp.com') +
+            (location.port ? ':' + location.port : '') + location.pathname + location.search + location.hash,
+        )
+      }
+    </script>
+    <script>
+      // Aplica el tema guardado ANTES de pintar la página para evitar el
+      // "parpadeo" claro→oscuro. Misma clave que usa la landing.
+      (function () {
+        try {
+          var saved = localStorage.getItem('locus-theme');
+          var theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+          document.documentElement.setAttribute('data-theme', theme);
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
