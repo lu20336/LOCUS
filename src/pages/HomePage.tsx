@@ -177,7 +177,12 @@ export function HomePage() {
       <div className="mx-auto flex max-w-6xl flex-col gap-20 px-4 py-16 sm:gap-24 sm:py-24">
         <DestinationCards onChoose={handleChooseCard} />
         <ActivityCards onChoose={handleChooseActivity} />
-        <p className="-mt-12 text-xs text-muted sm:-mt-16">Fotos: Unsplash.</p>
+        <p className="-mt-12 text-xs text-muted sm:-mt-16">
+          Fotos: Unsplash y Wikimedia Commons (licencias libres) ·{' '}
+          <a href="/images/CREDITOS.md" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
+            ver créditos y autores
+          </a>
+        </p>
       </div>
     </>
   )
