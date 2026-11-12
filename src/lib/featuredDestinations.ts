@@ -24,6 +24,8 @@ export interface FeaturedDestination {
   imagePosition?: string
   /** Altitud en metros sobre el nivel del mar. */
   elevation: number
+  /** Lugares conocidos para visitar (se deslizan sobre la foto al pasar el mouse). */
+  places: string[]
   destination: Destination
 }
 
@@ -43,6 +45,7 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     name: 'Cartagena',
     elevation: 2,
     tagline: 'Historia y mar Caribe',
+    places: ['Ciudad Amurallada', 'Castillo San Felipe de Barajas', 'Barrio Getsemaní', 'Islas del Rosario', 'Playa Blanca de Barú'],
     image: '/images/destinos/cartagena.jpg',
     destination: city('Cartagena, Colombia', 'Cartagena de Indias, Bolívar, Colombia', 10.424, -75.548, 8000),
   },
@@ -51,6 +54,7 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     name: 'Medellín',
     elevation: 1495,
     tagline: 'Clima templado todo el año',
+    places: ['Comuna 13', 'Parque Arví', 'Plaza Botero', 'Pueblito Paisa', 'Jardín Botánico'],
     image: '/images/destinos/medellin.jpg',
     destination: city('Medellín, Colombia', 'Medellín, Antioquia, Colombia', 6.2442, -75.5812, 8000),
   },
@@ -59,6 +63,7 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     name: 'Bogotá',
     elevation: 2640,
     tagline: 'Cultura en las alturas',
+    places: ['La Candelaria', 'Museo del Oro', 'Cerro de Monserrate', 'Museo Botero', 'Usaquén'],
     image: '/images/destinos/bogota.jpg',
     imagePosition: '45% center',
     destination: city('Bogotá, Colombia', 'Bogotá, Distrito Capital, Colombia', 4.6097, -74.0817, 8000),
@@ -68,6 +73,7 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     name: 'Villa de Leyva',
     elevation: 2149,
     tagline: 'Pueblo colonial, clima frío',
+    places: ['Plaza Mayor', 'Pozos Azules', 'Casa Terracota', 'Museo El Fósil', 'Convento del Santo Ecce Homo'],
     image: '/images/destinos/villa-de-leyva.jpg',
     imagePosition: '30% center',
     destination: city('Villa de Leyva, Colombia', 'Villa de Leyva, Boyacá, Colombia', 5.6337, -73.5245, 6000),
@@ -77,6 +83,7 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     name: 'San Andrés',
     elevation: 5,
     tagline: 'Isla caribeña',
+    places: ['Johnny Cay', 'Acuario y Haynes Cay', 'Hoyo Soplador', 'Cueva de Morgan', 'Playa de Spratt Bight'],
     image: '/images/destinos/san-andres.jpg',
     destination: city('San Andrés, Colombia', 'San Andrés, San Andrés y Providencia, Colombia', 12.5847, -81.7006, 6000),
   },
@@ -85,6 +92,7 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     name: 'Salento',
     elevation: 1895,
     tagline: 'Eje cafetero y aventura',
+    places: ['Valle de Cocora', 'Calle Real', 'Mirador de Salento', 'Fincas cafeteras', 'Río Quindío'],
     image: '/images/destinos/salento.jpg',
     destination: city('Salento, Quindío, Colombia', 'Salento, Quindío, Colombia', 4.6372, -75.5703, 8000),
   },
@@ -93,6 +101,7 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     name: 'Santa Marta',
     elevation: 6,
     tagline: 'Playa y Sierra Nevada',
+    places: ['Parque Tayrona', 'Minca', 'Taganga', 'Quinta de San Pedro Alejandrino', 'El Rodadero'],
     image: '/images/destinos/santa-marta.jpg',
     destination: city('Santa Marta, Colombia', 'Santa Marta, Magdalena, Colombia', 11.2408, -74.199, 8000),
   },
@@ -101,6 +110,7 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     name: 'Guatapé',
     elevation: 1925,
     tagline: 'Piedra del Peñol y embalse',
+    places: ['Piedra del Peñol', 'Calle del Recuerdo', 'Zócalos de colores', 'Malecón de Guatapé', 'Paseo en lancha por el embalse'],
     image: '/images/destinos/guatape.jpg',
     imagePosition: '75% center',
     destination: city('Guatapé, Antioquia, Colombia', 'Guatapé, Antioquia, Colombia', 6.2333, -75.1586, 6000),

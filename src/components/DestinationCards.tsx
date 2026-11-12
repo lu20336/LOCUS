@@ -26,6 +26,7 @@ export function DestinationCards({ onChoose }: { onChoose: (destination: Feature
                 imagePosition={item.imagePosition}
                 title={item.name}
                 subtitle={item.tagline}
+                places={item.places}
                 srPrefix="Planear un viaje a"
                 titleClassName="text-3xl"
                 className="h-[26rem] sm:h-96"
