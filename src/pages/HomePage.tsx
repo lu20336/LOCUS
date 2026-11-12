@@ -2,7 +2,8 @@
  * PANTALLA DE INICIO = PASO 1.
  *
  * - Barra de búsqueda: escribir despliega el formulario en Modo A (el texto
- *   de la barra es el destino); "Sugiéreme algo" lo despliega en Modo B.
+ *   de la barra es el destino) y muestra sugerencias de lugares debajo;
+ *   "Sugiéreme un lugar" lo despliega en Modo B.
  * - Panel desplegable (TripDetailsPanel): fechas, presupuesto y, en Modo B,
  *   la sugerencia de destino. Se abre con una transición suave bajo la barra.
  * - "Viaja por Colombia": tarjetas que abren el Modo A con el destino puesto.
@@ -19,6 +20,7 @@ import { DestinationCards } from '../components/DestinationCards'
 import { SearchBar } from '../components/SearchBar'
 import { TripDetailsPanel } from '../components/TripDetailsPanel'
 import type { FeaturedDestination } from '../lib/featuredDestinations'
+import { useDestinationOptions, type DestinationOption } from '../lib/flow/destinationOptions'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { useTripDetailsForm, type FocusableField } from '../lib/flow/useTripDetailsForm'
 import type { CategoryId } from '../types/itinerary'
@@ -38,6 +40,8 @@ export function HomePage() {
   const searchAreaRef = useRef<HTMLDivElement | null>(null)
   // Al elegir una actividad se reinicia el panel del Modo B (cancela una búsqueda en curso).
   const [suggesterKey, setSuggesterKey] = useState(0)
+  // Sugerencias de la barra mientras se escribe ("med" → Medellín).
+  const destinationOptions = useDestinationOptions(form.draft.destination)
 
   /**
    * Despliega el panel y, opcionalmente, lleva el foco a un campo.
@@ -72,6 +76,11 @@ export function HomePage() {
 
   function handleChooseCard(item: FeaturedDestination) {
     expand(() => form.chooseDestination(item.destination), 'startDate')
+  }
+
+  /** Elegir una sugerencia de la barra: Modo A con coordenadas conocidas (sin Nominatim). */
+  function handleChooseOption(option: DestinationOption) {
+    expand(() => form.chooseDestination(option.destination), 'startDate')
   }
 
   function handleChooseActivity(category: CategoryId) {
@@ -127,13 +136,14 @@ export function HomePage() {
             <SearchBar
               value={form.draft.destination}
               onChange={handleBarChange}
+              options={destinationOptions}
+              onSelectOption={handleChooseOption}
               onSuggest={handleSuggest}
               inputRef={(el) => {
                 barRef.current = el
                 form.registerField('destinationBar')(el)
               }}
               panelId={PANEL_ID}
-              expanded={expanded}
               suggestActive={expanded && mode === 'suggested'}
               error={mode === 'known' ? form.errors.destination : undefined}
               disabled={form.isGeocoding}
