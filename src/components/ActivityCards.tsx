@@ -14,9 +14,6 @@ const ACTIVITY_IMAGES: Record<CategoryId, string> = {
   compras: '/images/actividades/compras.jpg',
 }
 
-const prefersReducedMotion = () =>
-  typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches
-
 /**
  * Sección "¿Qué te gustaría hacer?": una tarjeta por categoría. Al elegir una,
  * la página abre el Modo B con esa actividad ya marcada.
@@ -26,12 +23,12 @@ const prefersReducedMotion = () =>
  *  - Se detiene al pasar el mouse o al enfocar una tarjeta con el teclado.
  *  - El botón "Pausar" lo detiene del todo (WCAG 2.2.2: todo lo que se mueve
  *    más de 5 s debe poder pausarse) y deja una fila que se desliza a mano.
- *  - Con "reducir movimiento" activado en el sistema, no se anima.
+ *  - Se anima aunque el sistema pida "reducir movimiento" (data-force-motion,
+ *    ver index.css): por eso el botón "Pausar" está siempre visible.
  */
 export function ActivityCards({ onChoose }: { onChoose: (category: CategoryId) => void }) {
-  const [reducedMotion] = useState(prefersReducedMotion)
   const [paused, setPaused] = useState(false)
-  const animated = !reducedMotion && !paused
+  const animated = !paused
 
   const renderCard = (category: CategoryId, copy = '') => (
     <li key={`${category}${copy}`} className="shrink-0 snap-start">
@@ -52,7 +49,7 @@ export function ActivityCards({ onChoose }: { onChoose: (category: CategoryId) =
   )
 
   return (
-    <section aria-labelledby="activities-title">
+    <section aria-labelledby="activities-title" data-force-motion>
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h2 id="activities-title" className="text-3xl font-semibold text-navy sm:text-4xl">
@@ -60,18 +57,16 @@ export function ActivityCards({ onChoose }: { onChoose: (category: CategoryId) =
           </h2>
           <p className="mt-2 text-muted sm:text-lg">Elige una actividad y te sugerimos a dónde ir.</p>
         </div>
-        {!reducedMotion && (
-          <button
-            type="button"
-            onClick={() => setPaused((p) => !p)}
-            className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-2"
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="currentColor">
-              {paused ? <path d="M8 5.5v13l10.5-6.5L8 5.5Z" /> : <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />}
-            </svg>
-            {paused ? 'Reanudar carrusel' : 'Pausar carrusel'}
-          </button>
-        )}
+        <button
+          type="button"
+          onClick={() => setPaused((p) => !p)}
+          className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-2"
+        >
+          <svg aria-hidden="true" viewBox="0 0 24 24" className="size-4" fill="currentColor">
+            {paused ? <path d="M8 5.5v13l10.5-6.5L8 5.5Z" /> : <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />}
+          </svg>
+          {paused ? 'Reanudar carrusel' : 'Pausar carrusel'}
+        </button>
       </div>
 
       {animated ? (

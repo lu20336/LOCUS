@@ -82,8 +82,16 @@
     outline-offset: 2px;
   }
 
+  /*
+   * "Reducir movimiento" apaga las animaciones de toda la app, EXCEPTO las de
+   * la portada marcadas con data-force-motion (lugares de cada destino y
+   * carrusel de actividades), que el equipo decidió mostrar siempre. El
+   * carrusel conserva su botón "Pausar".
+   */
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    :not([data-force-motion], [data-force-motion] *),
+    :not([data-force-motion], [data-force-motion] *)::before,
+    :not([data-force-motion], [data-force-motion] *)::after {
       transition: none !important;
       animation: none !important;
     }

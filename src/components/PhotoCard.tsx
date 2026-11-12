@@ -60,6 +60,8 @@ export function PhotoCard({
         onFocus={() => setHovered(true)}
         onBlur={() => setHovered(false)}
         aria-describedby={hasPlaces ? placesId : undefined}
+        // Las tarjetas con lugares se animan aunque el sistema pida reducir movimiento (index.css).
+        data-force-motion={hasPlaces || undefined}
         className={`group relative block w-full overflow-hidden rounded-3xl bg-surface-2 text-left shadow-md shadow-navy/10 transition duration-300 ease-out hover:-translate-y-1.5 hover:shadow-2xl hover:shadow-navy/25 focus-visible:-translate-y-1.5 focus-visible:ring-4 focus-visible:ring-teal-soft ${className}`}
       >
         <img
@@ -110,45 +112,37 @@ export function PhotoCard({
 /** Muestra un lugar a la vez; cada uno entra deslizándose desde la derecha. */
 function PlacesTicker({ places, running }: { places: string[]; running: boolean }) {
   const [index, setIndex] = useState(0)
-  const [reducedMotion] = useState(() => matches('(prefers-reduced-motion: reduce)'))
 
   useEffect(() => {
-    if (!running || reducedMotion) return
+    if (!running) return
     const timer = setInterval(() => setIndex((i) => (i + 1) % places.length), PLACE_INTERVAL_MS)
     // Al salir de la tarjeta, la próxima vez empieza desde el primer lugar.
     return () => {
       clearInterval(timer)
       setIndex(0)
     }
-  }, [running, reducedMotion, places.length])
+  }, [running, places.length])
 
   return (
     <span className="mt-3 flex flex-col gap-2 border-t border-white/25 pt-3">
       <span className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-light">Qué visitar</span>
-      {reducedMotion ? (
-        // Sin animaciones: todos los lugares a la vista.
-        <span className="text-sm leading-relaxed text-white">{places.join(' · ')}</span>
-      ) : (
-        <>
-          <span className="flex h-7 items-center overflow-hidden">
-            <span
-              key={index}
-              className="flex items-center gap-2 truncate text-base font-semibold text-white animate-[place-in_450ms_ease-out]"
-            >
-              <PinIcon />
-              <span className="truncate">{places[index]}</span>
-            </span>
-          </span>
-          <span className="flex gap-1.5">
-            {places.map((place, i) => (
-              <span
-                key={place}
-                className={`h-1 rounded-full transition-all duration-300 ${i === index ? 'w-5 bg-white' : 'w-1.5 bg-white/45'}`}
-              />
-            ))}
-          </span>
-        </>
-      )}
+      <span className="flex h-7 items-center overflow-hidden">
+        <span
+          key={index}
+          className="flex items-center gap-2 truncate text-base font-semibold text-white animate-[place-in_450ms_ease-out]"
+        >
+          <PinIcon />
+          <span className="truncate">{places[index]}</span>
+        </span>
+      </span>
+      <span className="flex gap-1.5">
+        {places.map((place, i) => (
+          <span
+            key={place}
+            className={`h-1 rounded-full transition-all duration-300 ${i === index ? 'w-5 bg-white' : 'w-1.5 bg-white/45'}`}
+          />
+        ))}
+      </span>
     </span>
   )
 }
