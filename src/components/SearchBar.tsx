@@ -51,7 +51,11 @@ export function SearchBar({
             placeholder="¿A dónde quieres ir?"
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            disabled={disabled}
+            // readOnly (no disabled) mientras se busca el destino: un campo
+            // deshabilitado no se puede enfocar, y si el destino no existe
+            // necesitamos devolverle el foco para mostrar el error.
+            readOnly={disabled}
+            aria-busy={disabled || undefined}
             aria-invalid={Boolean(error)}
             aria-describedby={error ? 'destination-error' : undefined}
             aria-controls={panelId}
