@@ -19,9 +19,10 @@ import { useCallback, useRef, useState } from 'react'
 import type { DestinationMode, SuggestionSearch } from '../../types/flow'
 import type { Destination } from '../../types/itinerary'
 import { countTripDays, formatCOP, formatThousands, parseBudget, todayISO } from '../format'
-import { osmClient } from '../itinerary/browserClient'
+import { osmClient, suggestionDeps } from '../itinerary/browserClient'
 import { ItineraryError } from '../itinerary/errors'
 import { geocodeDestination } from '../itinerary/generateItinerary'
+import { resolveDestination } from './resolveDestination'
 import { useTripFlow } from './tripFlowContext'
 import { hasErrors, validateTripDetails, type TripDetailsDraft, type TripDetailsErrors } from './validateTripDetails'
 
@@ -171,13 +172,17 @@ export function useTripDetailsForm() {
     }
 
     // 2a. Modo A: si el texto coincide con un destino conocido, usamos sus
-    // coordenadas; si no, geocodificamos con Nominatim.
+    // coordenadas; si no, resolveDestination (destacados → Nominatim → lista
+    // local de pueblos si Nominatim no responde).
     const query = draft.destination.trim()
     let destination = knownDestination?.query === query ? knownDestination : null
     if (!destination) {
       setIsGeocoding(true)
       try {
-        destination = await geocodeDestination(query, osmClient)
+        destination = await resolveDestination(query, {
+          geocode: (q) => geocodeDestination(q, osmClient),
+          loadTowns: suggestionDeps.loadTowns,
+        })
       } catch (error) {
         const message =
           error instanceof ItineraryError ? error.message : 'Ocurrió un error inesperado. Inténtalo de nuevo.'

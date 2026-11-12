@@ -225,7 +225,7 @@ describe('cliente de OSM (con fetch falso)', () => {
     const places = await client.findPlaces(destination!, 5000, ['playa'])
 
     expect(calls[0].url).toBe(
-      'https://nominatim.openstreetmap.org/search?q=Cartagena&format=jsonv2&limit=1&accept-language=es&email=equipo%40locus.test',
+      'https://nominatim.openstreetmap.org/search?q=Cartagena&format=jsonv2&limit=1&accept-language=es&countrycodes=co&email=equipo%40locus.test',
     )
     expect(calls[0].init.headers).not.toHaveProperty('User-Agent')
     expect(calls[1].url).toBe('https://overpass-api.de/api/interpreter')

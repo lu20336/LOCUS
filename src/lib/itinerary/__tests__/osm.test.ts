@@ -4,6 +4,7 @@ import {
   MAX_RADIUS_METERS,
   MIN_RADIUS_METERS,
   buildActivityCountQuery,
+  buildNominatimUrl,
   buildOverpassQuery,
   parseActivityCounts,
   type OverpassElement,
@@ -46,6 +47,14 @@ describe('Nominatim', () => {
 
   it('devuelve null si no hay resultados', () => {
     expect(parseNominatimResponse('Xyzzy', [])).toBeNull()
+  })
+
+  it('limita la búsqueda a Colombia y agrega el correo de contacto', () => {
+    const url = new URL(buildNominatimUrl('https://nominatim.example', 'Salento', 'equipo@example.com'))
+    expect(url.pathname).toBe('/search')
+    expect(url.searchParams.get('q')).toBe('Salento')
+    expect(url.searchParams.get('countrycodes')).toBe('co')
+    expect(url.searchParams.get('email')).toBe('equipo@example.com')
   })
 
   it('un pueblo pequeño recibe el radio mínimo', () => {

@@ -39,6 +39,9 @@ export function buildNominatimUrl(baseUrl: string, query: string, email?: string
     format: 'jsonv2',
     limit: '1',
     'accept-language': 'es',
+    // Locus solo planifica viajes por Colombia: sin esto, "Salento" se
+    // resuelve a Salento (Italia) y "Santa Marta" a otros países.
+    countrycodes: 'co',
   })
   if (email) params.set('email', email)
   return `${baseUrl}/search?${params}`
