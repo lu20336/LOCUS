@@ -3,11 +3,13 @@
  * selección única, checkbox para múltiple) ocultos visualmente: así el teclado
  * (Tab, flechas, Espacio) y los lectores de pantalla funcionan sin código extra.
  */
+import type { LucideIcon } from 'lucide-react'
+
 export interface ChipOption<T extends string> {
   value: T
   label: string
-  /** Emoji o símbolo decorativo (no lo leen los lectores de pantalla). */
-  icon?: string
+  /** Icono decorativo de Lucide (no lo leen los lectores de pantalla). */
+  icon?: LucideIcon
   /** Texto pequeño bajo la etiqueta, ej. "12 a 17 °C". */
   description?: string
 }
@@ -52,7 +54,7 @@ export function ChipGroup<T extends string>({ name, legend, type, options, value
               onChange={(e) => toggle(option.value, e.target.checked)}
               className="peer sr-only"
             />
-            {option.icon && <span aria-hidden="true">{option.icon}</span>}
+            {option.icon && <option.icon aria-hidden="true" className="size-4 shrink-0 text-teal-soft" strokeWidth={2} />}
             <span className="flex flex-col leading-tight">
               {option.label}
               {option.description && <span className="text-xs font-normal text-muted">{option.description}</span>}
