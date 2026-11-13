@@ -1,12 +1,18 @@
 /**
- * Inicialización de Firebase para la app. Proyecto propio "locus-bb57e",
- * independiente del de la landing ("locus-landing"). Estas claves son
- * públicas por diseño: la seguridad real la dan las reglas de Firestore
- * (firestore.rules). Analytics no se inicializa en este prototipo.
+ * Inicialización de Firebase. Proyecto "locus-bb57e".
+ *
+ * La configuración web de Firebase es PÚBLICA por diseño (identifica el
+ * proyecto, no da acceso): la seguridad real la dan las reglas de Firestore
+ * (firestore.rules), App Check y las restricciones de la API key en Google Cloud.
+ * Los secretos de servidor NO van aquí.
+ *
+ * En desarrollo (`npm run dev`) todo se conecta a los EMULADORES locales de
+ * Auth y Firestore (VITE_USE_EMULATORS=true), así que probar nunca toca la
+ * base real. Analytics no se inicializa.
  */
 import { initializeApp } from 'firebase/app'
-import { getAuth, onAuthStateChanged, signInAnonymously, type User } from 'firebase/auth'
-import { getFirestore } from 'firebase/firestore'
+import { connectAuthEmulator, getAuth, onAuthStateChanged, signInAnonymously, type User } from 'firebase/auth'
+import { connectFirestoreEmulator, getFirestore } from 'firebase/firestore'
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCG0WOnsdNGrvxR8UU-FhERNTouJdTd2vk',
@@ -18,14 +24,23 @@ const firebaseConfig = {
   measurementId: 'G-SQKB12MZ0S',
 }
 
+export const useEmulators = import.meta.env.VITE_USE_EMULATORS === 'true'
+
 export const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const db = getFirestore(app)
 
+// HMR vuelve a evaluar este módulo: solo conectamos los emuladores una vez.
+const globalFlags = globalThis as unknown as { __locusEmulators?: boolean }
+if (useEmulators && !globalFlags.__locusEmulators) {
+  globalFlags.__locusEmulators = true
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
+  connectFirestoreEmulator(db, '127.0.0.1', 8080)
+}
+
 /**
- * Devuelve el usuario anónimo de esta sesión, creándolo si no existe.
- * Firebase recuerda la sesión en el navegador, así que el mismo visitante
- * conserva su ID entre recargas.
+ * (Heredado del prototipo, sin uso en la app actual.) Devuelve el usuario
+ * anónimo de la sesión, creándolo si no existe.
  */
 export function ensureAnonymousUser(): Promise<User> {
   return new Promise((resolve, reject) => {

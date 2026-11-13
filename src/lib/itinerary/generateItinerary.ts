@@ -334,18 +334,38 @@ export async function generateItinerary(
   client: OsmClient,
   options: GenerateOptions = {},
 ): Promise<Itinerary> {
-  const { activitiesPerDay = DEFAULT_ACTIVITIES_PER_DAY, now = () => new Date() } = options
-
   // Validaciones baratas primero, antes de gastar peticiones de red.
-  const dates = tripDates(input.startDate, input.endDate)
+  tripDates(input.startDate, input.endDate)
+  validateEngineInput(input)
+
+  const destination = await geocodeDestination(input.destination, client) // Paso 1
+  return buildItinerary(destination, input, client, options)
+}
+
+function validateEngineInput(input: TripInput) {
   if (input.categories.length === 0) {
     throw new ItineraryError('INVALID_INPUT', 'Elige al menos una actividad.')
   }
   if (!Number.isFinite(input.budgetCOP) || input.budgetCOP < 0) {
     throw new ItineraryError('INVALID_INPUT', 'El presupuesto debe ser un valor positivo en pesos.')
   }
+}
 
-  const destination = await geocodeDestination(input.destination, client) // Paso 1
+/**
+ * Pasos 2 a 5 para un destino que YA está resuelto (con coordenadas): es lo que
+ * usa la app, porque el Paso 1 del flujo ya geocodificó o eligió el destino.
+ * Así no se vuelve a consultar Nominatim ni se arriesga otro resultado.
+ */
+export async function buildItinerary(
+  destination: Destination,
+  input: TripInput,
+  client: OsmClient,
+  options: GenerateOptions = {},
+): Promise<Itinerary> {
+  const { activitiesPerDay = DEFAULT_ACTIVITIES_PER_DAY, now = () => new Date() } = options
+  const dates = tripDates(input.startDate, input.endDate)
+  validateEngineInput(input)
+
   const { byCategory, missingCategories } = await searchPlaces(destination, input.categories, client) // Paso 2
   const selected = selectPlaces(byCategory, input.categories, dates.length * activitiesPerDay) // Paso 3
   const days = buildDailyPlan(destination, selected, dates) // Pasos 4 y 5

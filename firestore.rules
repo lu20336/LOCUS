@@ -2,12 +2,448 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Proyecto propio de la app ("locus-bb57e"). Las reglas de la landing
-    // (leads, stats) viven en su propio proyecto ("locus-landing").
+    // =========================================================================
+    //  REGLAS DE LOCUS  ·  proyecto Firebase "locus-bb57e" (plan Spark, sin Functions)
+    //
+    //  Como no hay servidor propio, ESTAS REGLAS son el backend de validación:
+    //  deciden quién lee/escribe qué y repiten la aritmética de precios y la
+    //  lógica anti-doble-reserva de src/lib/domain/pricing.ts.
+    //  Las pruebas están en tests/rules (npm run test:rules).
+    //  Todo lo no listado aquí queda CERRADO por defecto.
+    // =========================================================================
 
-    // --- Itinerarios generados ---
-    // Cada itinerario pertenece a una sesión anónima (Firebase Anonymous Auth).
-    // Solo su dueño puede leerlo o borrarlo; nadie puede reescribir el de otro.
+    function signedIn() { return request.auth != null; }
+    function isOwner(userId) { return signedIn() && request.auth.uid == userId; }
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    function isStr(v, min, max) { return v is string && v.size() >= min && v.size() <= max; }
+    function isInt(v, min, max) { return v is int && v >= min && v <= max; }
+    function isoDate(v) { return v is string && v.matches('^[0-9]{4}-[0-9]{2}-[0-9]{2}$'); }
+    function isImage(v, max) {
+      return v is string && v.size() <= max && v.matches('^data:image/(webp|jpeg);base64,.*');
+    }
+    // Colombia continental e insular (San Andrés y Providencia incluidas).
+    function inColombia(lat, lon) {
+      return lat is number && lon is number && lat >= -5 && lat <= 14 && lon >= -82.5 && lon <= -66;
+    }
+
+    // --- Cuentas ---------------------------------------------------------
+    // Los administradores se dan de alta a mano en la consola: /admins/{uid}.
+    match /admins/{userId} {
+      allow read: if isOwner(userId);
+    }
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update: if isOwner(userId)
+        && request.resource.data.keys().hasOnly(
+          ['displayName', 'phone', 'onboardingCompleted', 'onboardingSkipped', 'aiPersonalization', 'isHost', 'createdAt', 'updatedAt'])
+        && isStr(request.resource.data.get('displayName', ''), 0, 80)
+        && isStr(request.resource.data.get('phone', ''), 0, 30)
+        && request.resource.data.get('onboardingCompleted', false) is bool
+        && request.resource.data.get('aiPersonalization', false) is bool
+        && request.resource.data.get('isHost', false) is bool;
+
+      // Perfil del viajero. `declared` = lo que dijo el usuario; `inferred` = lo
+      // que deduce el agente. El agente SOLO escribe en `inferred` (ver
+      // src/lib/profile/profileService.ts) y nunca toca `declared`.
+      match /travelerProfile/{docId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId) && docId == 'main'
+          && request.resource.data.keys().hasOnly(['declared', 'inferred', 'version', 'completedAt', 'updatedAt'])
+          && request.resource.data.declared is map
+          && request.resource.data.inferred is map
+          && isInt(request.resource.data.version, 1, 1000);
+      }
+
+      match /favorites/{favoriteId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['kind', 'refId', 'title', 'subtitle', 'addedAt'])
+          && request.resource.data.kind in ['listing', 'experience', 'destination', 'place']
+          && isStr(request.resource.data.refId, 1, 200)
+          && isStr(request.resource.data.title, 1, 200);
+      }
+
+      match /itineraries/{itineraryId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(
+            ['title', 'destination', 'startDate', 'endDate', 'budgetCOP', 'travelers', 'days', 'notes', 'source', 'createdAt', 'updatedAt'])
+          && isStr(request.resource.data.title, 1, 120)
+          && request.resource.data.days is list && request.resource.data.days.size() <= 30;
+      }
+
+      match /agentChats/{chatId} {
+        allow read, delete: if isOwner(userId);
+        allow create, update: if isOwner(userId)
+          && request.resource.data.keys().hasOnly(['title', 'createdAt', 'updatedAt'])
+          && isStr(request.resource.data.title, 1, 120);
+
+        match /messages/{messageId} {
+          allow read, delete: if isOwner(userId);
+          allow create: if isOwner(userId)
+            && request.resource.data.keys().hasOnly(['role', 'text', 'cards', 'createdAt'])
+            && request.resource.data.role in ['user', 'model']
+            && isStr(request.resource.data.text, 1, 12000);
+        }
+      }
+
+      // Tope diario de mensajes al agente (control de costos; el límite duro
+      // lo pone la cuota de Gemini por proyecto/usuario en Firebase AI Logic).
+      match /agentUsage/{day} {
+        allow read: if isOwner(userId);
+        allow create: if isOwner(userId) && request.resource.data.keys().hasOnly(['count'])
+          && request.resource.data.count == 1;
+        allow update: if isOwner(userId) && request.resource.data.keys().hasOnly(['count'])
+          && request.resource.data.count == resource.data.count + 1 && request.resource.data.count <= 60;
+      }
+    }
+
+    // --- Anfitriones (perfil público) -------------------------------------
+    match /hosts/{hostId} {
+      allow read: if true;
+      allow create: if isOwner(hostId)
+        && request.resource.data.keys().hasOnly(
+          ['displayName', 'bio', 'municipality', 'languages', 'rnt', 'verified', 'createdAt', 'updatedAt'])
+        && isStr(request.resource.data.displayName, 2, 80)
+        && isStr(request.resource.data.get('bio', ''), 0, 1000)
+        && isStr(request.resource.data.get('rnt', ''), 0, 30)
+        && request.resource.data.get('languages', []) is list && request.resource.data.get('languages', []).size() <= 6
+        && request.resource.data.verified == false;
+      allow update: if (isOwner(hostId)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(
+            ['displayName', 'bio', 'municipality', 'languages', 'rnt', 'updatedAt'])
+          && isStr(request.resource.data.displayName, 2, 80))
+        || (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['verified', 'updatedAt']));
+    }
+
+    // Transiciones de estado que puede hacer el dueño; publicar o rechazar es solo del admin.
+    function ownerStatusOk(from, to) {
+      return (from in ['draft', 'pending', 'rejected'] && to in ['draft', 'pending'])
+        || (from == 'published' && to in ['published', 'draft']);
+    }
+    function adminModerates() {
+      return isAdmin()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'rejectionReason', 'updatedAt'])
+        && request.resource.data.status in ['published', 'rejected', 'suspended', 'draft', 'pending'];
+    }
+
+    // --- Alojamientos -----------------------------------------------------
+    function validListing(d) {
+      return d.keys().hasOnly([
+          'hostId', 'status', 'title', 'description', 'type', 'capacity', 'bedrooms', 'beds', 'bathrooms',
+          'department', 'municipality', 'addressReference', 'lat', 'lon', 'amenities', 'pricePerNight',
+          'cleaningFee', 'includedGuests', 'extraGuestFee', 'minNights', 'maxNights', 'bookingMode',
+          'cancellationPolicy', 'checkInTime', 'checkOutTime', 'rules', 'cover', 'photoCount',
+          'rejectionReason', 'isTestData', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll([
+          'hostId', 'status', 'title', 'description', 'type', 'capacity', 'bedrooms', 'beds', 'bathrooms',
+          'department', 'municipality', 'addressReference', 'lat', 'lon', 'amenities', 'pricePerNight',
+          'cleaningFee', 'includedGuests', 'extraGuestFee', 'minNights', 'maxNights', 'bookingMode',
+          'cancellationPolicy', 'checkInTime', 'checkOutTime', 'rules', 'cover', 'photoCount', 'createdAt', 'updatedAt'])
+        && isStr(d.title, 3, 100) && isStr(d.description, 0, 4000)
+        && d.type in ['casa', 'apartamento', 'habitacion', 'hotel', 'hostal', 'cabana', 'finca', 'glamping']
+        && isInt(d.capacity, 1, 50) && isInt(d.bedrooms, 0, 30) && isInt(d.beds, 1, 60) && isInt(d.bathrooms, 0, 30)
+        && isStr(d.department, 2, 60) && isStr(d.municipality, 2, 80) && isStr(d.addressReference, 0, 300)
+        && inColombia(d.lat, d.lon)
+        && d.amenities is list && d.amenities.size() <= 30
+        && isInt(d.pricePerNight, 10000, 20000000) && isInt(d.cleaningFee, 0, 5000000)
+        && isInt(d.includedGuests, 1, 50) && d.includedGuests <= d.capacity && isInt(d.extraGuestFee, 0, 2000000)
+        && isInt(d.minNights, 1, 30) && isInt(d.maxNights, 1, 365) && d.minNights <= d.maxNights
+        && d.bookingMode in ['instant', 'request']
+        && d.cancellationPolicy in ['flexible', 'moderada', 'estricta']
+        && isStr(d.checkInTime, 0, 10) && isStr(d.checkOutTime, 0, 10) && isStr(d.rules, 0, 2000)
+        && isImage(d.cover, 70000) && isInt(d.photoCount, 0, 20);
+    }
+
+    match /listings/{listingId} {
+      allow read: if resource.data.status == 'published' || isOwner(resource.data.hostId) || isAdmin();
+
+      // Un anfitrión crea borradores o los envía a revisión; solo un admin publica.
+      allow create: if signedIn() && request.resource.data.hostId == request.auth.uid
+        && exists(/databases/$(database)/documents/hosts/$(request.auth.uid))
+        && request.resource.data.status in ['draft', 'pending']
+        && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time
+        && validListing(request.resource.data);
+
+      allow update: if (isOwner(resource.data.hostId) && request.resource.data.hostId == resource.data.hostId
+          && ownerStatusOk(resource.data.status, request.resource.data.status)
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time && validListing(request.resource.data))
+        || adminModerates();
+
+      allow delete: if isOwner(resource.data.hostId) && resource.data.status in ['draft', 'rejected'];
+
+      match /photos/{photoId} {
+        allow read: if get(/databases/$(database)/documents/listings/$(listingId)).data.status == 'published'
+          || isOwner(get(/databases/$(database)/documents/listings/$(listingId)).data.hostId) || isAdmin();
+        allow create, update: if isOwner(get(/databases/$(database)/documents/listings/$(listingId)).data.hostId)
+          && photoId.matches('^p([0-9]|1[0-9])$')
+          && request.resource.data.keys().hasOnly(['order', 'dataUrl', 'alt'])
+          && isInt(request.resource.data.order, 0, 19)
+          && isImage(request.resource.data.dataUrl, 450000)
+          && isStr(request.resource.data.get('alt', ''), 0, 200);
+        allow delete: if isOwner(get(/databases/$(database)/documents/listings/$(listingId)).data.hostId);
+      }
+
+      // ---- Calendario -----------------------------------------------------
+      // booked:      noches reservadas. Solo cambia junto con una reserva (mismo lote).
+      // hostBlocked: noches bloqueadas por el anfitrión.
+      // lastBookingId: reserva que originó el último cambio (la reserva y el
+      //   calendario se validan mutuamente con getAfter()).
+      match /calendar/{calId} {
+        allow read: if true;
+
+        // El anfitrión prepara el calendario vacío o lo crea la primera reserva.
+        allow create: if calId == 'main' && (
+          (isOwner(get(/databases/$(database)/documents/listings/$(listingId)).data.hostId)
+            && request.resource.data.keys().hasOnly(['booked', 'hostBlocked', 'lastBookingId'])
+            && request.resource.data.booked == {} && request.resource.data.lastBookingId == ''
+            && request.resource.data.hostBlocked.values().hasOnly(['host']))
+          || (request.resource.data.keys().hasOnly(['booked', 'hostBlocked', 'lastBookingId'])
+            && request.resource.data.hostBlocked == {}
+            && request.resource.data.booked.values().hasOnly(['booking'])
+            && request.resource.data.booked.keys().hasAll(
+                 getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.dates)
+            && request.resource.data.booked.keys().hasOnly(
+                 getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.dates)
+            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.guestId == request.auth.uid
+            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.itemId == listingId
+            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.status in ['pending', 'confirmed'])
+        );
+
+        allow update: if calId == 'main' && (
+          // (a) El anfitrión bloquea o libera sus propias noches.
+          (isOwner(get(/databases/$(database)/documents/listings/$(listingId)).data.hostId)
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['hostBlocked'])
+            && request.resource.data.hostBlocked.values().hasOnly(['host']))
+          // (b) Una reserva nueva ocupa noches: solo AGREGA claves (nunca pisa ni quita),
+          //     exactamente las noches de esa reserva y ninguna bloqueada por el anfitrión.
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['booked', 'lastBookingId'])
+            && request.resource.data.hostBlocked == resource.data.hostBlocked
+            && request.resource.data.booked.values().hasOnly(['booking'])
+            && request.resource.data.booked.keys().hasAll(resource.data.booked.keys())
+            && request.resource.data.booked.keys().hasAll(
+                 getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.dates)
+            && request.resource.data.booked.diff(resource.data.booked).affectedKeys().hasOnly(
+                 getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.dates)
+            && !resource.data.booked.keys().hasAny(
+                 getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.dates)
+            && !resource.data.hostBlocked.keys().hasAny(
+                 getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.dates)
+            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.guestId == request.auth.uid
+            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.itemId == listingId
+            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.status in ['pending', 'confirmed'])
+          // (c) Una cancelación libera EXACTAMENTE las noches de esa reserva.
+          || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['booked', 'lastBookingId'])
+            && request.resource.data.hostBlocked == resource.data.hostBlocked
+            && resource.data.booked.keys().hasAll(request.resource.data.booked.keys())
+            && request.resource.data.booked.diff(resource.data.booked).affectedKeys().hasOnly(
+                 getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.dates)
+            && !request.resource.data.booked.keys().hasAny(
+                 getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.dates)
+            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.itemId == listingId
+            && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.status
+                 in ['cancelled_by_guest', 'cancelled_by_host']
+            && (getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.guestId == request.auth.uid
+                || getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.hostId == request.auth.uid))
+        );
+      }
+    }
+
+    // --- Experiencias -----------------------------------------------------
+    function validExperience(d) {
+      return d.keys().hasOnly([
+          'hostId', 'status', 'title', 'description', 'category', 'department', 'municipality', 'addressReference',
+          'lat', 'lon', 'durationMinutes', 'pricePerPerson', 'capacity', 'minAge', 'languages', 'weekdays',
+          'startTimes', 'requirements', 'cancellationPolicy', 'providerName', 'cover', 'photoCount',
+          'rejectionReason', 'isTestData', 'createdAt', 'updatedAt'])
+        && d.keys().hasAll([
+          'hostId', 'status', 'title', 'description', 'category', 'department', 'municipality', 'addressReference',
+          'lat', 'lon', 'durationMinutes', 'pricePerPerson', 'capacity', 'minAge', 'languages', 'weekdays',
+          'startTimes', 'requirements', 'cancellationPolicy', 'providerName', 'cover', 'photoCount', 'createdAt', 'updatedAt'])
+        && isStr(d.title, 3, 100) && isStr(d.description, 0, 4000)
+        && d.category in ['caminata', 'tour', 'gastronomia', 'acuatica', 'cultural', 'aves', 'aventura', 'rural', 'bienestar']
+        && isStr(d.department, 2, 60) && isStr(d.municipality, 2, 80) && isStr(d.addressReference, 0, 300)
+        && inColombia(d.lat, d.lon)
+        && isInt(d.durationMinutes, 15, 1440) && isInt(d.pricePerPerson, 5000, 20000000)
+        && isInt(d.capacity, 1, 200) && isInt(d.minAge, 0, 99)
+        && d.languages is list && d.languages.size() <= 6
+        && d.weekdays is list && d.weekdays.size() >= 1 && d.weekdays.size() <= 7
+        && d.startTimes is list && d.startTimes.size() >= 1 && d.startTimes.size() <= 8
+        && isStr(d.requirements, 0, 1500) && d.cancellationPolicy in ['flexible', 'moderada', 'estricta']
+        && isStr(d.providerName, 2, 100)
+        && isImage(d.cover, 70000) && isInt(d.photoCount, 0, 20);
+    }
+
+    match /experiences/{experienceId} {
+      allow read: if resource.data.status == 'published' || isOwner(resource.data.hostId) || isAdmin();
+      allow create: if signedIn() && request.resource.data.hostId == request.auth.uid
+        && exists(/databases/$(database)/documents/hosts/$(request.auth.uid))
+        && request.resource.data.status in ['draft', 'pending']
+        && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time
+        && validExperience(request.resource.data);
+      allow update: if (isOwner(resource.data.hostId) && request.resource.data.hostId == resource.data.hostId
+          && ownerStatusOk(resource.data.status, request.resource.data.status)
+          && request.resource.data.createdAt == resource.data.createdAt
+          && request.resource.data.updatedAt == request.time && validExperience(request.resource.data))
+        || adminModerates();
+      allow delete: if isOwner(resource.data.hostId) && resource.data.status in ['draft', 'rejected'];
+
+      match /photos/{photoId} {
+        allow read: if get(/databases/$(database)/documents/experiences/$(experienceId)).data.status == 'published'
+          || isOwner(get(/databases/$(database)/documents/experiences/$(experienceId)).data.hostId) || isAdmin();
+        allow create, update: if isOwner(get(/databases/$(database)/documents/experiences/$(experienceId)).data.hostId)
+          && photoId.matches('^p([0-9]|1[0-9])$')
+          && request.resource.data.keys().hasOnly(['order', 'dataUrl', 'alt'])
+          && isInt(request.resource.data.order, 0, 19)
+          && isImage(request.resource.data.dataUrl, 450000)
+          && isStr(request.resource.data.get('alt', ''), 0, 200);
+        allow delete: if isOwner(get(/databases/$(database)/documents/experiences/$(experienceId)).data.hostId);
+      }
+
+      // Cupos por sesión (fecha + hora): "booked" nunca puede superar la capacidad.
+      match /slots/{slotId} {
+        allow read: if true;
+        allow create: if request.resource.data.keys().hasOnly(['booked', 'lastBookingId'])
+          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.guestId == request.auth.uid
+          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.itemId == experienceId
+          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.status in ['pending', 'confirmed']
+          && slotId == getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.date + '_'
+               + getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.startTime.replace(':', '')
+          && request.resource.data.booked == getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.people
+          && request.resource.data.booked <= get(/databases/$(database)/documents/experiences/$(experienceId)).data.capacity;
+        allow update: if request.resource.data.keys().hasOnly(['booked', 'lastBookingId'])
+          && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.itemId == experienceId
+          && slotId == getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.date + '_'
+               + getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.startTime.replace(':', '')
+          && (
+            // reserva: suma exactamente las personas de la reserva y respeta la capacidad
+            (getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.guestId == request.auth.uid
+              && getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.status in ['pending', 'confirmed']
+              && request.resource.data.booked == resource.data.booked
+                   + getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.people
+              && request.resource.data.booked <= get(/databases/$(database)/documents/experiences/$(experienceId)).data.capacity)
+            // cancelación: devuelve exactamente las personas de la reserva
+            || (getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.status
+                  in ['cancelled_by_guest', 'cancelled_by_host']
+              && (getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.guestId == request.auth.uid
+                  || getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.hostId == request.auth.uid)
+              && request.resource.data.booked == resource.data.booked
+                   - getAfter(/databases/$(database)/documents/bookings/$(request.resource.data.lastBookingId)).data.people)
+          );
+      }
+    }
+
+    // --- Reservas ---------------------------------------------------------
+    function bookingCommon(b) {
+      return b.guestId == request.auth.uid && b.hostId != request.auth.uid
+        && isStr(b.guestName, 0, 80) && isStr(b.itemTitle, 1, 120)
+        && b.payment.mode in ['simulado', 'sandbox'] && b.payment.status == 'simulated_paid'
+        && b.pricing.serviceFee == 0 && b.pricing.currency == 'COP'
+        && b.createdAt == request.time && b.updatedAt == request.time;
+    }
+
+    function listingBookingValid(bookingId) {
+      let b = request.resource.data;
+      let l = get(/databases/$(database)/documents/listings/$(b.itemId)).data;
+      let n = b.dates.size();
+      let extra = b.guests > l.includedGuests ? b.guests - l.includedGuests : 0;
+      let p = b.checkIn.split('-');
+      return b.keys().hasOnly(['kind', 'itemId', 'itemTitle', 'hostId', 'guestId', 'guestName', 'status', 'checkIn',
+                               'checkOut', 'dates', 'guests', 'pricing', 'cancellationPolicy', 'payment', 'createdAt', 'updatedAt'])
+        && b.keys().hasAll(['kind', 'itemId', 'itemTitle', 'hostId', 'guestId', 'guestName', 'status', 'checkIn',
+                            'checkOut', 'dates', 'guests', 'pricing', 'cancellationPolicy', 'payment', 'createdAt', 'updatedAt'])
+        && bookingCommon(b)
+        && l.status == 'published' && l.hostId == b.hostId
+        && b.status == (l.bookingMode == 'instant' ? 'confirmed' : 'pending')
+        && isoDate(b.checkIn) && isoDate(b.checkOut) && b.checkIn < b.checkOut
+        && timestamp.date(int(p[0]), int(p[1]), int(p[2])) >= request.time - duration.value(1, 'd')
+        && b.dates is list && n >= 1 && n <= 30 && n >= l.minNights && n <= l.maxNights
+        && b.dates[0] == b.checkIn && b.dates[n - 1] < b.checkOut
+        && isInt(b.guests, 1, l.capacity)
+        && b.cancellationPolicy == l.cancellationPolicy
+        && b.pricing.nightly == l.pricePerNight && b.pricing.nights == n
+        && b.pricing.subtotal == l.pricePerNight * n
+        && b.pricing.cleaningFee == l.cleaningFee
+        && b.pricing.extraGuestsFee == extra * l.extraGuestFee * n
+        && b.pricing.total == l.pricePerNight * n + l.cleaningFee + extra * l.extraGuestFee * n
+        && getAfter(/databases/$(database)/documents/listings/$(b.itemId)/calendar/main).data.lastBookingId == bookingId;
+    }
+
+    function experienceBookingValid(bookingId) {
+      let b = request.resource.data;
+      let e = get(/databases/$(database)/documents/experiences/$(b.itemId)).data;
+      let slotId = b.date + '_' + b.startTime.replace(':', '');
+      let p = b.date.split('-');
+      return b.keys().hasOnly(['kind', 'itemId', 'itemTitle', 'hostId', 'guestId', 'guestName', 'status', 'date',
+                               'startTime', 'people', 'pricing', 'cancellationPolicy', 'payment', 'createdAt', 'updatedAt'])
+        && b.keys().hasAll(['kind', 'itemId', 'itemTitle', 'hostId', 'guestId', 'guestName', 'status', 'date',
+                            'startTime', 'people', 'pricing', 'cancellationPolicy', 'payment', 'createdAt', 'updatedAt'])
+        && bookingCommon(b)
+        && e.status == 'published' && e.hostId == b.hostId && b.status == 'confirmed'
+        && isoDate(b.date) && b.startTime in e.startTimes
+        && timestamp.date(int(p[0]), int(p[1]), int(p[2])) >= request.time - duration.value(1, 'd')
+        && isInt(b.people, 1, e.capacity)
+        && b.cancellationPolicy == e.cancellationPolicy
+        && b.pricing.perPerson == e.pricePerPerson && b.pricing.people == b.people
+        && b.pricing.total == e.pricePerPerson * b.people
+        && getAfter(/databases/$(database)/documents/experiences/$(b.itemId)/slots/$(slotId)).data.lastBookingId == bookingId;
+    }
+
+    function hostTransition(from, to) {
+      return (from == 'pending' && to in ['confirmed', 'cancelled_by_host'])
+        || (from == 'confirmed' && to in ['cancelled_by_host', 'completed']);
+    }
+    function guestTransition(from, to) {
+      return from in ['pending', 'confirmed'] && to == 'cancelled_by_guest';
+    }
+
+    match /bookings/{bookingId} {
+      allow read: if signedIn() && (resource.data.guestId == request.auth.uid
+                                    || resource.data.hostId == request.auth.uid || isAdmin());
+
+      allow create: if signedIn() && (
+        (request.resource.data.kind == 'listing' && listingBookingValid(bookingId))
+        || (request.resource.data.kind == 'experience' && experienceBookingValid(bookingId)));
+
+      // Solo cambia el estado (y el reembolso informativo). Al cancelar, la reserva
+      // debe liberar en el mismo lote sus noches o sus cupos.
+      allow update: if signedIn()
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'updatedAt', 'refundAmount'])
+        && request.resource.data.updatedAt == request.time
+        && ((resource.data.hostId == request.auth.uid && hostTransition(resource.data.status, request.resource.data.status))
+            || (resource.data.guestId == request.auth.uid && guestTransition(resource.data.status, request.resource.data.status)))
+        && (!(request.resource.data.status in ['cancelled_by_guest', 'cancelled_by_host'])
+            || (resource.data.kind == 'listing'
+                && !getAfter(/databases/$(database)/documents/listings/$(resource.data.itemId)/calendar/main).data.booked.keys()
+                      .hasAny(resource.data.dates))
+            || (resource.data.kind == 'experience'
+                && getAfter(/databases/$(database)/documents/experiences/$(resource.data.itemId)/slots/$(resource.data.date + '_' + resource.data.startTime.replace(':', ''))).data.booked
+                   == get(/databases/$(database)/documents/experiences/$(resource.data.itemId)/slots/$(resource.data.date + '_' + resource.data.startTime.replace(':', ''))).data.booked
+                      - resource.data.people));
+    }
+
+    // --- Reseñas: una por reserva completada, solo del huésped que la hizo ----
+    match /reviews/{bookingId} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['kind', 'itemId', 'guestId', 'guestName', 'rating', 'text', 'createdAt'])
+        && request.resource.data.guestId == request.auth.uid
+        && get(/databases/$(database)/documents/bookings/$(bookingId)).data.guestId == request.auth.uid
+        && get(/databases/$(database)/documents/bookings/$(bookingId)).data.status == 'completed'
+        && get(/databases/$(database)/documents/bookings/$(bookingId)).data.itemId == request.resource.data.itemId
+        && get(/databases/$(database)/documents/bookings/$(bookingId)).data.kind == request.resource.data.kind
+        && isInt(request.resource.data.rating, 1, 5)
+        && isStr(request.resource.data.text, 0, 2000)
+        && request.resource.data.createdAt == request.time;
+      allow delete: if signedIn() && resource.data.guestId == request.auth.uid;
+    }
+
+    // --- Heredado del prototipo: itinerarios por sesión anónima. Sin uso en la
+    //     app actual; se conserva para no perder datos existentes. -------------
     match /itineraries/{itineraryId} {
       allow create: if request.auth != null
                     && request.resource.data.uid == request.auth.uid;

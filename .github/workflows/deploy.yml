@@ -1,0 +1,66 @@
+# Despliegue a PRODUCCIÓN (Firebase Hosting + reglas de Firestore) al hacer
+# push/merge a `main`. Solo funciona si ya configuraste el secreto
+# FIREBASE_SERVICE_ACCOUNT (ver docs/CONFIGURACION_Y_DESPLIEGUE.md §5).
+# Sin ese secreto, el trabajo falla en el paso de autenticación y NO publica nada.
+name: Deploy a producción
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - run: npm ci
+      - run: npm run lint
+      - run: npm test
+      - run: npm run test:rules
+
+  deploy:
+    needs: verify
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - name: Compilar
+        run: npm run build
+        env:
+          # Variables PÚBLICAS (quedan visibles en el navegador): se configuran en
+          # GitHub → Settings → Secrets and variables → Actions → Variables.
+          VITE_NOMINATIM_EMAIL: ${{ vars.VITE_NOMINATIM_EMAIL }}
+          VITE_APPCHECK_SITE_KEY: ${{ vars.VITE_APPCHECK_SITE_KEY }}
+          VITE_MAPILLARY_TOKEN: ${{ vars.VITE_MAPILLARY_TOKEN }}
+          VITE_GEMINI_MODEL: ${{ vars.VITE_GEMINI_MODEL }}
+      - uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+      # Primero las reglas (la app nueva las necesita), luego el sitio.
+      - name: Publicar reglas e índices de Firestore
+        run: npx firebase-tools deploy --only firestore --project locus-bb57e --non-interactive
+      - name: Publicar Hosting
+        run: npx firebase-tools deploy --only hosting --project locus-bb57e --non-interactive

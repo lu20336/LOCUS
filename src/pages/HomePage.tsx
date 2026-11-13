@@ -13,13 +13,15 @@
  * La lógica del formulario vive en useTripDetailsForm (compartida por la
  * barra y el panel).
  */
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { Navigate, useSearchParams } from 'react-router'
 import { flushSync } from 'react-dom'
 import { ActivityCards } from '../components/ActivityCards'
 import { DestinationCards } from '../components/DestinationCards'
+import { HomeDiscovery } from '../components/HomeDiscovery'
 import { SearchBar } from '../components/SearchBar'
 import { TripDetailsPanel } from '../components/TripDetailsPanel'
-import type { FeaturedDestination } from '../lib/featuredDestinations'
+import { FEATURED_DESTINATIONS, type FeaturedDestination } from '../lib/featuredDestinations'
 import { useDestinationOptions, type DestinationOption } from '../lib/flow/destinationOptions'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { useTripDetailsForm, type FocusableField } from '../lib/flow/useTripDetailsForm'
@@ -30,7 +32,7 @@ const PANEL_ID = 'trip-panel'
 const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
 export function HomePage() {
-  const { trip } = useTripFlow()
+  const { trip, step } = useTripFlow()
   const form = useTripDetailsForm()
   const { mode, setMode } = form
 
@@ -106,6 +108,21 @@ export function HomePage() {
     void form.submit()
   }
 
+  // /?destino=salento (desde la ficha de un destino): abre el formulario con ese destino.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const requested = searchParams.get('destino')
+  useEffect(() => {
+    const item = FEATURED_DESTINATIONS.find((d) => d.id === requested)
+    if (!item) return
+    setSearchParams({}, { replace: true })
+    // flushSync no puede ejecutarse dentro de un efecto: se difiere a una microtarea.
+    queueMicrotask(() => handleChooseCard(item))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [requested])
+
+  // Con el Paso 1 completo, el planificador continúa en /planear.
+  if (step !== 1) return <Navigate to="/planear" replace />
+
   return (
     <>
       {/* HERO: foto a pantalla completa con degradado oscuro para el contraste del texto. */}
@@ -123,12 +140,12 @@ export function HomePage() {
 
         <div className="mx-auto flex min-h-[80svh] max-w-6xl flex-col px-4 pt-[10vh] pb-16 sm:min-h-[calc(100svh-4rem)] sm:pt-[16vh]">
           <div ref={searchAreaRef} className="mx-auto max-w-3xl scroll-mt-20 text-center [text-shadow:0_2px_16px_rgb(0_0_0/0.35)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">Itinerarios con lugares reales</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">Hospedajes, experiencias e itinerarios</p>
             <h1 id="step-title" tabIndex={-1} className="mt-3 text-5xl leading-tight font-semibold text-white focus:outline-none sm:text-6xl lg:text-7xl">
               Planea tu viaje por <em className="text-teal-light">Colombia</em>
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-lg text-white/90 sm:text-xl">
-              Te armamos un plan día a día, en el orden que menos te hace recorrer.
+              Encuentra dónde quedarte, qué hacer y cómo organizarlo, con la ayuda de tu compañero LOCUS.
             </p>
           </div>
 
@@ -177,6 +194,7 @@ export function HomePage() {
       <div className="mx-auto flex max-w-6xl flex-col gap-20 px-4 py-16 sm:gap-24 sm:py-24">
         <DestinationCards onChoose={handleChooseCard} />
         <ActivityCards onChoose={handleChooseActivity} />
+        <HomeDiscovery />
         <p className="-mt-12 text-xs text-muted sm:-mt-16">
           Fotos: Unsplash y Wikimedia Commons (licencias libres) ·{' '}
           <a href="/images/CREDITOS.md" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">

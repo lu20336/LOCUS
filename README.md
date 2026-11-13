@@ -1,4 +1,52 @@
-# Locus · App de planificación de viajes
+# Locus · Compañero inteligente de viajes por Colombia
+
+Plataforma de **hospedajes, experiencias, itinerarios y recomendaciones con IA** para Colombia (curso de Ingeniería Aplicada).
+React 19 + Vite + TypeScript + Tailwind, **Firebase** (proyecto `locus-bb57e`, plan gratuito Spark), Gemini vía Firebase AI Logic y datos abiertos de OpenStreetMap.
+
+**Dos modos en una sola cuenta:** *Huésped* (explora, reserva, guarda favoritos, planea viajes, conversa con tu compañero LOCUS) y *Anfitrión* (publica alojamientos y experiencias, gestiona calendario y reservas).
+
+> ⚠ Los **pagos son simulados** (no se cobra dinero). Ver [docs/PROVEEDORES.md](docs/PROVEEDORES.md) para saber qué es real y qué está pendiente.
+
+## Empezar (local, sin tocar producción)
+
+```bash
+npm ci
+npm run dev     # emuladores de Firebase + Vite en http://localhost:5173
+npm run seed    # (otra terminal) datos de prueba: anfitrion@ / huesped@ / admin@locus.test, clave locus-prueba-123
+```
+
+## Documentación
+
+| Documento | Contenido |
+|---|---|
+| [docs/CONFIGURACION_Y_DESPLIEGUE.md](docs/CONFIGURACION_Y_DESPLIEGUE.md) | Flujo de ramas, variables, pasos en la consola de Firebase, despliegue, cuotas |
+| [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) | Arquitectura, modelo de datos, reservas sin servidor, agente de IA, seguridad |
+| [docs/PROVEEDORES.md](docs/PROVEEDORES.md) | Investigación de APIs (gratuitas/pagas), decisiones y normativa |
+| [docs/SEGUIMIENTO.md](docs/SEGUIMIENTO.md) | Qué está hecho, parcial y pendiente; lo que se necesita de ti |
+| [docs/analysis/](docs/analysis/00_RESUMEN_EJECUTIVO.md) | Auditoría del prototipo original (previa a esta versión) |
+
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `npm run dev` | Emuladores (Auth + Firestore) y servidor de desarrollo. |
+| `npm run dev:web` | Solo Vite (si ya tienes los emuladores corriendo). |
+| `npm run dev:real` | Vite contra el Firebase **real** (cuidado: escribe en producción). |
+| `npm run seed` | Carga datos de prueba en el emulador. |
+| `npm test` | Pruebas unitarias (Vitest). |
+| `npm run test:rules` | Pruebas de las reglas de Firestore con el emulador. |
+| `npm run data:places` | Genera el respaldo estático de lugares de los destinos destacados (cuando Overpass responda). |
+| `npm run lint` · `npm run build` | Lint · compilación a `dist/`. |
+| `npm run deploy` | Publica reglas + Hosting (requiere `firebase login`). |
+| `npm run deploy:preview` | Publica un canal de vista previa temporal. |
+
+---
+
+# Documentación del prototipo original
+
+El resto de este archivo describe el motor de itinerarios y el despliegue del prototipo inicial, que se conservan.
+
+## Locus · App de planificación de viajes
 
 Prototipo funcional de Locus (curso de Ingeniería Aplicada). React + Vite + TypeScript + Tailwind, Firebase (proyecto propio `locus-bb57e`, independiente del de la landing) y datos de OpenStreetMap.
 
