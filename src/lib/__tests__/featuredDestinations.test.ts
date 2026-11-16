@@ -31,8 +31,19 @@ describe('FEATURED_DESTINATIONS', () => {
     },
   )
 
+  it.each(FEATURED_DESTINATIONS.map((d) => [d.name, d.activityImages] as const))(
+    '%s: cada foto de actividad existe',
+    (_, activityImages) => {
+      for (const image of Object.values(activityImages)) {
+        expect(PLACE_PHOTOS.has(image), `falta la foto ${image}`).toBe(true)
+      }
+    },
+  )
+
   it('no hay fotos de lugares sin usar', () => {
-    const used = new Set(FEATURED_DESTINATIONS.flatMap((d) => d.places.map((p) => p.image)))
+    const used = new Set(
+      FEATURED_DESTINATIONS.flatMap((d) => [...d.places.map((p) => p.image), ...Object.values(d.activityImages)]),
+    )
     expect([...PLACE_PHOTOS].filter((photo) => !used.has(photo))).toEqual([])
   })
 })
