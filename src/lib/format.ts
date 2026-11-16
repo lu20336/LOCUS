@@ -41,6 +41,20 @@ export function formatDate(iso: string): string {
   )
 }
 
+/**
+ * Rango de fechas compacto:
+ *   mismo día          → "10 dic 2026"
+ *   mismo mes y año    → "10–12 dic 2026"
+ *   distinto mes/año   → "30 dic 2026 – 2 ene 2027"
+ */
+export function formatDateRange(startISO: string, endISO: string): string {
+  if (startISO === endISO) return formatDate(startISO)
+  const [startYear, startMonth, startDay] = startISO.split('-').map(Number)
+  const [endYear, endMonth] = endISO.split('-').map(Number)
+  if (startYear === endYear && startMonth === endMonth) return `${startDay}–${formatDate(endISO)}`
+  return `${formatDate(startISO)} – ${formatDate(endISO)}`
+}
+
 /** Número de días del viaje, contando ambos extremos. ("2026-12-01", "2026-12-03") → 3 */
 export function countTripDays(startISO: string, endISO: string): number {
   return Math.round((Date.parse(`${endISO}T00:00:00Z`) - Date.parse(`${startISO}T00:00:00Z`)) / 86_400_000) + 1

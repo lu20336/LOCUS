@@ -9,6 +9,7 @@ export function TripFlowProvider({ children }: { children: ReactNode }) {
     () => ({
       ...state,
       completeTripDetails: (trip, extras) => dispatch({ type: 'COMPLETE_TRIP_DETAILS', trip, ...extras }),
+      completeActivities: (categories, pace) => dispatch({ type: 'COMPLETE_ACTIVITIES', categories, pace }),
       goToStep: (step) => dispatch({ type: 'GO_TO_STEP', step }),
     }),
     [state],

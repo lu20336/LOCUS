@@ -9,7 +9,7 @@
  * transiciones del flujo están en un solo lugar y se pueden probar.
  */
 import { createContext, useContext } from 'react'
-import type { FlowStep, SuggestionSearch, TripDetails, TripFlowState } from '../../types/flow'
+import type { FlowStep, SuggestionSearch, TripDetails, TripFlowState, TripPace } from '../../types/flow'
 import type { CategoryId } from '../../types/itinerary'
 
 export type TripFlowAction =
@@ -20,12 +20,14 @@ export type TripFlowAction =
       categories?: CategoryId[]
       suggestionSearch?: SuggestionSearch | null
     }
+  | { type: 'COMPLETE_ACTIVITIES'; categories: CategoryId[]; pace: TripPace }
   | { type: 'GO_TO_STEP'; step: FlowStep }
 
 export const initialTripFlowState: TripFlowState = {
   step: 1,
   trip: null,
   categories: [],
+  pace: 'normal',
   suggestionSearch: null,
 }
 
@@ -40,9 +42,17 @@ export function tripFlowReducer(state: TripFlowState, action: TripFlowAction): T
         suggestionSearch: action.suggestionSearch !== undefined ? action.suggestionSearch : state.suggestionSearch,
         step: 2,
       }
+    case 'COMPLETE_ACTIVITIES': {
+      // Guarda las actividades y el ritmo del Paso 2 y avanza al Paso 3.
+      // Sin Paso 1 o sin ninguna actividad no hay itinerario posible.
+      if (!state.trip || action.categories.length === 0) return state
+      const categories = [...new Set(action.categories)]
+      return { ...state, categories, pace: action.pace, step: 3 }
+    }
     case 'GO_TO_STEP':
-      // No se puede saltar a un paso posterior sin haber completado el Paso 1.
+      // No se puede saltar a un paso posterior sin haber completado los anteriores.
       if (action.step > 1 && !state.trip) return state
+      if (action.step > 2 && state.categories.length === 0) return state
       return { ...state, step: action.step }
   }
 }
@@ -52,6 +62,7 @@ export interface TripFlowContextValue extends TripFlowState {
     trip: TripDetails,
     extras?: { categories?: CategoryId[]; suggestionSearch?: SuggestionSearch | null },
   ) => void
+  completeActivities: (categories: CategoryId[], pace: TripPace) => void
   goToStep: (step: FlowStep) => void
 }
 

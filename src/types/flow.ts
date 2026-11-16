@@ -38,9 +38,14 @@ export interface TripDetails {
   rooms: number
 }
 
+/** Ritmo del viaje (Paso 2): cuántos lugares por día incluye el itinerario. */
+export type TripPace = 'tranquilo' | 'normal' | 'intenso'
+
 export interface TripFlowState {
   step: FlowStep
   trip: TripDetails | null
   categories: CategoryId[]
+  /** Ritmo elegido en el Paso 2 (por defecto 'normal'). */
+  pace: TripPace
   suggestionSearch: SuggestionSearch | null
 }

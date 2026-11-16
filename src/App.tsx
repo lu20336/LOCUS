@@ -3,8 +3,9 @@ import { Header } from './components/Header'
 import { Stepper } from './components/Stepper'
 import { TripFlowProvider } from './lib/flow/TripFlowProvider'
 import { useTripFlow } from './lib/flow/tripFlowContext'
-import { ActivitiesStepPlaceholder } from './pages/ActivitiesStepPlaceholder'
+import { ActivitiesStep } from './pages/ActivitiesStep'
 import { HomePage } from './pages/HomePage'
+import { ItineraryStepPlaceholder } from './pages/ItineraryStepPlaceholder'
 
 /** Muestra la pantalla del paso actual. El Paso 1 es la pantalla de inicio. */
 function CurrentStep() {
@@ -27,7 +28,10 @@ function CurrentStep() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:py-12">
       <Stepper current={step} />
-      <div className="mt-6">{step === 2 && <ActivitiesStepPlaceholder />}</div>
+      <div className="mt-6">
+        {step === 2 && <ActivitiesStep />}
+        {step === 3 && <ItineraryStepPlaceholder />}
+      </div>
     </div>
   )
 }

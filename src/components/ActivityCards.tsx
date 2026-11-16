@@ -1,17 +1,7 @@
 import { CATEGORY_IDS, CATEGORIES } from '../lib/itinerary/categories'
 import type { CategoryId } from '../types/itinerary'
-import { CATEGORY_ICONS } from './choiceOptions'
+import { ACTIVITY_IMAGES, CATEGORY_ICONS } from './choiceOptions'
 import { PhotoCard } from './PhotoCard'
-
-/** Foto de cada actividad en /public/images/actividades (ver public/images/CREDITOS.md). */
-const ACTIVITY_IMAGES: Record<CategoryId, string> = {
-  playa: '/images/actividades/playa.jpg',
-  cultura: '/images/actividades/cultura.jpg',
-  gastronomia: '/images/actividades/gastronomia.jpg',
-  aventura: '/images/actividades/aventura.jpg',
-  vidaNocturna: '/images/actividades/vida-nocturna.jpg',
-  compras: '/images/actividades/compras.jpg',
-}
 
 /**
  * Sección "¿Qué te gustaría hacer?": una tarjeta por categoría. Al elegir una,
