@@ -31,6 +31,29 @@ export const CATEGORY_ICONS: Record<CategoryId, Icon> = {
   compras: ShoppingBag,
 }
 
+/** Foto de cada actividad en /public/images/actividades (ver public/images/CREDITOS.md). */
+export const ACTIVITY_IMAGES: Record<CategoryId, string> = {
+  playa: '/images/actividades/playa.jpg',
+  cultura: '/images/actividades/cultura.jpg',
+  gastronomia: '/images/actividades/gastronomia.jpg',
+  aventura: '/images/actividades/aventura.jpg',
+  vidaNocturna: '/images/actividades/vida-nocturna.jpg',
+  compras: '/images/actividades/compras.jpg',
+}
+
+/**
+ * Qué incluye cada actividad. Corresponde a las etiquetas de OpenStreetMap que
+ * busca el motor (lib/itinerary/categories.ts): si cambian allá, cambiar aquí.
+ */
+export const CATEGORY_DESCRIPTIONS: Record<CategoryId, string> = {
+  playa: 'Playas y clubes de playa',
+  cultura: 'Museos, monumentos, fuertes y teatros',
+  gastronomia: 'Restaurantes y cafés',
+  aventura: 'Miradores, cascadas y reservas naturales',
+  vidaNocturna: 'Bares, pubs y discotecas',
+  compras: 'Mercados y centros comerciales',
+}
+
 export const CLIMATE_ICONS: Record<ClimateId, Icon> = {
   frio: ThermometerSnowflake,
   templado: CloudSun,

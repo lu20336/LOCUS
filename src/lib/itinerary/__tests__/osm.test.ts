@@ -11,6 +11,7 @@ import {
   parseNominatimResponse,
   parseOverpassResponse,
   radiusFromBoundingBox,
+  readableDisplayName,
 } from '../osm'
 import { createThrottle } from '../throttle'
 import { nominatimCartagena, overpassCartagena } from './fixtures/cartagena'
@@ -43,6 +44,38 @@ describe('Nominatim', () => {
     })
     // El bbox de Cartagena mide ~25 km de diagonal → se acota al máximo.
     expect(destination?.radiusMeters).toBe(MAX_RADIUS_METERS)
+  })
+
+  it('arma un nombre legible con municipio y departamento', () => {
+    // Respuesta real de Nominatim para "Pasto" (addressdetails=1).
+    const pasto = {
+      lat: '1.2140',
+      lon: '-77.2785',
+      name: 'Perímetro Urbano Pasto',
+      addresstype: 'city',
+      display_name: 'Perímetro Urbano Pasto, Pasto, Centro, Nariño, RAP Pacífico, Colombia',
+      address: { city: 'Perímetro Urbano Pasto', county: 'Pasto', state: 'Nariño' },
+    }
+    expect(readableDisplayName(pasto)).toBe('Pasto, Nariño, Colombia')
+    expect(parseNominatimResponse('pasto', [pasto])?.displayName).toBe('Pasto, Nariño, Colombia')
+  })
+
+  it('un lugar dentro de un municipio conserva su nombre y agrega el municipio', () => {
+    const comuna = {
+      lat: '6.25',
+      lon: '-75.61',
+      name: 'Comuna 13 - San Javier',
+      addresstype: 'suburb',
+      display_name: 'Comuna 13 - San Javier, Medellín, Valle de Aburrá, Antioquia, Colombia',
+      address: { county: 'Medellín', state: 'Antioquia' },
+    }
+    expect(readableDisplayName(comuna)).toBe('Comuna 13 - San Javier, Medellín, Antioquia, Colombia')
+  })
+
+  it('sin dirección por partes usa el nombre completo de Nominatim', () => {
+    expect(readableDisplayName({ lat: '0', lon: '0', display_name: 'Cartagena de Indias, Bolívar, Colombia' })).toBe(
+      'Cartagena de Indias, Bolívar, Colombia',
+    )
   })
 
   it('devuelve null si no hay resultados', () => {

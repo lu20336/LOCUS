@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { FEATURED_DESTINATIONS } from '../featuredDestinations'
+import { FEATURED_DESTINATIONS, findFeaturedNear } from '../featuredDestinations'
+
+describe('findFeaturedNear', () => {
+  it('reconoce un destacado aunque las coordenadas vengan de Nominatim (un poco distintas)', () => {
+    // Centro de Cartagena según Nominatim vs. el de la tarjeta (10.424, -75.548).
+    expect(findFeaturedNear({ lat: 10.4265566, lon: -75.5441671 })?.id).toBe('cartagena')
+  })
+
+  it('devuelve null lejos de cualquier destacado', () => {
+    expect(findFeaturedNear({ lat: 1.214, lon: -77.2785 })).toBeNull() // Pasto
+  })
+})
 
 /** Fotos que existen en public/images/lugares (se publican con la app). */
 const PLACE_PHOTOS = new Set(

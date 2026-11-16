@@ -11,7 +11,8 @@
  * térmicos que usa la sugerencia de destino (climateForElevation), para que
  * la portada y el Modo B nunca se contradigan.
  */
-import type { Destination } from '../types/itinerary'
+import type { Destination, GeoPoint } from '../types/itinerary'
+import { haversineKm } from './itinerary/geo'
 import { climateForElevation, type ClimateId } from './itinerary/suggestDestination'
 
 /** Un lugar para visitar, con su foto en /public/images/lugares (créditos en public/images/CREDITOS.md). */
@@ -170,3 +171,14 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     destination: city('Guatapé, Antioquia, Colombia', 'Guatapé, Antioquia, Colombia', 6.2333, -75.1586, 6000),
   },
 ]
+
+/** Un destino a menos de esta distancia de un destacado se considera el mismo lugar. */
+const SAME_PLACE_KM = 10
+
+/**
+ * Destino destacado en ese punto (o muy cerca), para mostrar su foto en los
+ * pasos siguientes aunque el usuario lo haya escrito en vez de elegir la tarjeta.
+ */
+export function findFeaturedNear(point: GeoPoint): FeaturedDestination | null {
+  return FEATURED_DESTINATIONS.find((item) => haversineKm(point, item.destination) < SAME_PLACE_KM) ?? null
+}
