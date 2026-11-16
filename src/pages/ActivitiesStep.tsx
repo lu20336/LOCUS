@@ -7,6 +7,9 @@
  *
  * - Si el destino vino del Modo B, las actividades elegidas al buscarlo ya
  *   aparecen marcadas.
+ * - Solo se pueden elegir las actividades que existen cerca del destino
+ *   (useActivityCounts): en Bogotá no hay "Playa". Cada tarjeta dice cuántos
+ *   lugares hay y, en los destinos destacados, muestra una foto de ese lugar.
  * - Las tarjetas de actividad son checkboxes nativos (teclado y lector de
  *   pantalla funcionan sin código extra); el ritmo, radios nativos.
  */
@@ -16,6 +19,7 @@ import { ACTIVITY_IMAGES, CATEGORY_DESCRIPTIONS, CATEGORY_ICONS } from '../compo
 import { findFeaturedNear } from '../lib/featuredDestinations'
 import { PACE_IDS, PACES } from '../lib/flow/pace'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
+import { useActivityCounts } from '../lib/flow/useActivityCounts'
 import { countTripDays, formatDateRange } from '../lib/format'
 import { CATEGORIES, CATEGORY_IDS } from '../lib/itinerary/categories'
 import type { TripPace } from '../types/flow'
@@ -23,20 +27,39 @@ import type { CategoryId } from '../types/itinerary'
 
 const ERROR_ID = 'activities-error'
 
+/** "1 lugar cerca", "54 lugares cerca", "Más de 100 lugares cerca". */
+function placesNearLabel(count: number): string {
+  if (count >= 100) return 'Más de 100 lugares cerca'
+  return `${count} ${count === 1 ? 'lugar' : 'lugares'} cerca`
+}
+
 export function ActivitiesStep() {
   const { trip, categories: savedCategories, pace: savedPace, completeActivities, goToStep } = useTripFlow()
   const [selected, setSelected] = useState<CategoryId[]>(savedCategories)
   const [pace, setPace] = useState<TripPace>(savedPace)
   const [showError, setShowError] = useState(false)
   const firstCheckbox = useRef<HTMLInputElement | null>(null)
+  const availability = useActivityCounts(trip?.destination ?? null)
 
   if (!trip) return null
 
   const days = countTripDays(trip.startDate, trip.endDate)
   const [placeName, ...region] = trip.destination.displayName.split(',').map((part) => part.trim())
-  const photo = findFeaturedNear(trip.destination)?.image
+  const featured = findFeaturedNear(trip.destination)
   const placesPerDay = PACES[pace].placesPerDay
   const fromSuggestion = trip.mode === 'suggested' && savedCategories.length > 0
+
+  /**
+   * Solo se muestran las actividades que existen cerca del destino. Si no se
+   * pudo revisar, se muestran todas (mejor dejar elegir que bloquear el viaje).
+   */
+  const found = availability.status === 'ready' ? CATEGORY_IDS.filter((c) => availability.counts[c] > 0) : []
+  // Si no hay ninguna registrada cerca (pueblos pequeños), mejor dejar elegir que mostrar una lista vacía.
+  const nothingFound = availability.status === 'ready' && found.length === 0
+  const isAvailable = (category: CategoryId) => availability.status !== 'ready' || nothingFound || found.includes(category)
+  const visible = CATEGORY_IDS.filter(isAvailable)
+  // Lo elegido antes que no exista en este destino se descarta (ej. cambió de destino).
+  const chosen = visible.filter((c) => selected.includes(c))
 
   function toggle(category: CategoryId, checked: boolean) {
     setSelected((current) => (checked ? [...current, category] : current.filter((c) => c !== category)))
@@ -45,24 +68,20 @@ export function ActivitiesStep() {
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    if (selected.length === 0) {
+    if (chosen.length === 0) {
       setShowError(true)
       firstCheckbox.current?.focus()
       return
     }
-    // Se guardan en el orden de la lista, no en el orden en que se marcaron.
-    completeActivities(
-      CATEGORY_IDS.filter((c) => selected.includes(c)),
-      pace,
-    )
+    completeActivities(chosen, pace)
   }
 
   return (
     <section aria-labelledby="step-title" className="overflow-hidden rounded-3xl border border-line bg-surface shadow-sm">
       {/* Encabezado: el destino del viaje, con su foto si es uno de los destacados. */}
       <div className="relative isolate flex min-h-40 items-end sm:min-h-48">
-        {photo ? (
-          <img src={photo} alt="" className="absolute inset-0 -z-10 size-full object-cover" />
+        {featured ? (
+          <img src={featured.image} alt="" className="absolute inset-0 -z-10 size-full object-cover" />
         ) : (
           <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-br from-navy to-teal-soft" />
         )}
@@ -105,6 +124,15 @@ export function ActivitiesStep() {
               Marcamos las que elegiste al buscar tu destino. Puedes cambiarlas.
             </p>
           )}
+          <p className="mt-3 text-sm text-muted" aria-live="polite">
+            {availability.status === 'loading' && 'Revisando qué hay cerca de tu destino…'}
+            {availability.status === 'ready' &&
+              (nothingFound
+                ? `No encontramos actividades registradas a menos de 7 km de ${placeName}; elige las que prefieras y buscaremos un poco más lejos.`
+                : `Te mostramos lo que encontramos a menos de 7 km de ${placeName}.`)}
+            {availability.status === 'unknown' &&
+              'No pudimos revisar qué hay cerca de tu destino; elige las actividades que prefieras.'}
+          </p>
         </div>
 
         {/* Actividades */}
@@ -113,51 +141,64 @@ export function ActivitiesStep() {
             Actividades <span className="text-sm font-normal text-muted">· puedes elegir varias</span>
           </legend>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {CATEGORY_IDS.map((category, index) => {
-              const Icon = CATEGORY_ICONS[category]
-              const checked = selected.includes(category)
-              return (
-                <label
-                  key={category}
-                  className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-0.5 hover:shadow-md has-checked:border-teal has-checked:ring-2 has-checked:ring-teal has-focus-visible:ring-2 has-focus-visible:ring-teal-soft has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-surface"
-                >
-                  <input
-                    ref={index === 0 ? firstCheckbox : undefined}
-                    type="checkbox"
-                    name="categories"
-                    value={category}
-                    checked={checked}
-                    onChange={(e) => toggle(category, e.target.checked)}
-                    className="peer sr-only"
-                  />
-                  <span className="relative block h-24 overflow-hidden sm:h-28">
-                    <img
-                      src={ACTIVITY_IMAGES[category]}
-                      alt=""
-                      loading="lazy"
-                      decoding="async"
-                      className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                    />
-                    {/* Marca de "elegida" sobre la foto. */}
-                    <span
-                      aria-hidden="true"
-                      className={`absolute right-2 top-2 grid size-7 place-items-center rounded-full border-2 text-white backdrop-blur-sm transition ${
-                        checked ? 'border-teal bg-teal' : 'border-white bg-black/25'
-                      }`}
+            {availability.status === 'loading'
+              ? // Tarjetas de carga: así no aparecen opciones que luego desaparecen.
+                CATEGORY_IDS.map((category) => (
+                  <span key={category} aria-hidden="true" className="h-44 animate-pulse rounded-2xl bg-surface-2 sm:h-48" />
+                ))
+              : visible.map((category, index) => {
+                  const Icon = CATEGORY_ICONS[category]
+                  const checked = chosen.includes(category)
+                  const count = availability.status === 'ready' ? availability.counts[category] : null
+                  return (
+                    <label
+                      key={category}
+                      className="group relative flex cursor-pointer flex-col overflow-hidden rounded-2xl border border-line bg-surface transition hover:-translate-y-0.5 hover:shadow-md has-checked:border-teal has-checked:ring-2 has-checked:ring-teal has-focus-visible:ring-2 has-focus-visible:ring-teal-soft has-focus-visible:ring-offset-2 has-focus-visible:ring-offset-surface"
                     >
-                      {checked && <Check className="size-4" strokeWidth={3} />}
-                    </span>
-                  </span>
-                  <span className="flex flex-1 flex-col gap-0.5 p-3">
-                    <span className="flex items-center gap-1.5 font-semibold text-ink">
-                      <Icon aria-hidden="true" className="size-4 shrink-0 text-teal-soft" />
-                      {CATEGORIES[category].label}
-                    </span>
-                    <span className="text-xs leading-snug text-muted">{CATEGORY_DESCRIPTIONS[category]}</span>
-                  </span>
-                </label>
-              )
-            })}
+                      <input
+                        ref={index === 0 ? firstCheckbox : undefined}
+                        type="checkbox"
+                        name="categories"
+                        value={category}
+                        checked={checked}
+                        onChange={(e) => toggle(category, e.target.checked)}
+                        aria-describedby={count ? `count-${category}` : undefined}
+                        className="peer sr-only"
+                      />
+                      <span className="relative block h-24 overflow-hidden sm:h-28">
+                        <img
+                          // Foto de esa actividad EN el destino, si la tenemos; si no, una genérica.
+                          src={featured?.activityImages?.[category] ?? ACTIVITY_IMAGES[category]}
+                          alt=""
+                          loading="lazy"
+                          decoding="async"
+                          className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        />
+                        {/* Marca de "elegida" sobre la foto. */}
+                        <span
+                          aria-hidden="true"
+                          className={`absolute right-2 top-2 grid size-7 place-items-center rounded-full border-2 text-white backdrop-blur-sm transition ${
+                            checked ? 'border-teal bg-teal' : 'border-white bg-black/25'
+                          }`}
+                        >
+                          {checked && <Check className="size-4" strokeWidth={3} />}
+                        </span>
+                      </span>
+                      <span className="flex flex-1 flex-col gap-0.5 p-3">
+                        <span className="flex items-center gap-1.5 font-semibold text-ink">
+                          <Icon aria-hidden="true" className="size-4 shrink-0 text-teal-soft" />
+                          {CATEGORIES[category].label}
+                        </span>
+                        <span className="text-xs leading-snug text-muted">{CATEGORY_DESCRIPTIONS[category]}</span>
+                        {count !== null && count > 0 && (
+                          <span id={`count-${category}`} className="mt-1 text-xs font-semibold text-teal-soft">
+                            {placesNearLabel(count)}
+                          </span>
+                        )}
+                      </span>
+                    </label>
+                  )
+                })}
           </div>
           {showError && (
             <p id={ERROR_ID} role="alert" className="mt-3 text-sm font-medium text-danger">
@@ -194,7 +235,7 @@ export function ActivitiesStep() {
         {/* Resumen y acciones */}
         <div className="flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted" aria-live="polite">
-            {selected.length === 0
+            {chosen.length === 0
               ? 'Aún no has elegido actividades.'
               : `Tu plan: ${days} ${days === 1 ? 'día' : 'días'} × ${placesPerDay} lugares ≈ ${days * placesPerDay} lugares para visitar.`}
           </p>

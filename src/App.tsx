@@ -2,6 +2,7 @@ import { useEffect, useRef } from 'react'
 import { Header } from './components/Header'
 import { Stepper } from './components/Stepper'
 import { TripFlowProvider } from './lib/flow/TripFlowProvider'
+import { usesGeoapify } from './lib/itinerary/browserClient'
 import { useTripFlow } from './lib/flow/tripFlowContext'
 import { ActivitiesStep } from './pages/ActivitiesStep'
 import { HomePage } from './pages/HomePage'
@@ -59,6 +60,15 @@ export default function App() {
         >
           OpenStreetMap contributors
         </a>
+        {/* El plan gratuito de Geoapify exige su atribución cuando se usa. */}
+        {usesGeoapify && (
+          <>
+            {' · '}
+            <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
+              Powered by Geoapify
+            </a>
+          </>
+        )}
       </footer>
     </TripFlowProvider>
   )

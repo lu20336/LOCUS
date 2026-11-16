@@ -167,12 +167,20 @@ export function buildOverpassQuery(
 }
 
 /** Sentencias Overpass de una categoría alrededor de un punto (una por filtro de OSM). */
-function categoryStatements(categoryId: CategoryId, center: GeoPoint, radiusMeters: number): string {
+function categoryStatements(categoryId: CategoryId, center: GeoPoint, radiusMeters: number, requireName = true): string {
   const around = `(around:${Math.round(radiusMeters)},${center.lat.toFixed(6)},${center.lon.toFixed(6)})`
+  const named = requireName ? '["name"]' : ''
   return CATEGORIES[categoryId].filters
-    .map((f) => `  nwr["${f.key}"~"^(${f.values.map(escapeRegex).join('|')})$"]["name"]${around};`)
+    .map((f) => `  nwr["${f.key}"~"^(${f.values.map(escapeRegex).join('|')})$"]${named}${around};`)
     .join('\n')
 }
+
+/**
+ * Actividades que, para saber si EXISTEN cerca, cuentan también los lugares
+ * sin nombre: en OSM muchas playas no tienen nombre (ej. las de Riohacha) y
+ * aun así hay playa. Un restaurante o bar sin nombre, en cambio, es ruido.
+ */
+export const COUNT_UNNAMED: ReadonlySet<CategoryId> = new Set<CategoryId>(['playa'])
 
 /**
  * Consulta que CUENTA (sin descargarlos) los lugares de cada categoría
@@ -184,13 +192,35 @@ function categoryStatements(categoryId: CategoryId, center: GeoPoint, radiusMete
  *
  * Sirve para revisar varios pueblos candidatos en UNA sola petición.
  */
-export function buildActivityCountQuery(centers: GeoPoint[], radiusMeters: number, categories: CategoryId[]): string {
+export function buildActivityCountQuery(
+  centers: GeoPoint[],
+  radiusMeters: number,
+  categories: CategoryId[],
+  // Por defecto corto: el navegador abandona a los 2,5 s, y Overpass da turno
+  // antes a las consultas que declaran un límite bajo. El script de datos usa más.
+  timeoutSeconds = 5,
+): string {
   const blocks = centers.flatMap((center) =>
-    categories.map((categoryId) => `(\n${categoryStatements(categoryId, center, radiusMeters)}\n);\nout count;`),
+    categories.map(
+      (categoryId) =>
+        `(\n${categoryStatements(categoryId, center, radiusMeters, !COUNT_UNNAMED.has(categoryId))}\n);\nout count;`,
+    ),
   )
-  // timeout corto: el navegador abandona a los 2,5 s, y Overpass da turno antes
-  // a las consultas que declaran un límite bajo.
-  return `[out:json][timeout:5];\n${blocks.join('\n')}`
+  return `[out:json][timeout:${timeoutSeconds}];\n${blocks.join('\n')}`
+}
+
+/**
+ * Como parseActivityCounts, pero con el número de lugares de cada categoría
+ * (en el orden de `categories`). Lanza error si la respuesta está incompleta.
+ */
+export function parseActivityTotals(response: OverpassResponse, centersCount: number, categories: CategoryId[]): number[][] {
+  const counts = (response.elements ?? []).filter((e) => (e.type as string) === 'count')
+  if (counts.length !== centersCount * categories.length) {
+    throw new Error(`Overpass devolvió ${counts.length} conteos; se esperaban ${centersCount * categories.length}`)
+  }
+  return Array.from({ length: centersCount }, (_, i) =>
+    categories.map((_, c) => Number(counts[i * categories.length + c].tags?.total ?? 0)),
+  )
 }
 
 /**
@@ -203,12 +233,8 @@ export function parseActivityCounts(
   centersCount: number,
   categories: CategoryId[],
 ): CategoryId[][] {
-  const counts = (response.elements ?? []).filter((e) => (e.type as string) === 'count')
-  if (counts.length !== centersCount * categories.length) {
-    throw new Error(`Overpass devolvió ${counts.length} conteos; se esperaban ${centersCount * categories.length}`)
-  }
-  return Array.from({ length: centersCount }, (_, i) =>
-    categories.filter((_, c) => Number(counts[i * categories.length + c].tags?.total ?? 0) > 0),
+  return parseActivityTotals(response, centersCount, categories).map((totals) =>
+    categories.filter((_, c) => totals[c] > 0),
   )
 }
 

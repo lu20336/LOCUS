@@ -11,7 +11,7 @@
  * térmicos que usa la sugerencia de destino (climateForElevation), para que
  * la portada y el Modo B nunca se contradigan.
  */
-import type { Destination, GeoPoint } from '../types/itinerary'
+import type { CategoryId, Destination, GeoPoint } from '../types/itinerary'
 import { haversineKm } from './itinerary/geo'
 import { climateForElevation, type ClimateId } from './itinerary/suggestDestination'
 
@@ -33,6 +33,11 @@ export interface FeaturedDestination {
   elevation: number
   /** Lugares conocidos para visitar: al pasar el mouse se deslizan sobre la tarjeta con su foto. */
   places: PlaceToVisit[]
+  /**
+   * Foto de cada actividad EN este destino (Paso 2). Las que falten usan la
+   * foto genérica de la actividad (ACTIVITY_IMAGES).
+   */
+  activityImages: Partial<Record<CategoryId, string>>
   destination: Destination
 }
 
@@ -59,6 +64,13 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
       { name: 'Islas del Rosario', image: '/images/lugares/cartagena/islas-del-rosario.jpg' },
       { name: 'Playa Blanca de Barú', image: '/images/lugares/cartagena/playa-blanca-de-baru.jpg' },
     ],
+    activityImages: {
+      playa: '/images/lugares/cartagena/playa-blanca-de-baru.jpg',
+      cultura: '/images/lugares/cartagena/castillo-san-felipe-de-barajas.jpg',
+      aventura: '/images/lugares/cartagena/islas-del-rosario.jpg',
+      vidaNocturna: '/images/lugares/cartagena/barrio-getsemani.jpg',
+      compras: '/images/lugares/cartagena/actividad-compras.jpg',
+    },
     image: '/images/destinos/cartagena.jpg',
     destination: city('Cartagena, Colombia', 'Cartagena de Indias, Bolívar, Colombia', 10.424, -75.548, 8000),
   },
@@ -74,6 +86,13 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
       { name: 'Pueblito Paisa', image: '/images/lugares/medellin/pueblito-paisa.jpg' },
       { name: 'Jardín Botánico', image: '/images/lugares/medellin/jardin-botanico.jpg' },
     ],
+    activityImages: {
+      cultura: '/images/lugares/medellin/plaza-botero.jpg',
+      gastronomia: '/images/lugares/medellin/actividad-gastronomia.jpg',
+      aventura: '/images/lugares/medellin/parque-arvi.jpg',
+      vidaNocturna: '/images/lugares/medellin/actividad-vida-nocturna.jpg',
+      compras: '/images/lugares/medellin/actividad-compras.jpg',
+    },
     image: '/images/destinos/medellin.jpg',
     destination: city('Medellín, Colombia', 'Medellín, Antioquia, Colombia', 6.2442, -75.5812, 8000),
   },
@@ -89,6 +108,13 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
       { name: 'Museo Botero', image: '/images/lugares/bogota/museo-botero.jpg' },
       { name: 'Usaquén', image: '/images/lugares/bogota/usaquen.jpg' },
     ],
+    activityImages: {
+      cultura: '/images/lugares/bogota/la-candelaria.jpg',
+      gastronomia: '/images/lugares/bogota/actividad-gastronomia.jpg',
+      aventura: '/images/lugares/bogota/cerro-de-monserrate.jpg',
+      vidaNocturna: '/images/lugares/bogota/actividad-vida-nocturna.jpg',
+      compras: '/images/lugares/bogota/usaquen.jpg',
+    },
     image: '/images/destinos/bogota.jpg',
     imagePosition: '45% center',
     destination: city('Bogotá, Colombia', 'Bogotá, Distrito Capital, Colombia', 4.6097, -74.0817, 8000),
@@ -105,6 +131,12 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
       { name: 'Museo El Fósil', image: '/images/lugares/villa-de-leyva/museo-el-fosil.jpg' },
       { name: 'Convento del Santo Ecce Homo', image: '/images/lugares/villa-de-leyva/convento-del-santo-ecce-homo.jpg' },
     ],
+    activityImages: {
+      cultura: '/images/lugares/villa-de-leyva/convento-del-santo-ecce-homo.jpg',
+      aventura: '/images/lugares/villa-de-leyva/pozos-azules.jpg',
+      vidaNocturna: '/images/lugares/villa-de-leyva/actividad-vida-nocturna.jpg',
+      compras: '/images/lugares/villa-de-leyva/actividad-compras.jpg',
+    },
     image: '/images/destinos/villa-de-leyva.jpg',
     imagePosition: '30% center',
     destination: city('Villa de Leyva, Colombia', 'Villa de Leyva, Boyacá, Colombia', 5.6337, -73.5245, 6000),
@@ -121,6 +153,11 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
       { name: 'Cueva de Morgan', image: '/images/lugares/san-andres/cueva-de-morgan.jpg' },
       { name: 'West View', image: '/images/lugares/san-andres/west-view.jpg' },
     ],
+    activityImages: {
+      playa: '/images/lugares/san-andres/johnny-cay.jpg',
+      cultura: '/images/lugares/san-andres/actividad-cultura.jpg',
+      aventura: '/images/lugares/san-andres/hoyo-soplador.jpg',
+    },
     image: '/images/destinos/san-andres.jpg',
     destination: city('San Andrés, Colombia', 'San Andrés, San Andrés y Providencia, Colombia', 12.5847, -81.7006, 6000),
   },
@@ -136,6 +173,10 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
       { name: 'Fincas cafeteras', image: '/images/lugares/salento/fincas-cafeteras.jpg' },
       { name: 'Río Quindío', image: '/images/lugares/salento/rio-quindio.jpg' },
     ],
+    activityImages: {
+      aventura: '/images/lugares/salento/valle-de-cocora.jpg',
+      compras: '/images/lugares/salento/calle-real.jpg',
+    },
     image: '/images/destinos/salento.jpg',
     destination: city('Salento, Quindío, Colombia', 'Salento, Quindío, Colombia', 4.6372, -75.5703, 8000),
   },
@@ -151,6 +192,14 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
       { name: 'Quinta de San Pedro Alejandrino', image: '/images/lugares/santa-marta/quinta-de-san-pedro-alejandrino.jpg' },
       { name: 'El Rodadero', image: '/images/lugares/santa-marta/el-rodadero.jpg' },
     ],
+    activityImages: {
+      playa: '/images/lugares/santa-marta/el-rodadero.jpg',
+      cultura: '/images/lugares/santa-marta/quinta-de-san-pedro-alejandrino.jpg',
+      gastronomia: '/images/lugares/santa-marta/actividad-gastronomia.jpg',
+      aventura: '/images/lugares/santa-marta/parque-tayrona.jpg',
+      vidaNocturna: '/images/lugares/santa-marta/actividad-vida-nocturna.jpg',
+      compras: '/images/lugares/santa-marta/actividad-compras.jpg',
+    },
     image: '/images/destinos/santa-marta.jpg',
     destination: city('Santa Marta, Colombia', 'Santa Marta, Magdalena, Colombia', 11.2408, -74.199, 8000),
   },
@@ -166,19 +215,47 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
       { name: 'Malecón de Guatapé', image: '/images/lugares/guatape/malecon-de-guatape.jpg' },
       { name: 'Paseo en lancha por el embalse', image: '/images/lugares/guatape/paseo-en-lancha-por-el-embalse.jpg' },
     ],
+    activityImages: {
+      playa: '/images/lugares/guatape/paseo-en-lancha-por-el-embalse.jpg',
+      cultura: '/images/lugares/guatape/zocalos-de-colores.jpg',
+      aventura: '/images/lugares/guatape/piedra-del-penol.jpg',
+      vidaNocturna: '/images/lugares/guatape/actividad-vida-nocturna.jpg',
+      compras: '/images/lugares/guatape/calle-del-recuerdo.jpg',
+    },
     image: '/images/destinos/guatape.jpg',
     imagePosition: '75% center',
     destination: city('Guatapé, Antioquia, Colombia', 'Guatapé, Antioquia, Colombia', 6.2333, -75.1586, 6000),
   },
 ]
 
-/** Un destino a menos de esta distancia de un destacado se considera el mismo lugar. */
-const SAME_PLACE_KM = 10
+/** Un punto a menos de esta distancia de un destacado es el mismo lugar aunque cambie el nombre. */
+export const SAME_PLACE_KM = 3
+/** Con el mismo nombre, se acepta hasta esta distancia (Nominatim y la tarjeta marcan centros distintos). */
+export const SAME_NAME_KM = 15
+
+/** "Bogotá, Distrito Capital, Colombia" → "bogota"; para comparar nombres sin tildes ni mayúsculas. */
+export function placeKey(text: string): string {
+  return (text.split(',')[0] ?? '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // quita tildes
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+}
 
 /**
- * Destino destacado en ese punto (o muy cerca), para mostrar su foto en los
+ * Destino destacado que corresponde a ese lugar, para mostrar sus fotos en los
  * pasos siguientes aunque el usuario lo haya escrito en vez de elegir la tarjeta.
+ * Es el mismo lugar si coincide el nombre (y está cerca) o si está a menos de
+ * SAME_PLACE_KM. Un pueblo vecino (ej. Bello junto a Medellín) NO coincide.
  */
-export function findFeaturedNear(point: GeoPoint): FeaturedDestination | null {
-  return FEATURED_DESTINATIONS.find((item) => haversineKm(point, item.destination) < SAME_PLACE_KM) ?? null
+export function findFeaturedNear(point: GeoPoint & { displayName?: string }): FeaturedDestination | null {
+  const key = point.displayName ? placeKey(point.displayName) : null
+  return (
+    FEATURED_DESTINATIONS.find((item) => {
+      const km = haversineKm(point, item.destination)
+      const sameName = key !== null && [item.name, item.destination.displayName].some((n) => placeKey(n) === key)
+      return km < SAME_PLACE_KM || (sameName && km < SAME_NAME_KM)
+    }) ?? null
+  )
 }
