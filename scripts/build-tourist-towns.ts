@@ -98,6 +98,9 @@ const TOWNS: Entry[] = [
   { name: 'Palomino', region: 'La Guajira', tagline: 'Playa y río al pie de la Sierra Nevada' },
   { name: 'Cabo de la Vela', region: 'La Guajira', tagline: 'Desierto y mar en La Guajira' },
   { name: 'Valledupar', region: 'Cesar', tagline: 'Cuna del vallenato' },
+  // Llanos
+  { name: 'San Martín', region: 'Meta', tagline: 'Pueblo más antiguo del Meta y sus Cuadrillas', near: [3.70, -73.70] },
+  { name: 'Puerto López', region: 'Meta', tagline: 'El Ombligo de Colombia, a orillas del río Meta' },
   // Sur
   { name: 'Ipiales', region: 'Nariño', tagline: 'Santuario de Las Lajas' },
   { name: 'El Encano', region: 'Nariño', tagline: 'Laguna de La Cocha' },

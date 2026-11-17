@@ -57,6 +57,8 @@ export interface Excursion extends GeoPoint {
   tagline: string
   /** Distancia en línea recta desde el destino principal. */
   distanceKm: number
+  /** Minutos en carro desde el destino (sin tráfico), si se pudieron calcular. */
+  driveMinutes?: number
 }
 
 /** Un día del itinerario, con sus lugares ya en orden optimizado. */

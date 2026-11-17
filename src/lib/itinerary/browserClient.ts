@@ -23,6 +23,7 @@ import { createElevationClient } from './elevationClient'
 import { createGeoapifyClient } from './geoapifyClient'
 import { buildActivityCountQuery, parseActivityTotals } from './osm'
 import { createOsmClient, type OsmClient } from './osmClient'
+import { createTravelTimeClient } from './travelTimes'
 import {
   ACTIVITY_RADIUS_METERS,
   CANDIDATES_FOR_ELEVATION,
@@ -38,6 +39,9 @@ const geoapifyKey: string | undefined = import.meta.env.VITE_GEOAPIFY_KEY || und
 
 /** Respaldo de Overpass; null si no hay clave (la app sigue funcionando sin él). */
 export const geoapifyClient = geoapifyKey ? createGeoapifyClient({ apiKey: geoapifyKey }) : null
+
+/** Tiempos en carro (pueblos cercanos del Paso 2); null sin clave de Geoapify. */
+export const travelTimes = geoapifyKey ? createTravelTimeClient({ apiKey: geoapifyKey }) : null
 
 /** true si la app puede usar Geoapify (el pie de página muestra su atribución). */
 export const usesGeoapify = geoapifyClient !== null

@@ -55,6 +55,14 @@ export function formatDateRange(startISO: string, endISO: string): string {
   return `${formatDate(startISO)} – ${formatDate(endISO)}`
 }
 
+/** 40 → "40 min"; 95 → "1 h 35 min"; 120 → "2 h". */
+export function formatDuration(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`
+  const h = Math.floor(minutes / 60)
+  const m = minutes % 60
+  return m === 0 ? `${h} h` : `${h} h ${m} min`
+}
+
 /** Número de días del viaje, contando ambos extremos. ("2026-12-01", "2026-12-03") → 3 */
 export function countTripDays(startISO: string, endISO: string): number {
   return Math.round((Date.parse(`${endISO}T00:00:00Z`) - Date.parse(`${startISO}T00:00:00Z`)) / 86_400_000) + 1

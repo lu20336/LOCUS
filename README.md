@@ -76,7 +76,7 @@ Todo está en [`src/lib/itinerary/`](src/lib/itinerary/); el archivo principal, 
    - **Algoritmo de barrido** (`sweepOrder()`, O(n log n)): ordena los lugares por su ángulo visto desde el centro, así cada día cubre una "tajada" de la ciudad.
    - `splitByCategory()`: cada día recibe su parte de cada actividad elegida (no un día solo de restaurantes).
    - Vecino más cercano dentro de cada día; la vida nocturna va al final.
-   - **Excursiones (opcional):** si en el Paso 2 se eligen pueblos cercanos, cada uno es un día aparte (`planExcursionDay()`): lugares a menos de 6 km del pueblo, sobre todo cultura y naturaleza, y un solo restaurante. Los pueblos salen de `src/data/touristTowns.json`, una lista de 65 pueblos turísticos escrita a mano con coordenadas verificadas en Nominatim (`npm run data:tourist-towns`).
+   - **Excursiones (opcional):** si en el Paso 2 se eligen pueblos cercanos, cada uno es un día aparte (`planExcursionDay()`): lugares a menos de 6 km del pueblo, sobre todo cultura y naturaleza, y un solo restaurante. Los pueblos salen de `src/data/touristTowns.json`, una lista de 67 pueblos turísticos escrita a mano con coordenadas verificadas en Nominatim (`npm run data:tourist-towns`). Solo se ofrecen los que quedan a **2 h o menos en carro** (Geoapify Route Matrix, sin tráfico); sin clave de Geoapify, a 45 km o menos en línea recta.
 
 En la app, el Paso 3 usa `planItinerary()` (pasos 2 a 5) con el destino ya resuelto en el Paso 1, y muestra el plan con un mapa por día ([MapLibre GL JS](https://maplibre.org/) con las teselas de OpenFreeMap/OpenStreetMap, cargado solo en ese paso; es el mismo mapa de toda la app).
 
@@ -104,6 +104,7 @@ La app llama a OpenStreetMap **directo desde el navegador** (sin servidor interm
 | `src/data/activityAvailability.json` | Qué actividades hay a menos de 7 km de cada municipio y destino destacado (Paso 2 y Modo B). Funciona sin red. | Se regenera con `npm run data:activities` (usa Overpass; tarda varios minutos). |
 | Overpass (en vivo) | Lugares reales para el itinerario. | Sin clave. |
 | [Geoapify Places](https://apidocs.geoapify.com/docs/places/) | **Respaldo** si Overpass no responde. Mismos datos de OpenStreetMap. | Opcional: `VITE_GEOAPIFY_KEY` en `.env.local` (plan gratuito, 3.000 consultas/día). Limitar la clave a los dominios de la app (ver `.env.example`). Con clave, el pie de página muestra "Powered by Geoapify", obligatorio en el plan gratuito. |
+| [Geoapify Route Matrix](https://apidocs.geoapify.com/docs/route-matrix/) | Tiempo en carro a los pueblos cercanos (Paso 2): en la montaña la línea recta engaña. Una petición por destino. | La misma `VITE_GEOAPIFY_KEY`. Sin clave, se usa la línea recta. |
 | Wikidata + Wikimedia Commons | Fotos reales de cualquier destino en el Paso 2: un lugar de cada actividad (ej. Cali · Cultura: Museo del Oro Calima) y la foto de la ciudad. Con autor y licencia en pantalla. | Sin clave. `src/lib/itinerary/placePhotos.ts`. |
 
 ## Firebase y despliegue

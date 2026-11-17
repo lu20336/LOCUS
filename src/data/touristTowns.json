@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T02:20:14.708Z",
+  "generatedAt": "2026-11-17T02:40:03.779Z",
   "source": "Coordenadas: Nominatim / OpenStreetMap",
   "towns": [
     {
@@ -505,6 +505,22 @@
       "tagline": "Cuna del vallenato",
       "lat": 10.34311,
       "lon": -73.37579
+    },
+    {
+      "id": "san-martin",
+      "name": "San Martín",
+      "region": "Meta",
+      "tagline": "Pueblo más antiguo del Meta y sus Cuadrillas",
+      "lat": 3.69439,
+      "lon": -73.69529
+    },
+    {
+      "id": "puerto-lopez",
+      "name": "Puerto López",
+      "region": "Meta",
+      "tagline": "El Ombligo de Colombia, a orillas del río Meta",
+      "lat": 4.08501,
+      "lon": -72.95847
     },
     {
       "id": "ipiales",

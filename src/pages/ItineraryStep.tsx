@@ -35,7 +35,7 @@ import { PACES } from '../lib/flow/pace'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
 import { useItinerary } from '../lib/flow/useItinerary'
-import { countTripDays, formatCOP, formatDateRange } from '../lib/format'
+import { countTripDays, formatCOP, formatDateRange, formatDuration } from '../lib/format'
 import { CATEGORIES } from '../lib/itinerary/categories'
 import { placesSource } from '../lib/itinerary/fallbackClient'
 import { useAsync } from '../lib/useAsync'
@@ -338,7 +338,10 @@ function DayPanel({ day, itinerary, forecast }: { day: DayPlan; itinerary: Itine
             </p>
             <p className="text-sm text-ink">{day.excursion.tagline}</p>
             <p className="text-xs text-muted">
-              {day.excursion.region} · a {day.excursion.distanceKm} km de {cityName} en línea recta
+              {day.excursion.region} ·{' '}
+              {day.excursion.driveMinutes !== undefined
+                ? `≈ ${formatDuration(day.excursion.driveMinutes)} en carro desde ${cityName}, sin tráfico`
+                : `a ${day.excursion.distanceKm} km de ${cityName} en línea recta`}
             </p>
           </div>
           <a
