@@ -119,6 +119,45 @@
   }
 }
 
+/* Mapa del itinerario (Paso 3, Leaflet): marcadores numerados con los colores de Locus. */
+.locus-map {
+  z-index: 0; /* que los controles de Leaflet no queden encima del encabezado fijo */
+  background: var(--surface-2);
+}
+.locus-marker span {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 9999px;
+  background: var(--secondary);
+  color: #fff;
+  font: 700 13px/1 var(--sans);
+  border: 2px solid #fff;
+  box-shadow: 0 2px 6px rgb(0 0 0 / 0.35);
+  transition: transform 0.15s ease, background-color 0.15s ease;
+}
+.locus-marker.is-active span {
+  background: var(--accent);
+  color: var(--on-accent);
+  transform: scale(1.2);
+}
+.locus-start span {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 9999px;
+  background: var(--primary);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 4px rgb(0 166 153 / 0.3);
+}
+.locus-route {
+  stroke: var(--primary);
+}
+.leaflet-container {
+  font-family: var(--sans);
+}
+
 /* Tarjetas de destino: cada lugar para visitar entra deslizándose desde la derecha. */
 @keyframes place-in {
   from {

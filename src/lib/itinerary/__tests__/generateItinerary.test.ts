@@ -6,9 +6,12 @@ import {
   generateItinerary,
   geocodeDestination,
   optimizeRoute,
+  planItinerary,
   routeDistanceKm,
   searchPlaces,
   selectPlaces,
+  splitByCategory,
+  sweepOrder,
   splitEvenly,
   tripDates,
 } from '../generateItinerary'
@@ -193,8 +196,10 @@ describe('generateItinerary (flujo completo con datos de ejemplo)', () => {
     expect(new Set(all.map((p) => p.id)).size).toBe(12)
     for (const day of itinerary.days) {
       expect(day.places.length).toBeGreaterThan(0)
-      // Cada día está en el orden del vecino más cercano desde el centro.
-      expect(day.places).toEqual(optimizeRoute(itinerary.destination, day.places))
+      // Cada día: vecino más cercano desde el centro, y la vida nocturna al final.
+      const daytime = optimizeRoute(itinerary.destination, day.places.filter((p) => p.category !== 'vidaNocturna'))
+      const night = day.places.filter((p) => p.category === 'vidaNocturna')
+      expect(day.places).toEqual([...daytime, ...optimizeRoute(daytime.at(-1) ?? itinerary.destination, night)])
     }
 
     expect(itinerary.stats.optimizedKm).toBeLessThanOrEqual(itinerary.stats.unoptimizedKm)
@@ -386,5 +391,66 @@ describe('Overpass: 2 intentos rápidos, sin esperas (sin red)', () => {
     expect(OVERPASS_MAX_ATTEMPTS).toBe(2)
     expect(OVERPASS_ATTEMPT_TIMEOUT_MS * OVERPASS_MAX_ATTEMPTS).toBeLessThanOrEqual(5000)
     expect(OVERPASS_MIN_INTERVAL_MS).toBeGreaterThanOrEqual(2000)
+  })
+})
+
+describe('planItinerary (destino ya resuelto en el Paso 1)', () => {
+  it('no vuelve a geocodificar y respeta los lugares por día', async () => {
+    const destination = parseNominatimResponse('Cartagena', nominatimCartagena)!
+    const client = { findPlaces: fixtureClient.findPlaces }
+    const itinerary = await planItinerary(
+      destination,
+      { destination: 'Cartagena', startDate: '2026-12-01', endDate: '2026-12-02', budgetCOP: 1_000_000, categories: ['cultura', 'gastronomia'] },
+      client,
+      { activitiesPerDay: 3 },
+    )
+    expect(itinerary.destination).toBe(destination)
+    expect(itinerary.days).toHaveLength(2)
+    for (const day of itinerary.days) expect(day.places.length).toBeLessThanOrEqual(3)
+  })
+})
+
+describe('buildDailyPlan: la vida nocturna va al final del día', () => {
+  it('un bar junto al hotel no queda de primero', () => {
+    const origin = { lat: 0, lon: 0 }
+    const bar = place('bar', 0, 0.001, 'vidaNocturna')
+    const museo = place('museo', 0, 0.02, 'cultura')
+    const playa = place('playa', 0, 0.03, 'playa')
+    const [day] = buildDailyPlan(origin, [bar, museo, playa], ['2026-12-01'])
+    expect(day.places.map((p) => p.id)).toEqual(['museo', 'playa', 'bar'])
+  })
+})
+
+describe('splitByCategory: cada día tiene de todo lo elegido', () => {
+  it('reparte cada actividad entre los días y rota los sobrantes', () => {
+    const route = [
+      ...['c1', 'c2', 'c3', 'c4'].map((id, i) => place(id, 0, i * 0.01, 'cultura')),
+      ...['g1', 'g2', 'g3', 'g4'].map((id, i) => place(id, 0, i * 0.01, 'gastronomia')),
+      ...['n1', 'n2', 'n3', 'n4'].map((id, i) => place(id, 0, i * 0.01, 'vidaNocturna')),
+    ]
+    const days = splitByCategory(route, 3)
+    expect(days.map((d) => d.length)).toEqual([4, 4, 4])
+    for (const day of days) {
+      expect(new Set(day.map((p) => p.category))).toEqual(new Set(['cultura', 'gastronomia', 'vidaNocturna']))
+    }
+    // Dentro de cada actividad se respeta el orden de la ruta.
+    expect(days.flat().filter((p) => p.category === 'cultura').map((p) => p.id)).toEqual(['c1', 'c2', 'c3', 'c4'])
+  })
+})
+
+describe('sweepOrder (barrido por ángulo)', () => {
+  it('nunca junta lugares de extremos opuestos de la ciudad', () => {
+    const norte = [place('N1', 0.05, 0.001), place('N2', 0.07, -0.001)]
+    const sur = [place('S1', -0.05, 0.001), place('S2', -0.07, -0.001)]
+    const order = sweepOrder(origin, [norte[0], sur[0], norte[1], sur[1]]).map((p) => p.id[0])
+    // Los dos del norte quedan seguidos y los dos del sur también.
+    expect(order.join('')).toMatch(/^(NNSS|SSNN)$/)
+  })
+
+  it('empieza después del mayor hueco: no parte un grupo que cruza el ángulo 180°', () => {
+    // Tres lugares al oeste (ángulos cerca de ±180°) y uno al este.
+    const oeste = [place('W1', 0.01, -0.05), place('W2', 0, -0.05), place('W3', -0.01, -0.05)]
+    const order = sweepOrder(origin, [...oeste, place('E', 0, 0.05)]).map((p) => p.id[0])
+    expect(order.join('')).toMatch(/^(WWWE|EWWW)$/)
   })
 })
