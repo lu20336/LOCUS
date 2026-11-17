@@ -3,6 +3,8 @@ import type { CategoryId, GeoPoint, Place, TripInput } from '../../../types/itin
 import { ItineraryError, OsmHttpError } from '../errors'
 import {
   buildDailyPlan,
+  excursionDayIndexes,
+  planExcursionDay,
   generateItinerary,
   geocodeDestination,
   optimizeRoute,
@@ -452,5 +454,84 @@ describe('sweepOrder (barrido por ángulo)', () => {
     const oeste = [place('W1', 0.01, -0.05), place('W2', 0, -0.05), place('W3', -0.01, -0.05)]
     const order = sweepOrder(origin, [...oeste, place('E', 0, 0.05)]).map((p) => p.id[0])
     expect(order.join('')).toMatch(/^(WWWE|EWWW)$/)
+  })
+})
+
+describe('excursiones a pueblos cercanos', () => {
+  const town = { id: 'turbaco', name: 'Turbaco', region: 'Bolívar', tagline: 'Jardín Botánico', lat: 10.3306, lon: -75.4127, distanceKm: 18 }
+
+  it('reparte los días de excursión y nunca usa el primero', () => {
+    expect(excursionDayIndexes(3, 1)).toEqual([1])
+    expect(excursionDayIndexes(4, 2)).toEqual([1, 2])
+    expect(excursionDayIndexes(2, 5)).toEqual([1]) // siempre queda un día en el destino
+    expect(excursionDayIndexes(1, 1)).toEqual([])
+  })
+
+  it('el día de excursión sale del pueblo y busca allí sus lugares', async () => {
+    const destination = parseNominatimResponse('Cartagena', nominatimCartagena)!
+    const centers: { lat: number; lon: number; radius: number }[] = []
+    const client = {
+      findPlaces: async (center: { lat: number; lon: number }, radius: number, categories: CategoryId[]) => {
+        centers.push({ ...center, radius })
+        if (center.lat === town.lat) return [place('iglesia', town.lat + 0.001, town.lon, 'cultura'), place('fonda', town.lat, town.lon + 0.002, 'gastronomia')]
+        return parseOverpassResponse(overpassCartagena, categories)
+      },
+    }
+    const itinerary = await planItinerary(
+      destination,
+      { destination: 'Cartagena', startDate: '2026-12-01', endDate: '2026-12-03', budgetCOP: 1, categories: ['cultura'] },
+      client,
+      { activitiesPerDay: 3, excursions: [town] },
+    )
+    expect(itinerary.days.map((d) => d.day)).toEqual([1, 2, 3])
+    const excursion = itinerary.days[1]
+    expect(excursion.excursion?.name).toBe('Turbaco')
+    expect(excursion.date).toBe('2026-12-02')
+    expect(excursion.places.map((p) => p.id).sort()).toEqual(['fonda', 'iglesia'])
+    expect(centers.some((c) => c.lat === town.lat && c.radius === 6000)).toBe(true)
+    expect(itinerary.days.filter((d) => !d.excursion).every((d) => d.places.every((p) => p.id !== 'iglesia'))).toBe(true)
+  })
+
+  it('si el pueblo no tiene lugares o el servicio falla, el día queda libre (no se cae el plan)', async () => {
+    const destination = parseNominatimResponse('Cartagena', nominatimCartagena)!
+    const client = {
+      findPlaces: async (center: { lat: number; lon: number }, _r: number, categories: CategoryId[]) => {
+        if (center.lat === town.lat) throw new OsmHttpError(504, 'caído')
+        return parseOverpassResponse(overpassCartagena, categories)
+      },
+    }
+    const itinerary = await planItinerary(
+      destination,
+      { destination: 'Cartagena', startDate: '2026-12-01', endDate: '2026-12-02', budgetCOP: 1, categories: ['cultura'] },
+      client,
+      { excursions: [town] },
+    )
+    expect(itinerary.days[1].excursion?.name).toBe('Turbaco')
+    expect(itinerary.days[1].places).toEqual([])
+  })
+})
+
+describe('planExcursionDay', () => {
+  const town = { id: 'guatape', name: 'Guatapé', region: 'Antioquia', tagline: 'Piedra del Peñol', lat: 6.2342, lon: -75.1617, distanceKm: 46 }
+  const near = (id: string, category: CategoryId, score = 1, d = 0.01) => place(id, town.lat + d, town.lon, category, score)
+
+  it('prioriza sitios para conocer y deja un solo restaurante (el almuerzo)', async () => {
+    const asked: CategoryId[][] = []
+    const client = {
+      findPlaces: async (_c: GeoPoint, _r: number, categories: CategoryId[]) => {
+        asked.push(categories)
+        return [near('peñol', 'aventura', 4), near('iglesia', 'cultura'), near('r1', 'gastronomia'), near('r2', 'gastronomia'), near('r3', 'gastronomia')]
+      },
+    }
+    const day = await planExcursionDay(town, '2026-12-02', ['gastronomia'], client, 4)
+    expect(asked[0]).toEqual(expect.arrayContaining(['cultura', 'aventura', 'gastronomia']))
+    expect(asked[0]).not.toContain('playa')
+    expect(day.places.map((p) => p.id).sort()).toEqual(['iglesia', 'peñol', 'r1'])
+  })
+
+  it('si no hay sitios, completa con lugares para comer', async () => {
+    const client = { findPlaces: async () => [near('r1', 'gastronomia'), near('r2', 'gastronomia', 1, 0.02)] }
+    const day = await planExcursionDay(town, '2026-12-02', ['cultura'], client, 3)
+    expect(day.places.map((p) => p.id).sort()).toEqual(['r1', 'r2'])
   })
 })

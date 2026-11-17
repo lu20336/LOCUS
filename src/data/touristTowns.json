@@ -1,0 +1,526 @@
+{
+  "generatedAt": "2026-11-17T02:20:14.708Z",
+  "source": "Coordenadas: Nominatim / OpenStreetMap",
+  "towns": [
+    {
+      "id": "guatape",
+      "name": "Guatapé",
+      "region": "Antioquia",
+      "tagline": "Piedra del Peñol y zócalos de colores",
+      "lat": 6.23422,
+      "lon": -75.16175
+    },
+    {
+      "id": "santa-fe-de-antioquia",
+      "name": "Santa Fe de Antioquia",
+      "region": "Antioquia",
+      "tagline": "Centro colonial y Puente de Occidente",
+      "lat": 6.54019,
+      "lon": -75.91599
+    },
+    {
+      "id": "jardin",
+      "name": "Jardín",
+      "region": "Antioquia",
+      "tagline": "Calles empedradas, balcones y cafetales",
+      "lat": 5.59905,
+      "lon": -75.81918
+    },
+    {
+      "id": "jerico",
+      "name": "Jericó",
+      "region": "Antioquia",
+      "tagline": "Pueblo patrimonio entre montañas",
+      "lat": 5.79146,
+      "lon": -75.78621
+    },
+    {
+      "id": "el-retiro",
+      "name": "El Retiro",
+      "region": "Antioquia",
+      "tagline": "Pueblo de montaña cerca de Medellín",
+      "lat": 6.05727,
+      "lon": -75.50261
+    },
+    {
+      "id": "san-rafael",
+      "name": "San Rafael",
+      "region": "Antioquia",
+      "tagline": "Ríos de aguas cristalinas",
+      "lat": 6.29549,
+      "lon": -75.02801
+    },
+    {
+      "id": "zipaquira",
+      "name": "Zipaquirá",
+      "region": "Cundinamarca",
+      "tagline": "Catedral de Sal",
+      "lat": 5.02347,
+      "lon": -74.00398
+    },
+    {
+      "id": "guatavita",
+      "name": "Guatavita",
+      "region": "Cundinamarca",
+      "tagline": "Laguna de Guatavita y la leyenda de El Dorado",
+      "lat": 4.90434,
+      "lon": -73.77995
+    },
+    {
+      "id": "suesca",
+      "name": "Suesca",
+      "region": "Cundinamarca",
+      "tagline": "Escalada en roca junto al río Bogotá",
+      "lat": 5.10334,
+      "lon": -73.79901
+    },
+    {
+      "id": "nemocon",
+      "name": "Nemocón",
+      "region": "Cundinamarca",
+      "tagline": "Mina de sal",
+      "lat": 5.09723,
+      "lon": -73.87473
+    },
+    {
+      "id": "choachi",
+      "name": "Choachí",
+      "region": "Cundinamarca",
+      "tagline": "Aguas termales",
+      "lat": 4.5822,
+      "lon": -73.91373
+    },
+    {
+      "id": "tabio",
+      "name": "Tabio",
+      "region": "Cundinamarca",
+      "tagline": "Pueblo de la Sabana con termales",
+      "lat": 4.95239,
+      "lon": -74.07901
+    },
+    {
+      "id": "la-vega",
+      "name": "La Vega",
+      "region": "Cundinamarca",
+      "tagline": "Clima cálido cerca de Bogotá",
+      "lat": 4.99971,
+      "lon": -74.33952
+    },
+    {
+      "id": "sopo",
+      "name": "Sopó",
+      "region": "Cundinamarca",
+      "tagline": "Pueblo tradicional de la Sabana",
+      "lat": 4.90792,
+      "lon": -73.94023
+    },
+    {
+      "id": "villa-de-leyva",
+      "name": "Villa de Leyva",
+      "region": "Boyacá",
+      "tagline": "Plaza mayor empedrada y casas coloniales",
+      "lat": 5.66199,
+      "lon": -73.52838
+    },
+    {
+      "id": "raquira",
+      "name": "Ráquira",
+      "region": "Boyacá",
+      "tagline": "Artesanías en barro",
+      "lat": 5.53801,
+      "lon": -73.63222
+    },
+    {
+      "id": "mongui",
+      "name": "Monguí",
+      "region": "Boyacá",
+      "tagline": "Pueblo patrimonio y páramo de Ocetá",
+      "lat": 5.69816,
+      "lon": -72.83193
+    },
+    {
+      "id": "paipa",
+      "name": "Paipa",
+      "region": "Boyacá",
+      "tagline": "Aguas termales y lago Sochagota",
+      "lat": 5.78127,
+      "lon": -73.11765
+    },
+    {
+      "id": "nobsa",
+      "name": "Nobsa",
+      "region": "Boyacá",
+      "tagline": "Ruanas y tejidos de lana",
+      "lat": 5.77056,
+      "lon": -72.93975
+    },
+    {
+      "id": "aquitania",
+      "name": "Aquitania",
+      "region": "Boyacá",
+      "tagline": "Lago de Tota",
+      "lat": 5.51758,
+      "lon": -72.88315
+    },
+    {
+      "id": "iza",
+      "name": "Iza",
+      "region": "Boyacá",
+      "tagline": "Postres típicos y aguas termales",
+      "lat": 5.61967,
+      "lon": -72.96139
+    },
+    {
+      "id": "sutamarchan",
+      "name": "Sutamarchán",
+      "region": "Boyacá",
+      "tagline": "Tierra de la longaniza",
+      "lat": 5.63748,
+      "lon": -73.62752
+    },
+    {
+      "id": "tunja",
+      "name": "Tunja",
+      "region": "Boyacá",
+      "tagline": "Ciudad colonial, capital de Boyacá",
+      "lat": 5.53243,
+      "lon": -73.3616
+    },
+    {
+      "id": "barichara",
+      "name": "Barichara",
+      "region": "Santander",
+      "tagline": "El pueblo de piedra",
+      "lat": 6.63572,
+      "lon": -73.22344
+    },
+    {
+      "id": "san-gil",
+      "name": "San Gil",
+      "region": "Santander",
+      "tagline": "Turismo de aventura: rafting y parapente",
+      "lat": 6.55529,
+      "lon": -73.13124
+    },
+    {
+      "id": "giron",
+      "name": "Girón",
+      "region": "Santander",
+      "tagline": "Pueblo colonial junto a Bucaramanga",
+      "lat": 7.06907,
+      "lon": -73.17003
+    },
+    {
+      "id": "socorro",
+      "name": "Socorro",
+      "region": "Santander",
+      "tagline": "Historia comunera y arquitectura colonial",
+      "lat": 6.47052,
+      "lon": -73.26232
+    },
+    {
+      "id": "zapatoca",
+      "name": "Zapatoca",
+      "region": "Santander",
+      "tagline": "Pueblo de clima fresco y tradición",
+      "lat": 6.81666,
+      "lon": -73.26865
+    },
+    {
+      "id": "pamplona",
+      "name": "Pamplona",
+      "region": "Norte de Santander",
+      "tagline": "Ciudad colonial y Semana Santa",
+      "lat": 7.37638,
+      "lon": -72.64826
+    },
+    {
+      "id": "salento",
+      "name": "Salento",
+      "region": "Quindío",
+      "tagline": "Valle de Cocora y palmas de cera",
+      "lat": 4.6373,
+      "lon": -75.5698
+    },
+    {
+      "id": "filandia",
+      "name": "Filandia",
+      "region": "Quindío",
+      "tagline": "Mirador y artesanías en bejuco",
+      "lat": 4.67508,
+      "lon": -75.658
+    },
+    {
+      "id": "pijao",
+      "name": "Pijao",
+      "region": "Quindío",
+      "tagline": "Pueblo cafetero tranquilo",
+      "lat": 4.33414,
+      "lon": -75.70381
+    },
+    {
+      "id": "montenegro",
+      "name": "Montenegro",
+      "region": "Quindío",
+      "tagline": "Parque del Café",
+      "lat": 4.56642,
+      "lon": -75.75071
+    },
+    {
+      "id": "quimbaya",
+      "name": "Quimbaya",
+      "region": "Quindío",
+      "tagline": "Pueblo cafetero de las velas y faroles",
+      "lat": 4.62245,
+      "lon": -75.76313
+    },
+    {
+      "id": "santa-rosa-de-cabal",
+      "name": "Santa Rosa de Cabal",
+      "region": "Risaralda",
+      "tagline": "Termales y chorizo santarrosano",
+      "lat": 4.86507,
+      "lon": -75.62116
+    },
+    {
+      "id": "salamina",
+      "name": "Salamina",
+      "region": "Caldas",
+      "tagline": "Pueblo patrimonio de balcones tallados",
+      "lat": 5.40785,
+      "lon": -75.48805
+    },
+    {
+      "id": "aguadas",
+      "name": "Aguadas",
+      "region": "Caldas",
+      "tagline": "Sombrero aguadeño y arquitectura colonial",
+      "lat": 5.61311,
+      "lon": -75.45759
+    },
+    {
+      "id": "guadalajara-de-buga",
+      "name": "Guadalajara de Buga",
+      "region": "Valle del Cauca",
+      "tagline": "Basílica del Señor de los Milagros",
+      "lat": 3.90006,
+      "lon": -76.30201
+    },
+    {
+      "id": "ginebra",
+      "name": "Ginebra",
+      "region": "Valle del Cauca",
+      "tagline": "Música andina y comida típica vallecaucana",
+      "lat": 3.7237,
+      "lon": -76.2688
+    },
+    {
+      "id": "calima",
+      "name": "Calima",
+      "region": "Valle del Cauca",
+      "tagline": "Lago Calima y deportes de viento",
+      "lat": 3.93182,
+      "lon": -76.48424
+    },
+    {
+      "id": "roldanillo",
+      "name": "Roldanillo",
+      "region": "Valle del Cauca",
+      "tagline": "Museo Rayo y parapente",
+      "lat": 4.40912,
+      "lon": -76.15437
+    },
+    {
+      "id": "el-cerrito",
+      "name": "El Cerrito",
+      "region": "Valle del Cauca",
+      "tagline": "Hacienda El Paraíso, escenario de María",
+      "lat": 3.68292,
+      "lon": -76.30715
+    },
+    {
+      "id": "cartago",
+      "name": "Cartago",
+      "region": "Valle del Cauca",
+      "tagline": "Capital de los bordados",
+      "lat": 4.71066,
+      "lon": -75.93239
+    },
+    {
+      "id": "popayan",
+      "name": "Popayán",
+      "region": "Cauca",
+      "tagline": "La Ciudad Blanca",
+      "lat": 2.44315,
+      "lon": -76.54633
+    },
+    {
+      "id": "silvia",
+      "name": "Silvia",
+      "region": "Cauca",
+      "tagline": "Mercado del pueblo misak",
+      "lat": 2.61154,
+      "lon": -76.37842
+    },
+    {
+      "id": "san-agustin",
+      "name": "San Agustín",
+      "region": "Huila",
+      "tagline": "Parque Arqueológico",
+      "lat": 1.88208,
+      "lon": -76.2729
+    },
+    {
+      "id": "villavieja",
+      "name": "Villavieja",
+      "region": "Huila",
+      "tagline": "Desierto de la Tatacoa",
+      "lat": 3.21954,
+      "lon": -75.21903
+    },
+    {
+      "id": "honda",
+      "name": "Honda",
+      "region": "Tolima",
+      "tagline": "La ciudad de los puentes",
+      "lat": 5.21042,
+      "lon": -74.73619
+    },
+    {
+      "id": "ambalema",
+      "name": "Ambalema",
+      "region": "Tolima",
+      "tagline": "Arquitectura colonial junto al río Magdalena",
+      "lat": 4.78359,
+      "lon": -74.76439
+    },
+    {
+      "id": "mompox",
+      "name": "Mompox",
+      "region": "Bolívar",
+      "tagline": "Centro histórico patrimonio de la humanidad",
+      "lat": 9.24149,
+      "lon": -74.42515
+    },
+    {
+      "id": "turbaco",
+      "name": "Turbaco",
+      "region": "Bolívar",
+      "tagline": "Jardín Botánico cerca de Cartagena",
+      "lat": 10.33059,
+      "lon": -75.41273
+    },
+    {
+      "id": "santiago-de-tolu",
+      "name": "Santiago de Tolú",
+      "region": "Sucre",
+      "tagline": "Playas del golfo de Morrosquillo",
+      "lat": 9.52411,
+      "lon": -75.58418
+    },
+    {
+      "id": "covenas",
+      "name": "Coveñas",
+      "region": "Sucre",
+      "tagline": "Playas del golfo de Morrosquillo",
+      "lat": 9.40176,
+      "lon": -75.6787
+    },
+    {
+      "id": "lorica",
+      "name": "Lorica",
+      "region": "Córdoba",
+      "tagline": "Mercado y arquitectura junto al río Sinú",
+      "lat": 9.23946,
+      "lon": -75.81398
+    },
+    {
+      "id": "puerto-colombia",
+      "name": "Puerto Colombia",
+      "region": "Atlántico",
+      "tagline": "Muelle y playas cerca de Barranquilla",
+      "lat": 10.98913,
+      "lon": -74.95541
+    },
+    {
+      "id": "usiacuri",
+      "name": "Usiacurí",
+      "region": "Atlántico",
+      "tagline": "Artesanías en palma de iraca",
+      "lat": 10.74238,
+      "lon": -74.97786
+    },
+    {
+      "id": "aracataca",
+      "name": "Aracataca",
+      "region": "Magdalena",
+      "tagline": "Casa natal de Gabriel García Márquez",
+      "lat": 10.5906,
+      "lon": -74.18768
+    },
+    {
+      "id": "cienaga",
+      "name": "Ciénaga",
+      "region": "Magdalena",
+      "tagline": "Arquitectura republicana junto a la ciénaga",
+      "lat": 11.01079,
+      "lon": -74.25164
+    },
+    {
+      "id": "minca",
+      "name": "Minca",
+      "region": "Magdalena",
+      "tagline": "Cascadas y fincas cafeteras en la Sierra Nevada",
+      "lat": 11.14276,
+      "lon": -74.11693
+    },
+    {
+      "id": "taganga",
+      "name": "Taganga",
+      "region": "Magdalena",
+      "tagline": "Bahía de pescadores y buceo",
+      "lat": 11.26839,
+      "lon": -74.18942
+    },
+    {
+      "id": "palomino",
+      "name": "Palomino",
+      "region": "La Guajira",
+      "tagline": "Playa y río al pie de la Sierra Nevada",
+      "lat": 11.24489,
+      "lon": -73.55981
+    },
+    {
+      "id": "cabo-de-la-vela",
+      "name": "Cabo de la Vela",
+      "region": "La Guajira",
+      "tagline": "Desierto y mar en La Guajira",
+      "lat": 12.20713,
+      "lon": -72.18022
+    },
+    {
+      "id": "valledupar",
+      "name": "Valledupar",
+      "region": "Cesar",
+      "tagline": "Cuna del vallenato",
+      "lat": 10.34311,
+      "lon": -73.37579
+    },
+    {
+      "id": "ipiales",
+      "name": "Ipiales",
+      "region": "Nariño",
+      "tagline": "Santuario de Las Lajas",
+      "lat": 0.82365,
+      "lon": -77.63486
+    },
+    {
+      "id": "el-encano",
+      "name": "El Encano",
+      "region": "Nariño",
+      "tagline": "Laguna de La Cocha",
+      "lat": 1.16269,
+      "lon": -77.15631
+    }
+  ]
+}

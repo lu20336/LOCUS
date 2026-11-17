@@ -28,6 +28,7 @@ Todo está en [`src/lib/itinerary/`](src/lib/itinerary/); el archivo principal, 
    - **Algoritmo de barrido** (`sweepOrder()`, O(n log n)): ordena los lugares por su ángulo visto desde el centro, así cada día cubre una "tajada" de la ciudad.
    - `splitByCategory()`: cada día recibe su parte de cada actividad elegida (no un día solo de restaurantes).
    - Vecino más cercano dentro de cada día; la vida nocturna va al final.
+   - **Excursiones (opcional):** si en el Paso 2 se eligen pueblos cercanos, cada uno es un día aparte (`planExcursionDay()`): lugares a menos de 6 km del pueblo, sobre todo cultura y naturaleza, y un solo restaurante. Los pueblos salen de `src/data/touristTowns.json`, una lista de 65 pueblos turísticos escrita a mano con coordenadas verificadas en Nominatim (`npm run data:tourist-towns`).
 
 En la app, el Paso 3 usa `planItinerary()` (pasos 2 a 5) con el destino ya resuelto en el Paso 1, y muestra el plan con un mapa por día ([Leaflet](https://leafletjs.com/) con los mapas de OpenStreetMap, cargado solo en ese paso).
 

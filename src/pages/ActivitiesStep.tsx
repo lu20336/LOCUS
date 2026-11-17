@@ -16,7 +16,9 @@
 import { ArrowLeft, ArrowRight, CalendarDays, Check, MapPin, Users } from 'lucide-react'
 import { useRef, useState, type FormEvent } from 'react'
 import { ACTIVITY_IMAGES, CATEGORY_DESCRIPTIONS, CATEGORY_ICONS } from '../components/choiceOptions'
+import { NearbyTownsPicker } from '../components/NearbyTownsPicker'
 import { findFeaturedNear } from '../lib/featuredDestinations'
+import { maxExcursions, nearbyTowns } from '../lib/flow/nearbyTowns'
 import { PACE_IDS, PACES } from '../lib/flow/pace'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { assignTilePhotos, type TilePhoto } from '../lib/flow/tilePhotos'
@@ -37,9 +39,18 @@ function placesNearLabel(count: number): string {
 }
 
 export function ActivitiesStep() {
-  const { trip, categories: savedCategories, pace: savedPace, completeActivities, goToStep } = useTripFlow()
+  const {
+    trip,
+    categories: savedCategories,
+    pace: savedPace,
+    excursions: savedExcursions,
+    completeActivities,
+    goToStep,
+  } = useTripFlow()
   const [selected, setSelected] = useState<CategoryId[]>(savedCategories)
   const [pace, setPace] = useState<TripPace>(savedPace)
+  const [wantsTowns, setWantsTowns] = useState(savedExcursions.length > 0)
+  const [townIds, setTownIds] = useState<string[]>(savedExcursions.map((e) => e.id))
   const [showError, setShowError] = useState(false)
   const firstCheckbox = useRef<HTMLInputElement | null>(null)
   const availability = useActivityCounts(trip?.destination ?? null)
@@ -51,6 +62,10 @@ export function ActivitiesStep() {
   const [placeName, ...region] = trip.destination.displayName.split(',').map((part) => part.trim())
   const featured = findFeaturedNear(trip.destination)
   const placesPerDay = PACES[pace].placesPerDay
+  const towns = nearbyTowns(trip.destination)
+  const maxTowns = maxExcursions(days)
+  // Solo los pueblos de ESTE destino y dentro del máximo (por si cambiaron destino o fechas).
+  const chosenTowns = wantsTowns ? towns.filter((t) => townIds.includes(t.id)).slice(0, maxTowns) : []
   const fromSuggestion = trip.mode === 'suggested' && savedCategories.length > 0
 
   /**
@@ -101,7 +116,7 @@ export function ActivitiesStep() {
       firstCheckbox.current?.focus()
       return
     }
-    completeActivities(chosen, pace)
+    completeActivities(chosen, pace, chosenTowns)
   }
 
   return (
@@ -291,12 +306,27 @@ export function ActivitiesStep() {
           </div>
         </fieldset>
 
+        <NearbyTownsPicker
+          placeName={placeName}
+          tripDays={days}
+          towns={towns}
+          enabled={wantsTowns}
+          onEnabledChange={setWantsTowns}
+          selectedIds={chosenTowns.map((t) => t.id)}
+          onToggle={(id, checked) =>
+            setTownIds((current) => (checked ? [...current, id] : current.filter((x) => x !== id)))
+          }
+          max={maxTowns}
+        />
+
         {/* Resumen y acciones */}
         <div className="flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted" aria-live="polite">
             {chosen.length === 0
               ? 'Aún no has elegido actividades.'
-              : `Tu plan: ${days} ${days === 1 ? 'día' : 'días'} × ${placesPerDay} lugares ≈ ${days * placesPerDay} lugares para visitar.`}
+              : chosenTowns.length > 0
+                ? `Tu plan: ${days - chosenTowns.length} ${days - chosenTowns.length === 1 ? 'día' : 'días'} en ${placeName} y ${chosenTowns.length} de excursión (${chosenTowns.map((t) => t.name).join(', ')}).`
+                : `Tu plan: ${days} ${days === 1 ? 'día' : 'días'} × ${placesPerDay} lugares ≈ ${days * placesPerDay} lugares para visitar.`}
           </p>
           <div className="flex flex-col-reverse gap-3 sm:flex-row">
             <button

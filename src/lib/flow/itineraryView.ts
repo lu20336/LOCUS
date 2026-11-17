@@ -29,14 +29,18 @@ export function osmPlaceUrl(place: Pick<Place, 'id' | 'lat' | 'lon'>): string {
  * pasa por los lugares en orden y termina en el último.
  * Google admite hasta 9 paradas intermedias en estos enlaces.
  */
-export function googleMapsRouteUrl(start: GeoPoint, places: readonly GeoPoint[]): string | null {
+export function googleMapsRouteUrl(
+  start: GeoPoint,
+  places: readonly GeoPoint[],
+  travelmode: 'walking' | 'driving' = 'walking',
+): string | null {
   if (places.length === 0) return null
   const stops = places.slice(0, 10)
   const params = new URLSearchParams({
     api: '1',
     origin: coord(start),
     destination: coord(stops[stops.length - 1]),
-    travelmode: 'walking',
+    travelmode,
   })
   if (stops.length > 1) params.set('waypoints', stops.slice(0, -1).map(coord).join('|'))
   return `https://www.google.com/maps/dir/?${params}`

@@ -29,6 +29,7 @@ import type {
   CategoryId,
   DayPlan,
   Destination,
+  Excursion,
   GeoPoint,
   Itinerary,
   ItineraryStats,
@@ -36,6 +37,7 @@ import type {
   TripInput,
 } from '../../types/itinerary'
 import { CATEGORIES } from './categories'
+import { isCoastal } from './coast'
 import { ItineraryError, toItineraryError } from './errors'
 import { haversineKm } from './geo'
 import type { OsmClient } from './osmClient'
@@ -396,6 +398,8 @@ const isNightPlace = (place: Place) => place.category === 'vidaNocturna'
 
 export interface GenerateOptions {
   activitiesPerDay?: number
+  /** Pueblos cercanos para excursiones de un día (uno por día). */
+  excursions?: readonly Excursion[]
   /** Inyectable para tests (fecha de generación fija). */
   now?: () => Date
 }
@@ -434,16 +438,100 @@ export async function planItinerary(
     throw new ItineraryError('INVALID_INPUT', 'Elige al menos una actividad.')
   }
 
+  // Días de excursión: repartidos en el viaje, dejando al menos un día en el destino.
+  const excursions = (options.excursions ?? []).slice(0, Math.max(0, dates.length - 1))
+  const excursionAt = new Map(excursionDayIndexes(dates.length, excursions.length).map((d, i) => [d, excursions[i]]))
+  const mainDates = dates.filter((_, i) => !excursionAt.has(i))
+
   const { byCategory, missingCategories } = await searchPlaces(destination, input.categories, client) // Paso 2
-  const selected = selectPlaces(byCategory, input.categories, dates.length * activitiesPerDay) // Paso 3
-  const days = buildDailyPlan(destination, selected, dates) // Pasos 4 y 5
+  const selected = selectPlaces(byCategory, input.categories, mainDates.length * activitiesPerDay) // Paso 3
+  const mainDays = buildDailyPlan(destination, selected, mainDates) // Pasos 4 y 5
+
+  // Excursiones: una tras otra (los servicios de mapas limitan las peticiones por segundo).
+  const excursionDays: DayPlan[] = []
+  for (const [index, town] of excursionAt) {
+    excursionDays.push(await planExcursionDay(town, dates[index], input.categories, client, activitiesPerDay))
+  }
+  const days = [...mainDays, ...excursionDays]
+    .sort((a, b) => a.date.localeCompare(b.date))
+    .map((day, i) => ({ ...day, day: i + 1 }))
 
   return {
     input,
     destination,
     days,
     missingCategories,
-    stats: computeStats(destination, selected, days),
+    // Ahorro de la ruta: solo los días en el destino (las excursiones salen de otro punto).
+    stats: computeStats(destination, selected, mainDays),
     generatedAt: now().toISOString(),
   }
+}
+
+// ---------------------------------------------------------------------------
+// Excursiones de un día a pueblos cercanos
+// ---------------------------------------------------------------------------
+
+/**
+ * Radio de búsqueda en un pueblo: lo que se visita suele estar a las afueras
+ * (la Piedra del Peñol queda a ~5 km del centro de Guatapé).
+ */
+export const EXCURSION_RADIUS_METERS = 6000
+
+/**
+ * En qué días del viaje van las excursiones (índices desde 0), repartidas a lo
+ * largo del viaje y nunca el primer día (se llega al destino).
+ * Ej. 3 días y 1 excursión → día 2 (índice 1); 4 días y 2 → días 2 y 3.
+ */
+export function excursionDayIndexes(totalDays: number, count: number): number[] {
+  const n = Math.min(count, Math.max(0, totalDays - 1))
+  const result: number[] = []
+  for (let i = 0; i < n; i++) {
+    let index = Math.max(1, Math.floor(((i + 1) * totalDays) / (n + 1)))
+    while (result.includes(index) && index < totalDays - 1) index++
+    result.push(index)
+  }
+  return result
+}
+
+/**
+ * Plan de un día en un pueblo cercano: un lugar menos que un día normal (el
+ * viaje de ida y vuelta toma tiempo). Además de lo que eligió el usuario,
+ * busca cultura y aventura (miradores, cascadas, cerros): es lo que se va a
+ * ver a un pueblo. Como máximo un restaurante (el almuerzo); el resto del día
+ * son sitios para conocer. "Playa" solo si el pueblo está junto al mar.
+ * Si no hay lugares o el servicio falla, el día queda libre para recorrer el
+ * pueblo (no se cae todo el itinerario por una excursión).
+ */
+export async function planExcursionDay(
+  town: Excursion,
+  date: string,
+  categories: readonly CategoryId[],
+  client: Pick<OsmClient, 'findPlaces'>,
+  activitiesPerDay: number,
+): Promise<DayPlan> {
+  const sights = [...new Set<CategoryId>([...categories, 'cultura', 'aventura'])].filter(
+    (c) => c !== 'gastronomia' && (c !== 'playa' || isCoastal(town)),
+  )
+  const wanted: CategoryId[] = [...sights, 'gastronomia']
+  const total = Math.max(2, activitiesPerDay - 1)
+  const center: Destination = {
+    query: town.name,
+    displayName: `${town.name}, ${town.region}, Colombia`,
+    lat: town.lat,
+    lon: town.lon,
+    radiusMeters: EXCURSION_RADIUS_METERS,
+  }
+  let selected: Place[] = []
+  try {
+    const { byCategory } = await searchPlaces(center, wanted, client)
+    const lunch = (byCategory.gastronomia ?? []).slice(0, 1)
+    selected = selectPlaces(byCategory, sights, total - lunch.length)
+    // Si no hay suficientes sitios, se completa con más lugares para comer.
+    const food = (byCategory.gastronomia ?? []).slice(0, total - selected.length)
+    selected = [...selected, ...food]
+  } catch {
+    // Sin lugares registrados o sin servicio: día libre en el pueblo.
+  }
+  const [day] = buildDailyPlan(town, selected, [date])
+  return { ...day, excursion: town }
 }

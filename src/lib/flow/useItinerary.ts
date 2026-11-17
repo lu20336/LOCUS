@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from 'react'
 import type { TripDetails, TripPace } from '../../types/flow'
-import type { CategoryId, Itinerary } from '../../types/itinerary'
+import type { CategoryId, Excursion, Itinerary } from '../../types/itinerary'
 import { placesClient } from '../itinerary/browserClient'
 import { ItineraryError } from '../itinerary/errors'
 import { planItinerary } from '../itinerary/generateItinerary'
@@ -19,12 +19,25 @@ export type ItineraryState =
   | { status: 'done'; itinerary: Itinerary }
   | { status: 'error'; message: string; code?: ItineraryError['code'] }
 
-const CACHE_PREFIX = 'locus:itinerary:v1:'
+const CACHE_PREFIX = 'locus:itinerary:v2:'
 
-/** Identifica un plan: mismo destino, fechas, actividades y ritmo → mismo itinerario. */
-export function itineraryKey(trip: TripDetails, categories: readonly CategoryId[], pace: TripPace): string {
+/** Identifica un plan: mismo destino, fechas, actividades, ritmo y excursiones → mismo itinerario. */
+export function itineraryKey(
+  trip: TripDetails,
+  categories: readonly CategoryId[],
+  pace: TripPace,
+  excursions: readonly Excursion[] = [],
+): string {
   const { lat, lon } = trip.destination
-  return [lat.toFixed(4), lon.toFixed(4), trip.startDate, trip.endDate, [...categories].sort().join('+'), pace].join('|')
+  return [
+    lat.toFixed(4),
+    lon.toFixed(4),
+    trip.startDate,
+    trip.endDate,
+    [...categories].sort().join('+'),
+    pace,
+    excursions.map((e) => e.id).join('+'),
+  ].join('|')
 }
 
 function readCache(key: string): Itinerary | null {
@@ -64,8 +77,9 @@ export function useItinerary(
   trip: TripDetails | null,
   categories: readonly CategoryId[],
   pace: TripPace,
+  excursions: readonly Excursion[] = [],
 ): { state: ItineraryState; retry: () => void } {
-  const key = trip ? itineraryKey(trip, categories, pace) : ''
+  const key = trip ? itineraryKey(trip, categories, pace, excursions) : ''
   const [result, setResult] = useState<{ key: string; state: ItineraryState } | null>(null)
   const [attempt, setAttempt] = useState(0)
   const cached = key ? readCache(key) : null
@@ -84,7 +98,7 @@ export function useItinerary(
           categories: [...categories],
         },
         placesClient,
-        { activitiesPerDay: PACES[pace].placesPerDay },
+        { activitiesPerDay: PACES[pace].placesPerDay, excursions },
       ),
     ).then(
       (itinerary) => {
@@ -101,7 +115,7 @@ export function useItinerary(
     return () => {
       cancelled = true
     }
-    // trip, categories y pace están resumidos en `key`; `attempt` fuerza un reintento.
+    // trip, categories, pace y excursions están resumidos en `key`; `attempt` fuerza un reintento.
     // oxlint-disable-next-line react-hooks/exhaustive-deps
   }, [key, attempt])
 
