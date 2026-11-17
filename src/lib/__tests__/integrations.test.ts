@@ -3,6 +3,8 @@ import { availableListings, filterExperiences, filterListings, matchesPlace, EMP
 import { buildLodgingQuery, parseLodging, safeUrl } from '../catalog/osmLodging'
 import { findAirport, flightLinks, nearestAirports } from '../flights/airports'
 import { fitDimensions, validateImageFile } from '../images/compress'
+import { CATEGORY_PHRASES, bboxAround, parseLodging as parseNominatimLodging, parsePlaces as parseNominatimPlaces } from '../itinerary/nominatimPlaces'
+import type { NominatimSearchResult } from '../itinerary/osmClient'
 import { movePlace, removePlace, setDayNote } from '../itinerary/itineraryStore'
 import { parseWikiSummary } from '../places/wikipedia'
 import { describeWeatherCode, forecastUrl, parseForecast, rainRisk } from '../weather/openMeteo'
@@ -153,5 +155,61 @@ describe('Wikipedia', () => {
     expect(s?.title).toBe('Salento')
     expect(parseWikiSummary({ type: 'disambiguation', title: 'x', extract: 'y' })).toBeNull()
     expect(parseWikiSummary({ type: 'standard', title: 'x', extract: 'y', content_urls: { desktop: { page: 'http://evil.test' } } })).toBeNull()
+  })
+})
+
+describe('respaldo con Nominatim (alojamientos y lugares)', () => {
+  const r = (over: Partial<NominatimSearchResult>): NominatimSearchResult => ({
+    osm_type: 'node', osm_id: 1, lat: '4.63', lon: '-75.57', name: 'Lugar', display_name: 'Lugar, Salento', category: 'tourism', type: 'hotel', extratags: null, ...over,
+  })
+
+  it('convierte hoteles en alojamientos de referencia y descarta lo que no es alojamiento', () => {
+    const out = parseNominatimLodging([
+      r({ osm_id: 1, name: 'Hotel Café', extratags: { website: 'hotelcafe.co' } }),
+      r({ osm_id: 2, name: 'Hostal Palma', type: 'hostel', extratags: { phone: '+57 1' } }),
+      r({ osm_id: 3, name: 'Sin datos', lat: '4.64' }),
+      r({ osm_id: 4, name: 'Museo', type: 'museum' }),
+      r({ osm_id: 5, name: 'Hotel Café', extratags: null }), // duplicado (mismo nombre y lugar)
+      r({ osm_id: 6, name: 'Hotel Malo', lat: '4.65', extratags: { website: 'javascript:alert(1)' } }),
+    ])
+    expect(out.map((p) => p.name)).toEqual(['Hotel Café', 'Hostal Palma', 'Sin datos', 'Hotel Malo'])
+    expect(out[0].website).toBe('https://hotelcafe.co/')
+    expect(out[3].website).toBeUndefined()
+    expect(out.every((p) => p.source === 'osm')).toBe(true)
+  })
+
+  it('ordena primero los que tienen contacto y luego los más cercanos', () => {
+    const out = parseNominatimLodging(
+      [r({ osm_id: 1, name: 'Lejos', lat: '4.9' }), r({ osm_id: 2, name: 'Cerca', lat: '4.631' }), r({ osm_id: 3, name: 'Con web', lat: '4.8', extratags: { website: 'https://a.co' } })],
+      { lat: 4.63, lon: -75.57 },
+    )
+    expect(out.map((p) => p.name)).toEqual(['Con web', 'Cerca', 'Lejos'])
+  })
+
+  it('clasifica lugares con las mismas reglas del motor y descarta memoriales', () => {
+    const places = parseNominatimPlaces(
+      [
+        r({ osm_id: 10, name: 'Museo del Oro', category: 'tourism', type: 'museum', extratags: { wikidata: 'Q1', website: 'x.co' } }),
+        r({ osm_id: 11, name: 'Memorial', category: 'historic', type: 'memorial' }),
+        r({ osm_id: 12, name: 'Fuerte', category: 'historic', type: 'fort' }),
+        r({ osm_id: 13, name: 'Bar X', category: 'amenity', type: 'bar' }),
+      ],
+      ['cultura'],
+    )
+    expect(places.map((p) => p.name)).toEqual(['Museo del Oro', 'Fuerte'])
+    expect(places[0].score).toBe(5) // 1 + wikidata(3) + website(1)
+    expect(places[0].kind).toBe('Museo')
+    expect(places[0].id).toBe('node/10')
+  })
+
+  it('el rectángulo de búsqueda cubre el radio pedido', () => {
+    const box = bboxAround({ lat: 4.6, lon: -75.5 }, 8000)
+    expect(box.north - box.south).toBeCloseTo(2 * (8000 / 111_320), 4)
+    expect(box.west).toBeLessThan(-75.5)
+    expect(box.east).toBeGreaterThan(-75.5)
+  })
+
+  it('cada categoría tiene al menos una frase de búsqueda', () => {
+    for (const phrases of Object.values(CATEGORY_PHRASES)) expect(phrases.length).toBeGreaterThan(0)
   })
 })

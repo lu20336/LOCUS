@@ -21,6 +21,9 @@ const KIND_LABELS: Record<string, string> = {
 
 export const LODGING_TAGS = Object.keys(KIND_LABELS)
 
+/** Etiqueta en español de un tipo de alojamiento de OSM (o null si no es alojamiento). */
+export const lodgingKindLabel = (type: string): string | null => KIND_LABELS[type] ?? null
+
 export function buildLodgingQuery(lat: number, lon: number, radiusMeters: number, limit = 40): string {
   return `[out:json][timeout:20];\nnwr["tourism"~"^(${LODGING_TAGS.join('|')})$"]["name"](around:${Math.round(radiusMeters)},${lat.toFixed(6)},${lon.toFixed(6)});\nout center ${limit};`
 }

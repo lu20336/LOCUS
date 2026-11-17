@@ -38,7 +38,7 @@ export function buildSystemInstruction(today: string, profileSummary: string | n
 REGLAS INQUEBRANTABLES
 1. NUNCA inventes hospedajes, experiencias, precios, disponibilidad, horarios de apertura, tarifas de vuelos ni ubicaciones. Todo dato concreto debe salir de una herramienta. Si la herramienta no devuelve resultados, dilo con honestidad y propón una alternativa (otras fechas, otro destino, ver alojamientos de referencia de OpenStreetMap, publicar como anfitrión).
 2. Usa las herramientas ANTES de recomendar: search_listings / search_experiences para oferta reservable de LOCUS, get_weather para el clima, find_places para lugares, plan_itinerary para armar rutas, recommend_destinations para sugerir destinos, flight_search_links para vuelos.
-3. Distingue siempre entre (a) datos de LOCUS confirmados por anfitriones (reservables), (b) datos de fuentes abiertas como OpenStreetMap (referencia, sin precio ni reserva) y (c) tus sugerencias generales. Di cuál es cuál cuando importe.
+3. Distingue siempre entre (a) datos de LOCUS confirmados por anfitriones (reservables), (b) datos de fuentes abiertas como OpenStreetMap (referencia, sin precio ni reserva; p. ej. referenceLodging: se pueden VER pero NO reservar en LOCUS) y (c) tus sugerencias generales. Di cuál es cuál cuando importe. Si no hay alojamientos reservables pero sí de referencia, preséntalos como tales.
 4. El clima es un PRONÓSTICO: dilo como estimación que puede cambiar, nunca como certeza.
 5. No puedes reservar, pagar, cancelar ni editar la cuenta. Si el usuario quiere reservar, dile que abra la ficha (se muestra como tarjeta) y confirme él mismo. No pidas ni aceptes datos de pago.
 6. LOCUS no vende tiquetes de avión: para vuelos solo entregas enlaces de búsqueda y no mencionas precios.
@@ -54,7 +54,7 @@ FORMATO: texto plano con listas cortas con guiones cuando ayuden; sin tablas ni 
 }
 
 export class AgentUnavailableError extends Error {
-  readonly reason: 'not-enabled' | 'quota' | 'blocked' | 'network' | 'unknown'
+  readonly reason: 'not-enabled' | 'app-check' | 'quota' | 'blocked' | 'network' | 'unknown'
   constructor(reason: AgentUnavailableError['reason'], message: string) {
     super(message)
     this.name = 'AgentUnavailableError'
@@ -67,13 +67,21 @@ export function describeAiError(error: unknown): AgentUnavailableError {
   if (error instanceof AgentUnavailableError) return error
   if (import.meta.env.DEV) console.warn('[agente] error de IA:', error)
   const text = `${(error as { code?: string })?.code ?? ''} ${error instanceof Error ? error.message : String(error)}`.toLowerCase()
-  if (/permission|403|has not been used|not enabled|not-enabled|api-not-enabled|api key not valid|api_key|disabled|service_disabled|requests-to-this-api|blocked/.test(text) && !/safety/.test(text)) {
+  // App Check va primero: su mensaje ("...token is invalid") no debe confundirse con otros errores.
+  if (/app check|app-check|appcheck/.test(text)) {
+    return new AgentUnavailableError('app-check', 'El compañero está protegido con App Check y este navegador no tiene un token válido. Hay que registrar la app o desactivar la exigencia en la consola de Firebase (ver docs/CONFIGURACION_Y_DESPLIEGUE.md).')
+  }
+  if (/api-not-enabled|not-enabled|has not been used|service_disabled|api key not valid|api_key_invalid/.test(text)) {
     return new AgentUnavailableError('not-enabled', 'El compañero de IA todavía no está activado en este proyecto (falta habilitar Firebase AI Logic con el Gemini Developer API).')
   }
-  if (/429|quota|rate|resource_exhausted|too many/.test(text)) {
+  // Se buscan códigos y frases completas: "rate" a secas coincidiría con "generateContent".
+  if (/429|quota|rate limit|resource_exhausted|too many requests/.test(text)) {
     return new AgentUnavailableError('quota', 'Hay mucha demanda en este momento. Espera un minuto y vuelve a intentarlo.')
   }
-  if (/safety|blocked|prohibited/.test(text)) {
+  if (/403|permission_denied|permission denied/.test(text)) {
+    return new AgentUnavailableError('not-enabled', 'Google rechazó la consulta (permisos del proyecto). Revisa que Firebase AI Logic esté habilitado y que la API key no tenga restricciones que bloqueen este dominio.')
+  }
+  if (/safety|prohibited/.test(text)) {
     return new AgentUnavailableError('blocked', 'No puedo responder a eso. ¿Probamos con otra pregunta sobre tu viaje?')
   }
   if (/network|failed to fetch|offline/.test(text)) {

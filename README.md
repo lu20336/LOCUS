@@ -35,7 +35,7 @@ npm run seed    # (otra terminal) datos de prueba: anfitrion@ / huesped@ / admin
 | `npm run seed` | Carga datos de prueba en el emulador. |
 | `npm test` | Pruebas unitarias (Vitest). |
 | `npm run test:rules` | Pruebas de las reglas de Firestore con el emulador. |
-| `npm run data:places` | Genera el respaldo estático de lugares de los destinos destacados (cuando Overpass responda). |
+| `npm run data:reference` | Regenera los alojamientos de referencia y el respaldo de lugares (Nominatim, ~5 min, una sola vez). |
 | `npm run lint` · `npm run build` | Lint · compilación a `dist/`. |
 | `npm run deploy` | Publica reglas + Hosting (requiere `firebase login`). |
 | `npm run deploy:preview` | Publica un canal de vista previa temporal. |

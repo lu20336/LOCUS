@@ -108,8 +108,8 @@ function ItineraryStep() {
           Recorrido optimizado: {itinerary.stats.optimizedKm} km
           {itinerary.stats.savingPercent > 0 && <> (un {itinerary.stats.savingPercent} % menos que sin ordenar)</>}.
         </p>
-        {placesSource.last === 'static' && (
-          <div className="mt-3"><Alert tone="info">El servicio de mapas está ocupado: te mostramos lugares guardados de OpenStreetMap (pueden no estar actualizados).</Alert></div>
+        {placesSource.last !== 'live' && (
+          <div className="mt-3"><Alert tone="info">El servicio principal de mapas está ocupado: armamos el plan con {placesSource.last === 'static' ? 'lugares guardados' : 'una fuente alternativa'} de OpenStreetMap (menos lugares y pueden no estar actualizados).</Alert></div>
         )}
         {itinerary.missingCategories.length > 0 && (
           <div className="mt-3"><Alert tone="info">No encontramos lugares para alguna de las actividades elegidas en esta zona.</Alert></div>

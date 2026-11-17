@@ -1,18 +1,18 @@
 /**
  * "Dónde hospedarte" cerca de un punto: 1) alojamientos reservables publicados
- * por anfitriones de LOCUS; 2) a pedido, alojamientos de referencia de
- * OpenStreetMap (no reservables aquí). Mantiene separadas las dos fuentes.
+ * por anfitriones de LOCUS; 2) alojamientos de referencia de OpenStreetMap
+ * (solo para ver, no reservables), que se muestran siempre para que un
+ * destino nunca aparezca vacío. Mantiene separadas las dos fuentes.
  */
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { LocusMap, type MapMarker } from '../lib/maps/MapLazy'
 import { fetchPublished } from '../lib/catalog/repo'
-import { buildLodgingQuery, parseLodging } from '../lib/catalog/osmLodging'
+import { getReferenceLodging } from '../lib/catalog/referenceLodging'
 import { db } from '../lib/firebase/client'
-import { osmClient } from '../lib/itinerary/browserClient'
 import { haversineKm } from '../lib/itinerary/geo'
 import { useAsync } from '../lib/useAsync'
-import type { ExternalPlace, Listing } from '../lib/domain/types'
+import type { Listing } from '../lib/domain/types'
 import { ListingCard } from './ListingCard'
 import { FavoriteButton } from './FavoriteButton'
 import { Alert, Badge, Button, ButtonLink, Spinner } from './ui'
@@ -47,27 +47,17 @@ export function StaysSection({
   )
   const search = checkIn && checkOut ? `?llegada=${checkIn}&salida=${checkOut}&huespedes=${guests}` : ''
 
-  const [showOsm, setShowOsm] = useState(false)
-  const [osm, setOsm] = useState<{ loading: boolean; error: string | null; places: ExternalPlace[] }>({ loading: false, error: null, places: [] })
-
-  async function loadOsm() {
-    setShowOsm(true)
-    setOsm({ loading: true, error: null, places: [] })
-    try {
-      const response = await osmClient.queryOverpass(buildLodgingQuery(lat, lon, 8000))
-      setOsm({ loading: false, error: null, places: parseLodging(response, { lat, lon }) })
-    } catch {
-      setOsm({ loading: false, error: 'El servicio de mapas (Overpass) está ocupado. Inténtalo de nuevo en unos segundos.', places: [] })
-    }
-  }
-
-  const osmMarkers: MapMarker[] = osm.places.map((p) => ({ id: p.id, lat: p.lat, lon: p.lon, kind: 'lodging-osm' }))
+  // Alojamientos de referencia (solo para ver): catálogo precalculado o Nominatim en vivo.
+  const reference = useAsync(() => getReferenceLodging({ lat, lon }), [lat, lon])
+  const osmPlaces = reference.data?.places ?? []
+  const osmMarkers: MapMarker[] = osmPlaces.map((p) => ({ id: p.id, lat: p.lat, lon: p.lon, kind: 'lodging-osm' }))
+  const [selectedRef, setSelectedRef] = useState<string | null>(null)
 
   return (
-    <section aria-labelledby="stays-title" className="flex flex-col gap-5">
+    <section aria-label={`Alojamientos en ${placeName}`} className="flex flex-col gap-5">
       {showLocus && (<>
       <div>
-        <h2 id="stays-title" className="text-2xl font-semibold text-navy">Dónde hospedarte en {placeName}</h2>
+        <h2 className="text-2xl font-semibold text-navy">Dónde hospedarte en {placeName}</h2>
         <p className="mt-1 text-sm text-muted">Reservables en LOCUS, publicados por anfitriones.</p>
       </div>
 
@@ -83,7 +73,7 @@ export function StaysSection({
         </ul>
       ) : (
         <Alert tone="info">
-          Todavía no hay anfitriones de LOCUS cerca de {placeName}. Puedes ver alojamientos de referencia (no reservables aquí) o{' '}
+          Todavía no hay anfitriones de LOCUS cerca de {placeName}. Más abajo puedes ver alojamientos de referencia (no reservables aquí) o{' '}
           <Link to="/anfitrion" className="font-semibold underline">publicar el tuyo</Link>.
         </Alert>
       )}
@@ -91,52 +81,50 @@ export function StaysSection({
       {near.length > 6 && <ButtonLink to="/explorar" variant="secondary" className="self-start">Ver todos los alojamientos</ButtonLink>}
       </>)}
 
-      {!showOsm ? (
-        <Button variant="ghost" className="self-start border border-line" onClick={loadOsm}>
-          Ver alojamientos de referencia en OpenStreetMap
-        </Button>
-      ) : (
-        <div className="flex flex-col gap-3 rounded-3xl border border-line bg-surface-2 p-5">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3 className="text-lg font-semibold text-navy">Alojamientos de referencia</h3>
-            <Badge>OpenStreetMap · no reservables en LOCUS</Badge>
-          </div>
-          <p className="text-sm text-muted">
-            Establecimientos reales cerca de {placeName}. No tenemos sus precios ni su disponibilidad: contáctalos directamente.
-          </p>
-          {osm.loading && <Spinner label="Consultando OpenStreetMap…" />}
-          {osm.error && (
-            <>
-              <Alert>{osm.error}</Alert>
-              <Button variant="secondary" className="self-start" onClick={loadOsm}>Reintentar</Button>
-            </>
-          )}
-          {!osm.loading && !osm.error && osm.places.length === 0 && <p className="text-sm text-muted">No encontramos alojamientos registrados en OpenStreetMap en esta zona.</p>}
-          {osm.places.length > 0 && (
-            <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
-              <ul className="flex max-h-96 flex-col gap-2 overflow-y-auto pr-1">
-                {osm.places.map((p) => (
-                  <li key={p.id} className="flex items-start gap-3 rounded-2xl border border-line bg-surface p-3">
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-ink">{p.name}</p>
-                      <p className="text-sm text-muted">
-                        {p.kind}
-                        {p.address ? ` · ${p.address}` : ''} · {haversineKm({ lat, lon }, p).toFixed(1)} km
-                      </p>
-                      <p className="mt-1 flex flex-wrap gap-3 text-sm">
-                        {p.website && <a href={p.website} target="_blank" rel="noreferrer noopener" className="font-semibold text-teal-soft underline">Sitio web</a>}
-                        {p.phone && <span className="text-muted">Tel. {p.phone}</span>}
-                      </p>
-                    </div>
-                    <FavoriteButton item={{ kind: 'place', refId: p.id, title: p.name, subtitle: p.kind }} />
-                  </li>
-                ))}
-              </ul>
-              <LocusMap markers={osmMarkers} center={[lat, lon]} zoom={12} className="h-72" ariaLabel="Mapa de alojamientos de referencia" />
-            </div>
-          )}
+      <div className="flex flex-col gap-3 rounded-3xl border border-line bg-surface-2 p-5">
+        <div className="flex flex-wrap items-center gap-2">
+          <h3 className="text-lg font-semibold text-navy">{showLocus ? 'Más opciones en la zona' : `Alojamientos en ${placeName}`}</h3>
+          <Badge>Solo para ver · no reservables en LOCUS</Badge>
         </div>
-      )}
+        <p className="text-sm text-muted">
+          Establecimientos reales de OpenStreetMap cerca de {placeName}. No tenemos sus precios, fotos ni disponibilidad: contáctalos directamente.
+        </p>
+        {reference.loading && <Spinner label="Buscando alojamientos…" />}
+        {reference.error && (
+          <>
+            <Alert>No pudimos consultar los alojamientos de referencia en este momento.</Alert>
+            <Button variant="secondary" className="self-start" onClick={reference.reload}>Reintentar</Button>
+          </>
+        )}
+        {!reference.loading && !reference.error && osmPlaces.length === 0 && <p className="text-sm text-muted">No encontramos alojamientos registrados en OpenStreetMap en esta zona.</p>}
+        {osmPlaces.length > 0 && (
+          <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
+            <ul className="flex max-h-96 flex-col gap-2 overflow-y-auto pr-1">
+              {osmPlaces.map((p) => (
+                <li key={p.id} onMouseEnter={() => setSelectedRef(p.id)} className={`flex items-start gap-3 rounded-2xl border bg-surface p-3 ${selectedRef === p.id ? 'border-teal' : 'border-line'}`}>
+                  <div className="min-w-0 flex-1">
+                    <p className="font-semibold text-ink">{p.name}</p>
+                    <p className="text-sm text-muted">{p.kind} · {haversineKm({ lat, lon }, p).toFixed(1)} km del centro</p>
+                    <p className="mt-1 flex flex-wrap gap-3 text-sm">
+                      {p.website && <a href={p.website} target="_blank" rel="noreferrer noopener" className="font-semibold text-teal-soft underline">Sitio web</a>}
+                      {p.phone && <span className="text-muted">Tel. {p.phone}</span>}
+                      <a href={`https://www.openstreetmap.org/${p.id}`} target="_blank" rel="noreferrer noopener" className="text-muted underline">Ver en el mapa</a>
+                    </p>
+                  </div>
+                  <FavoriteButton item={{ kind: 'place', refId: p.id, title: p.name, subtitle: p.kind }} />
+                </li>
+              ))}
+            </ul>
+            <LocusMap markers={osmMarkers} selectedId={selectedRef} onSelect={setSelectedRef} center={[lat, lon]} zoom={12} className="h-72" ariaLabel="Mapa de alojamientos de referencia" />
+          </div>
+        )}
+        {osmPlaces.length > 0 && (
+          <p className="text-xs text-muted">
+            {osmPlaces.length} alojamientos · Datos © OpenStreetMap contributors (ODbL)
+            {reference.data?.source === 'static' && reference.data.generatedAt ? ` · actualizado el ${new Date(reference.data.generatedAt).toLocaleDateString('es-CO')}` : ''}.
+          </p>
+        )}
+      </div>
     </section>
   )
 }

@@ -9,15 +9,18 @@ import { Link, useSearchParams } from 'react-router'
 import { Counter } from '../components/Counter'
 import { ListingCard } from '../components/ListingCard'
 import { StaysSection } from '../components/StaysSection'
-import { Alert, Badge, ButtonLink, Container, EmptyState, PageHeader, Spinner, selectClassName } from '../components/ui'
+import type { Destination } from '../types/itinerary'
+import { Alert, Button, ButtonLink, Container, EmptyState, PageHeader, Spinner, selectClassName } from '../components/ui'
 import { inputClassName } from '../components/FormField'
 import { fetchCalendar, fetchPublished } from '../lib/catalog/repo'
 import { availableListings, filterListings, type ListingFilters } from '../lib/catalog/search'
 import { AMENITIES, LISTING_TYPES, type Listing, type ListingType } from '../lib/domain/types'
 import { db } from '../lib/firebase/client'
 import { useDestinationOptions } from '../lib/flow/destinationOptions'
-import { findFeaturedDestination, findTownDestination } from '../lib/flow/resolveDestination'
-import { suggestionDeps } from '../lib/itinerary/browserClient'
+import { findFeaturedDestination, findTownDestination, resolveDestination } from '../lib/flow/resolveDestination'
+import { FEATURED_DESTINATIONS } from '../lib/featuredDestinations'
+import { osmClient, suggestionDeps } from '../lib/itinerary/browserClient'
+import { geocodeDestination } from '../lib/itinerary/generateItinerary'
 import { haversineKm } from '../lib/itinerary/geo'
 import { formatCOP, todayISO } from '../lib/format'
 import { LocusMap, type MapMarker } from '../lib/maps/MapLazy'
@@ -98,6 +101,20 @@ export default function ExplorePage() {
   }, [])
   const knownPlace = useMemo(() => text.trim().length >= 3 ? findFeaturedDestination(text) ?? findTownDestination(text, towns) : null, [text, towns])
 
+  // Destino que no está en la lista local: se geocodifica con Nominatim SOLO al pulsar el botón.
+  const [searched, setSearched] = useState<{ query: string; place: Destination | null; busy: boolean } | null>(null)
+  async function searchOutsideList() {
+    const query = text.trim()
+    setSearched({ query, place: null, busy: true })
+    try {
+      const place = await resolveDestination(query, { geocode: (q) => geocodeDestination(q, osmClient), loadTowns: suggestionDeps.loadTowns })
+      setSearched({ query, place, busy: false })
+    } catch {
+      setSearched({ query, place: null, busy: false })
+    }
+  }
+  const extraPlace = !knownPlace && searched && searched.query === text.trim() ? searched : null
+
   function selectFromMap(id: string) {
     setSelectedId(id)
     cardRefs.current[id]?.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
@@ -121,7 +138,7 @@ export default function ExplorePage() {
   return (
     <Container className="py-8 sm:py-10">
       <PageHeader eyebrow="Hospedajes" title="Encuentra dónde quedarte en Colombia">
-        Alojamientos publicados por anfitriones de LOCUS, con reserva directa.
+        Alojamientos publicados por anfitriones de LOCUS, con reserva directa, y alojamientos de referencia de cada destino para que siempre veas opciones.
       </PageHeader>
 
       <form onSubmit={(e) => e.preventDefault()} className="mb-6 grid gap-3 rounded-3xl border border-line bg-surface p-4 shadow-sm md:grid-cols-[1.4fr_1fr_1fr_auto]" role="search" aria-label="Buscar hospedajes">
@@ -140,6 +157,13 @@ export default function ExplorePage() {
         </div>
         <Counter label="Huéspedes" icon="👥" unit="un huésped" value={guests} min={1} max={20} onChange={setGuests} />
       </form>
+
+      <div className="mb-5 flex flex-wrap items-center gap-2" role="group" aria-label="Destinos populares">
+        <span className="text-sm text-muted">Destinos populares:</span>
+        {FEATURED_DESTINATIONS.map((d) => (
+          <button key={d.id} type="button" onClick={() => setText(d.name)} aria-pressed={text.trim().toLowerCase() === d.name.toLowerCase()} className="rounded-full border border-line bg-surface px-3 py-1 text-sm font-semibold hover:bg-surface-2 aria-pressed:border-teal aria-pressed:bg-teal/15">{d.name}</button>
+        ))}
+      </div>
 
       <div className="mb-5 flex flex-wrap items-center gap-2" role="group" aria-label="Filtros">
         {(Object.keys(LISTING_TYPES) as ListingType[]).map((t) => (
@@ -207,7 +231,7 @@ export default function ExplorePage() {
                 action={<ButtonLink to="/anfitrion" variant="secondary">Publica el primero en tu zona</ButtonLink>}
               >
                 {(all.data?.length ?? 0) === 0
-                  ? 'LOCUS está empezando: los anfitriones se están sumando. Mientras tanto puedes ver alojamientos de referencia de OpenStreetMap o explorar experiencias.'
+                  ? 'LOCUS está empezando: los anfitriones se están sumando. Elige un destino arriba para ver alojamientos de referencia de la zona (solo para ver) o explora experiencias.'
                   : 'Prueba con otras fechas, menos filtros o un precio más alto.'}
               </EmptyState>
             ) : (
@@ -240,9 +264,20 @@ export default function ExplorePage() {
         </div>
       )}
 
-      {!all.loading && results.length === 0 && knownPlace && (
+      {!knownPlace && text.trim().length >= 3 && !extraPlace && (
         <div className="mt-8">
-          <Badge tone="teal">Fuente alternativa</Badge>
+          <Button variant="secondary" onClick={searchOutsideList}>Ver alojamientos de referencia en «{text.trim()}»</Button>
+        </div>
+      )}
+      {extraPlace && (
+        <div className="mt-10">
+          {extraPlace.busy ? <Spinner label="Ubicando el destino…" /> : extraPlace.place ? (
+            <StaysSection lat={extraPlace.place.lat} lon={extraPlace.place.lon} placeName={extraPlace.place.displayName.split(',')[0]} guests={guests} showLocus={false} />
+          ) : <Alert tone="info">No encontramos «{extraPlace.query}» en Colombia. Prueba con el nombre del municipio.</Alert>}
+        </div>
+      )}
+      {knownPlace && (
+        <div className="mt-10">
           <div className="mt-3">
             <StaysSection lat={knownPlace.lat} lon={knownPlace.lon} placeName={knownPlace.displayName.split(',')[0]} guests={guests} showLocus={false} />
           </div>

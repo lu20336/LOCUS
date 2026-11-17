@@ -136,7 +136,7 @@ export default function AgentWidget() {
     } catch (e) {
       const err = e instanceof UsageLimitError ? e : describeAiError(e)
       if (err instanceof AgentUnavailableError) {
-        if (err.reason === 'not-enabled') setUnavailable(err)
+        if (err.reason === 'not-enabled' || err.reason === 'app-check') setUnavailable(err)
         sessionRef.current = err.reason === 'network' || err.reason === 'quota' ? sessionRef.current : null
       }
       setMessages((m) => [...m, { id: crypto.randomUUID(), role: 'model', text: err.message, error: true }])

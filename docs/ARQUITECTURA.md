@@ -177,7 +177,7 @@ gratuita y predecible. Se guarda en `travelerProfile/main.declared`, se puede **
 `LocusMap` = MapLibre GL JS + estilos `positron`/`dark` de OpenFreeMap (cambia con el tema). Marcadores con precio, selección
 sincronizada tarjeta↔marcador↔vista previa, selector de ubicación (clic/arrastre + búsqueda Nominatim a demanda), "Cerca de mí" con la
 geolocalización del navegador. Los lugares vienen de Overpass con **caché de 24 h** y reintentos entre 3 servidores; si fallan, para los **destinos destacados** se usa un
-respaldo precalculado (`src/data/featuredPlaces.json`, generado con `npm run data:places`; el cliente `lib/itinerary/fallbackClient.ts` ya está cableado y avisa al usuario) y para el resto la UI lo dice y ofrece reintentar. **Riesgo:** Overpass es público y a veces no responde (ocurrió en las pruebas) → para producción seria conviene un
+respaldo precalculado (`src/data/featuredPlaces.json`, generado con `npm run data:reference`) y para el resto se consulta **Nominatim** en vivo (`lib/itinerary/fallbackClient.ts` encadena Overpass → datos precalculados → Nominatim y avisa al usuario). Los **alojamientos de referencia** (`catalog/referenceLodging.ts`) salen de `referenceLodging.json` o de Nominatim, nunca de Overpass. **Riesgo:** Overpass es público y a veces no responde (ocurrió en las pruebas) → para producción seria conviene un
 proxy con caché propio (decisión D1/D2 en `analysis/07`).
 
 ## 10. Pagos y notificaciones (pendientes de decisión)

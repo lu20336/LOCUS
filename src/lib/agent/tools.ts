@@ -22,6 +22,7 @@ import { AIRLINE_SITES, findAirport, flightLinks, nearestAirports } from '../fli
 import { formatCOP } from '../format'
 import { osmClient, suggestionDeps } from '../itinerary/browserClient'
 import { placesClient } from '../itinerary/fallbackClient'
+import { getReferenceLodging } from '../catalog/referenceLodging'
 import { CATEGORIES, isCategoryId } from '../itinerary/categories'
 import { buildItinerary, tripDates } from '../itinerary/generateItinerary'
 import { geocodeDestination } from '../itinerary/generateItinerary'
@@ -207,6 +208,16 @@ async function searchListings(a: Record<string, unknown>): Promise<ToolOutcome> 
     list = availableListings(list, Object.fromEntries(entries), checkIn, checkOut)
   }
   const top = list.slice(0, MAX_RESULTS)
+
+  // Alojamientos de REFERENCIA (OpenStreetMap): solo para ver, nunca reservables.
+  let reference: { name: string; type: string; website?: string; phone?: string; osm: string }[] = []
+  if (destination) {
+    const place = await resolvePlace(destination)
+    if (place) {
+      const found = await getReferenceLodging(place).catch(() => null)
+      reference = (found?.places ?? []).slice(0, 8).map((p) => ({ name: p.name, type: p.kind, website: p.website, phone: p.phone, osm: `https://www.openstreetmap.org/${p.id}` }))
+    }
+  }
   const cards: AgentCard[] = top.map((l) => ({
     kind: 'listing', id: l.id, title: l.title, subtitle: `${LISTING_TYPES[l.type]} · ${l.municipality}`, price: `${formatCOP(l.pricePerNight)} / noche`,
     cover: l.photoCount > 0 ? l.cover : undefined, href: `/hospedajes/${l.id}${checkIn && checkOut ? `?llegada=${checkIn}&salida=${checkOut}&huespedes=${guests}` : ''}`,
@@ -220,9 +231,15 @@ async function searchListings(a: Record<string, unknown>): Promise<ToolOutcome> 
         id: l.id, title: l.title, type: LISTING_TYPES[l.type], municipality: l.municipality, department: l.department, pricePerNightCOP: l.pricePerNight,
         capacity: l.capacity, bookingMode: l.bookingMode === 'instant' ? 'reserva inmediata' : 'por solicitud', cancellationPolicy: l.cancellationPolicy,
       })),
-      note: list.length === 0 ? 'No hay alojamientos publicados en LOCUS para esos criterios. No inventes ninguno; puedes sugerir ver alojamientos de referencia de OpenStreetMap desde la ficha del destino.' : undefined,
+      referenceLodging: reference.map((r) => ({ name: r.name, type: r.type, website: r.website, phone: r.phone })),
+      note:
+        (list.length === 0 ? 'No hay alojamientos RESERVABLES publicados en LOCUS para esos criterios. ' : '') +
+        (reference.length > 0 ? 'La lista referenceLodging son alojamientos reales de OpenStreetMap SOLO PARA VER: no se pueden reservar en LOCUS y no tienes sus precios ni disponibilidad; preséntalos como referencia y no inventes datos.' : 'No inventes alojamientos.'),
     },
-    cards,
+    cards: [
+      ...cards,
+      ...(reference.length > 0 ? [{ kind: 'places' as const, title: 'Alojamientos de referencia (solo para ver, no reservables)', items: reference.map((r) => ({ name: r.name, kind: r.type, href: r.website ?? r.osm })) }] : []),
+    ],
   }
 }
 

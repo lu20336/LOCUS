@@ -29,11 +29,12 @@
 
 | Qué | Estado | Falta |
 |---|---|---|
-| Agente de IA | Código completo; el error real de la consola confirmó el único paso pendiente | **Que habilites Firebase AI Logic** (§4.3 de CONFIGURACION). Sin eso, solo funciona el modo guiado. **No pude probar respuestas reales de Gemini.** |
+| Agente de IA | Código completo. Firebase AI Logic ya está habilitado, pero **App Check bloquea las consultas** (401 "App Check token is invalid") | Resolver App Check (§4.4 de CONFIGURACION: desactivar la exigencia o registrar reCAPTCHA v3). **Aún no se han visto respuestas reales de Gemini.** |
 | Fotos de calle (Mapillary) | Componente listo | Tu token de cliente (`VITE_MAPILLARY_TOKEN`). |
 | App Check | Código listo (activo con la variable) | reCAPTCHA v3 y activar "Enforce". |
 | Rutas con tiempos reales | El itinerario usa línea recta y lo dice | Un proxy/backend para openrouteservice (key secreta) o similar. |
-| Respaldo de lugares sin Overpass | Cliente con respaldo estático cableado en planificador, destinos y agente (inactivo sin datos) | Ejecutar `npm run data:places` cuando Overpass responda (hoy estaba saturado) y confirmar `src/data/featuredPlaces.json`. |
+| Alojamientos de referencia (solo ver) | **Precalculados** para destinos destacados y ~30 ciudades (`src/data/referenceLodging.json`) + Nominatim en vivo para el resto; se muestran automáticamente al buscar un destino y los usa el agente | Refrescar con `npm run data:reference` cuando quieras (no es necesario con frecuencia). |
+| Lugares del itinerario sin Overpass | Respaldo en cadena: Overpass → lugares precalculados (destinos destacados) → Nominatim en vivo | — |
 | Notificaciones | La interfaz muestra estados | Correos/avisos requieren backend. |
 | Verificación de anfitriones | Campo `verified` y distintivo; solo el admin lo puede cambiar | Pantalla para que el admin verifique (hoy desde la consola). |
 | Reseñas | Crear y mostrar | Promedio persistido y moderación de reseñas. |
@@ -51,7 +52,7 @@
 
 | # | Acción | Desbloquea |
 |---|---|---|
-| 1 | Habilitar **Firebase AI Logic** (Gemini Developer API) | Respuestas reales del compañero |
+| 1 | Resolver **App Check** para Firebase AI Logic (desactivar la exigencia o registrar reCAPTCHA v3) | Respuestas reales del compañero |
 | 2 | Habilitar **Auth: correo + Google** | Registro/ingreso en producción |
 | 3 | Crear el documento **`admins/{tuUID}`** | Moderación |
 | 4 | Crear el **secreto `FIREBASE_SERVICE_ACCOUNT`** en GitHub | Despliegue automático |
@@ -67,7 +68,8 @@
 
 ## 🐞 Problemas encontrados
 
-- **Overpass** (servidores públicos) no respondió en varias pruebas → riesgo de disponibilidad real; la UI lo comunica.
+- **Overpass** (servidores públicos) no respondió en varias pruebas → riesgo de disponibilidad real. **Mitigado**: los alojamientos de referencia y el respaldo de lugares usan Nominatim (estable) y datos precalculados.
+- El mensaje "Hay mucha demanda" del agente era un **error mío**: una expresión regular tomaba `generateContent` por "rate"; el error real era App Check. Corregido (ahora hay un mensaje específico).
 - Las reglas de Firestore limitan accesos por lote → calendario como un documento por alojamiento (ver ARQUITECTURA §5).
 - `@firebase/rules-unit-testing` 6 exige Firebase 13; se usa la v5 compatible con Firebase 12.
 - `npm audit`: avisos altos en `firebase` (grpc-js/re2js, rutas de Node que no se empaquetan) y en `vite` (servidor de desarrollo). No se "arreglan" bajando a firebase 9; evaluar Firebase 13 y `vite ≥ 8.3.8`.
