@@ -1,7 +1,12 @@
-# Despliegue a PRODUCCIÓN (Firebase Hosting + reglas de Firestore) al hacer
-# push/merge a `main`. Solo funciona si ya configuraste el secreto
-# FIREBASE_SERVICE_ACCOUNT (ver docs/CONFIGURACION_Y_DESPLIEGUE.md §5).
-# Sin ese secreto, el trabajo falla en el paso de autenticación y NO publica nada.
+# Despliegue a PRODUCCIÓN (Firebase Hosting + reglas e índices de Firestore)
+# al hacer push/merge a `main`.
+#
+# Autenticación SIN CLAVES (Workload Identity Federation): GitHub entrega un
+# token de identidad de este repositorio y Google lo cambia por permisos de la
+# cuenta "github-deploy@locus-bb57e", que solo puede publicar Hosting y las
+# reglas/índices de Firestore. El proveedor de Google Cloud solo acepta el
+# repositorio lu20336/LOCUS en la rama main (ver docs/CONFIGURACION_Y_DESPLIEGUE.md §5).
+# No hay ningún secreto que guardar en GitHub.
 name: Deploy a producción
 
 on:
@@ -11,6 +16,7 @@ on:
 
 permissions:
   contents: read
+  id-token: write # para pedir el token de identidad de GitHub (Workload Identity)
 
 concurrency:
   group: deploy-production
@@ -21,12 +27,12 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -40,25 +46,46 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     environment: production
+    env:
+      # Variables PÚBLICAS (quedan visibles en el navegador): se configuran en
+      # GitHub → Settings → Secrets and variables → Actions → pestaña Variables.
+      VITE_NOMINATIM_EMAIL: ${{ vars.VITE_NOMINATIM_EMAIL }}
+      VITE_APPCHECK_SITE_KEY: ${{ vars.VITE_APPCHECK_SITE_KEY }}
+      VITE_GEOAPIFY_KEY: ${{ vars.VITE_GEOAPIFY_KEY }}
+      VITE_MAPILLARY_TOKEN: ${{ vars.VITE_MAPILLARY_TOKEN }}
+      VITE_GEMINI_MODEL: ${{ vars.VITE_GEMINI_MODEL }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+
+      # Sin estas variables la app publicada se rompe: sin App Check el
+      # compañero LOCUS no responde y sin Geoapify el itinerario vuelve a tardar.
+      # Mejor no publicar y avisar qué falta.
+      - name: Revisar variables de producción
+        run: |
+          missing=""
+          [ -z "$VITE_APPCHECK_SITE_KEY" ] && missing="$missing VITE_APPCHECK_SITE_KEY"
+          [ -z "$VITE_GEOAPIFY_KEY" ] && missing="$missing VITE_GEOAPIFY_KEY"
+          if [ -n "$missing" ]; then
+            echo "::error title=Faltan variables de producción::Agrega en GitHub → Settings → Secrets and variables → Actions → Variables:$missing (los mismos valores de .env.local). No se publicó nada."
+            exit 1
+          fi
+          [ -z "$VITE_NOMINATIM_EMAIL" ] && echo "::warning::Falta VITE_NOMINATIM_EMAIL (contacto que pide la política de Nominatim)."
+          echo "Variables de producción completas."
+
+      - uses: actions/setup-node@v5
         with:
           node-version: 24
           cache: npm
       - run: npm ci
       - name: Compilar
         run: npm run build
-        env:
-          # Variables PÚBLICAS (quedan visibles en el navegador): se configuran en
-          # GitHub → Settings → Secrets and variables → Actions → Variables.
-          VITE_NOMINATIM_EMAIL: ${{ vars.VITE_NOMINATIM_EMAIL }}
-          VITE_APPCHECK_SITE_KEY: ${{ vars.VITE_APPCHECK_SITE_KEY }}
-          VITE_MAPILLARY_TOKEN: ${{ vars.VITE_MAPILLARY_TOKEN }}
-          VITE_GEMINI_MODEL: ${{ vars.VITE_GEMINI_MODEL }}
-      - uses: google-github-actions/auth@v2
+
+      - name: Autenticarse en Google Cloud (sin claves)
+        uses: google-github-actions/auth@v3
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          workload_identity_provider: projects/863826859569/locations/global/workloadIdentityPools/github/providers/locus-repo
+          service_account: github-deploy@locus-bb57e.iam.gserviceaccount.com
+
       # Primero las reglas (la app nueva las necesita), luego el sitio.
       - name: Publicar reglas e índices de Firestore
         run: npx firebase-tools deploy --only firestore --project locus-bb57e --non-interactive
