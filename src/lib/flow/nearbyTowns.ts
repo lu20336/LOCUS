@@ -23,9 +23,11 @@ export interface TouristTown extends GeoPoint {
   name: string
   region: string
   tagline: string
+  /** Lo imperdible del pueblo, con coordenadas verificadas (entra siempre en su día). */
+  highlight?: Excursion['highlight']
 }
 
-export const TOURIST_TOWNS: readonly TouristTown[] = data.towns
+export const TOURIST_TOWNS: readonly TouristTown[] = data.towns as TouristTown[]
 
 /** Más cerca que esto es el mismo lugar (o un barrio): ya entra en el itinerario normal. */
 export const EXCURSION_MIN_KM = 8

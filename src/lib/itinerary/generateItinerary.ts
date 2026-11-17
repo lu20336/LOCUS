@@ -141,6 +141,7 @@ export async function searchPlaces(
     throw toItineraryError(error, 'el servicio de lugares (Overpass)')
   }
 
+  places = cleanPlaces(places, destination)
   const byCategory: Partial<Record<CategoryId, Place[]>> = {}
   const missingCategories: CategoryId[] = []
 
@@ -160,6 +161,67 @@ export async function searchPlaces(
     )
   }
   return { byCategory, missingCategories }
+}
+
+// ---------------------------------------------------------------------------
+// Limpieza: sin lugares repetidos ni sin interés para un turista
+// ---------------------------------------------------------------------------
+
+/**
+ * Nombres que en OpenStreetMap aparecen como "mirador" o "atracción" pero no
+ * son para turistas (una cantera, una nota de un mapeador…).
+ */
+const NOT_FOR_TOURISTS =
+  /\b(cantera|cementos?|argos|parqueadero|relleno sanitario|planta de|bodega|chatarrer\w*|taller|not a|don ?t|no entrar)\b/
+
+const STOPWORDS = new Set(['de', 'del', 'la', 'las', 'el', 'los', 'y'])
+
+/**
+ * Clave para detectar el mismo lugar con nombres casi iguales:
+ * "Playas de Marbella" y "Playa de Marbella" → "playa marbella".
+ */
+export function placeNameKey(name: string): string {
+  return name
+    .normalize('NFD')
+    .replace(/\p{Mn}/gu, '') // quita tildes
+    .toLowerCase()
+    .split(/[^a-z0-9]+/)
+    .filter((w) => w && !STOPWORDS.has(w))
+    .map((w) => (w.length > 3 && w.endsWith('s') ? w.slice(0, -1) : w))
+    .join(' ')
+}
+
+export const isForTourists = (name: string) =>
+  !NOT_FOR_TOURISTS.test(name.normalize('NFD').replace(/\p{Mn}/gu, '').toLowerCase())
+
+/** A esta distancia, dos lugares con el mismo nombre (casi) son el mismo lugar. */
+const SAME_PLACE_KM = 2
+
+/**
+ * Quita lugares sin interés para turistas y los repetidos (mismo nombre o casi
+ * el mismo a menos de SAME_PLACE_KM), quedándose con el más relevante.
+ */
+export function cleanPlaces<T extends Place>(places: readonly T[], center: GeoPoint): T[] {
+  const ranked = places
+    .filter((p) => isForTourists(p.name))
+    .sort((a, b) => b.score - a.score || haversineKm(center, a) - haversineKm(center, b))
+  const kept: T[] = []
+  for (const place of ranked) {
+    const key = placeNameKey(place.name)
+    const duplicate = kept.some((k) => placeNameKey(k.name) === key && haversineKm(k, place) < SAME_PLACE_KM)
+    if (!duplicate) kept.push(place)
+  }
+  return kept
+}
+
+/** Lugares que no entraron, de cada actividad (para "Cambiar" en el Paso 3). */
+export function leftovers(
+  byCategory: Partial<Record<CategoryId, Place[]>>,
+  used: readonly Place[],
+  perCategory = 6,
+): Place[] {
+  const usedIds = new Set(used.map((p) => p.id))
+  return Object.values(byCategory).flatMap((list) => (list ?? []).filter((p) => !usedIds.has(p.id)).slice(0, perCategory))
 }
 
 // ---------------------------------------------------------------------------
@@ -445,7 +507,8 @@ export async function planItinerary(
 
   const { byCategory, missingCategories } = await searchPlaces(destination, input.categories, client) // Paso 2
   const selected = selectPlaces(byCategory, input.categories, mainDates.length * activitiesPerDay) // Paso 3
-  const mainDays = buildDailyPlan(destination, selected, mainDates) // Pasos 4 y 5
+  const alternatives = leftovers(byCategory, selected)
+  const mainDays = buildDailyPlan(destination, selected, mainDates).map((d) => ({ ...d, alternatives })) // Pasos 4 y 5
 
   // Excursiones: una tras otra (los servicios de mapas limitan las peticiones por segundo).
   const excursionDays: DayPlan[] = []
@@ -521,17 +584,27 @@ export async function planExcursionDay(
     lon: town.lon,
     radiusMeters: EXCURSION_RADIUS_METERS,
   }
-  let selected: Place[] = []
+  // Lo imperdible del pueblo (touristTowns.json) entra siempre, aunque OSM no lo traiga.
+  const highlight: Place | null = town.highlight
+    ? { id: `imperdible/${town.id}`, ...town.highlight, kind: 'Imperdible', score: 100 }
+    : null
+  const isHighlight = (p: Place) =>
+    highlight !== null &&
+    (placeNameKey(p.name) === placeNameKey(highlight.name) || haversineKm(p, highlight) < 0.3)
+  let selected: Place[] = highlight ? [highlight] : []
+  let alternatives: Place[] = []
   try {
     const { byCategory } = await searchPlaces(center, wanted, client)
+    for (const c of wanted) byCategory[c] = byCategory[c]?.filter((p) => !isHighlight(p))
     const lunch = (byCategory.gastronomia ?? []).slice(0, 1)
-    selected = selectPlaces(byCategory, sights, total - lunch.length)
+    const found = selectPlaces(byCategory, sights, total - selected.length - lunch.length)
     // Si no hay suficientes sitios, se completa con más lugares para comer.
-    const food = (byCategory.gastronomia ?? []).slice(0, total - selected.length)
-    selected = [...selected, ...food]
+    const food = (byCategory.gastronomia ?? []).slice(0, total - selected.length - found.length)
+    selected = [...selected, ...found, ...food]
+    alternatives = leftovers(byCategory, selected)
   } catch {
-    // Sin lugares registrados o sin servicio: día libre en el pueblo.
+    // Sin lugares registrados o sin servicio: el día queda con lo imperdible (o libre).
   }
   const [day] = buildDailyPlan(town, selected, [date])
-  return { ...day, excursion: town }
+  return { ...day, excursion: town, alternatives }
 }

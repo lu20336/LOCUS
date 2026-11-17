@@ -19,6 +19,9 @@ import { Alert, Badge, Button, ButtonLink, Spinner } from './ui'
 
 const NEAR_KM = 40
 
+/** Alojamientos de referencia que se muestran de entrada (y cuántos más con "Ver más"). */
+const REF_PAGE = 6
+
 export function StaysSection({
   lat,
   lon,
@@ -52,6 +55,8 @@ export function StaysSection({
   const osmPlaces = reference.data?.places ?? []
   const osmMarkers: MapMarker[] = osmPlaces.map((p) => ({ id: p.id, lat: p.lat, lon: p.lon, kind: 'lodging-osm' }))
   const [selectedRef, setSelectedRef] = useState<string | null>(null)
+  // Se muestran de a 6 (en Cartagena hay más de 60): una lista larga abruma, sobre todo en el celular.
+  const [visibleRefs, setVisibleRefs] = useState(REF_PAGE)
 
   return (
     <section aria-label={`Alojamientos en ${placeName}`} className="flex flex-col gap-5">
@@ -99,8 +104,9 @@ export function StaysSection({
         {!reference.loading && !reference.error && osmPlaces.length === 0 && <p className="text-sm text-muted">No encontramos alojamientos registrados en OpenStreetMap en esta zona.</p>}
         {osmPlaces.length > 0 && (
           <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
-            <ul className="flex max-h-96 flex-col gap-2 overflow-y-auto pr-1">
-              {osmPlaces.map((p) => (
+            <div className="flex flex-col gap-2">
+            <ul className="flex flex-col gap-2">
+              {osmPlaces.slice(0, visibleRefs).map((p) => (
                 <li key={p.id} onMouseEnter={() => setSelectedRef(p.id)} className={`flex items-start gap-3 rounded-2xl border bg-surface p-3 ${selectedRef === p.id ? 'border-teal' : 'border-line'}`}>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-ink">{p.name}</p>
@@ -115,6 +121,12 @@ export function StaysSection({
                 </li>
               ))}
             </ul>
+            {osmPlaces.length > visibleRefs && (
+              <Button variant="secondary" className="self-start" onClick={() => setVisibleRefs((n) => n + REF_PAGE)}>
+                Ver más alojamientos ({osmPlaces.length - visibleRefs})
+              </Button>
+            )}
+            </div>
             <LocusMap markers={osmMarkers} selectedId={selectedRef} onSelect={setSelectedRef} center={[lat, lon]} zoom={12} className="h-72" ariaLabel="Mapa de alojamientos de referencia" />
           </div>
         )}

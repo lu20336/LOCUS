@@ -59,6 +59,8 @@ export interface Excursion extends GeoPoint {
   distanceKm: number
   /** Minutos en carro desde el destino (sin tráfico), si se pudieron calcular. */
   driveMinutes?: number
+  /** Lo imperdible del pueblo (ej. la Piedra del Peñol en Guatapé): siempre entra en su día. */
+  highlight?: { name: string; category: CategoryId; lat: number; lon: number }
 }
 
 /** Un día del itinerario, con sus lugares ya en orden optimizado. */
@@ -72,6 +74,8 @@ export interface DayPlan {
   distanceKm: number
   /** Si es un día de excursión: el pueblo que se visita (el recorrido sale de su centro). */
   excursion?: Excursion
+  /** Lugares que no entraron en el plan, para cambiar una parada por otra (Paso 3). */
+  alternatives?: Place[]
 }
 
 export interface ItineraryStats {
@@ -93,4 +97,6 @@ export interface Itinerary {
   stats: ItineraryStats
   /** Fecha ISO de generación. */
   generatedAt: string
+  /** true si el usuario quitó o cambió paradas: el "ahorro de ruta" ya no aplica. */
+  edited?: boolean
 }
