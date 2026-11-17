@@ -20,6 +20,8 @@ import { findFeaturedNear } from '../lib/featuredDestinations'
 import { PACE_IDS, PACES } from '../lib/flow/pace'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { useActivityCounts } from '../lib/flow/useActivityCounts'
+import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
+import type { PlacePhoto } from '../lib/itinerary/placePhotos'
 import { countTripDays, formatDateRange } from '../lib/format'
 import { CATEGORIES, CATEGORY_IDS } from '../lib/itinerary/categories'
 import type { TripPace } from '../types/flow'
@@ -40,6 +42,7 @@ export function ActivitiesStep() {
   const [showError, setShowError] = useState(false)
   const firstCheckbox = useRef<HTMLInputElement | null>(null)
   const availability = useActivityCounts(trip?.destination ?? null)
+  const photosState = useDestinationPhotos(trip?.destination ?? null)
 
   if (!trip) return null
 
@@ -61,6 +64,33 @@ export function ActivitiesStep() {
   // Lo elegido antes que no exista en este destino se descarta (ej. cambió de destino).
   const chosen = visible.filter((c) => selected.includes(c))
 
+  /**
+   * Fotos, siempre del destino, en este orden:
+   *   1. Revisadas a mano (destinos destacados).
+   *   2. Automáticas de Wikidata/Commons: un lugar real de esa actividad allí.
+   *   3. La foto de la ciudad.
+   *   4. Solo si no hay ninguna de las anteriores, la genérica de la actividad.
+   * Las automáticas se muestran con su autor y licencia (lista "Créditos").
+   */
+  const autoPhotos = photosState.status === 'done' ? photosState.photos : null
+  const cityPhoto: { url: string; credit?: PlacePhoto } | null = featured
+    ? { url: featured.image }
+    : autoPhotos?.city
+      ? { url: autoPhotos.city.url, credit: autoPhotos.city }
+      : null
+  function tilePhoto(category: CategoryId): { url: string; credit?: PlacePhoto } | null {
+    const curated = featured?.activityImages?.[category]
+    if (curated) return { url: curated }
+    if (photosState.status === 'loading') return null // aún buscando: se muestra un marcador
+    const auto = autoPhotos?.byCategory[category]
+    if (auto) return { url: auto.url, credit: auto }
+    return cityPhoto ?? { url: ACTIVITY_IMAGES[category] }
+  }
+  // Créditos de las fotos automáticas que se ven en pantalla (sin repetir).
+  const credits = [cityPhoto?.credit, ...visible.map((c) => tilePhoto(c)?.credit)].filter(
+    (credit, i, all): credit is PlacePhoto => Boolean(credit) && all.findIndex((x) => x?.url === credit?.url) === i,
+  )
+
   function toggle(category: CategoryId, checked: boolean) {
     setSelected((current) => (checked ? [...current, category] : current.filter((c) => c !== category)))
     setShowError(false)
@@ -78,10 +108,10 @@ export function ActivitiesStep() {
 
   return (
     <section aria-labelledby="step-title" className="overflow-hidden rounded-3xl border border-line bg-surface shadow-sm">
-      {/* Encabezado: el destino del viaje, con su foto si es uno de los destacados. */}
+      {/* Encabezado: foto del destino (revisada o de Wikidata); si no hay, un degradado de marca. */}
       <div className="relative isolate flex min-h-40 items-end sm:min-h-48">
-        {featured ? (
-          <img src={featured.image} alt="" className="absolute inset-0 -z-10 size-full object-cover" />
+        {cityPhoto ? (
+          <img src={cityPhoto.url} alt="" className="absolute inset-0 -z-10 size-full object-cover" />
         ) : (
           <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-br from-navy to-teal-soft" />
         )}
@@ -150,6 +180,7 @@ export function ActivitiesStep() {
                   const Icon = CATEGORY_ICONS[category]
                   const checked = chosen.includes(category)
                   const count = availability.status === 'ready' ? availability.counts[category] : null
+                  const photo = tilePhoto(category)
                   return (
                     <label
                       key={category}
@@ -165,15 +196,28 @@ export function ActivitiesStep() {
                         aria-describedby={count ? `count-${category}` : undefined}
                         className="peer sr-only"
                       />
-                      <span className="relative block h-24 overflow-hidden sm:h-28">
-                        <img
-                          // Foto de esa actividad EN el destino, si la tenemos; si no, una genérica.
-                          src={featured?.activityImages?.[category] ?? ACTIVITY_IMAGES[category]}
-                          alt=""
-                          loading="lazy"
-                          decoding="async"
-                          className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
+                      <span className="relative block h-24 overflow-hidden bg-surface-2 sm:h-28">
+                        {photo ? (
+                          <img
+                            src={photo.url}
+                            alt=""
+                            loading="lazy"
+                            decoding="async"
+                            title={photo.credit ? `Foto: ${photo.credit.author} · ${photo.credit.license} · Wikimedia Commons` : undefined}
+                            className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                        ) : (
+                          <span aria-hidden="true" className="block size-full animate-pulse bg-surface-2" />
+                        )}
+                        {/* Qué lugar muestra la foto (si es de un lugar concreto, ej. "Teatro Jorge Isaacs"). */}
+                        {photo?.credit?.caption && (
+                          <span
+                            aria-hidden="true"
+                            className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-2 pb-1 pt-4 text-[11px] font-medium text-white"
+                          >
+                            {photo.credit.caption}
+                          </span>
+                        )}
                         {/* Marca de "elegida" sobre la foto. */}
                         <span
                           aria-hidden="true"
@@ -204,6 +248,23 @@ export function ActivitiesStep() {
             <p id={ERROR_ID} role="alert" className="mt-3 text-sm font-medium text-danger">
               Elige al menos una actividad para armar tu itinerario.
             </p>
+          )}
+          {/* Crédito de las fotos automáticas (lo exigen sus licencias libres). */}
+          {credits.length > 0 && (
+            <details className="mt-3 text-xs text-muted">
+              <summary className="cursor-pointer select-none hover:text-ink">Fotos de Wikimedia Commons · ver autores</summary>
+              <ul className="mt-2 flex flex-col gap-1">
+                {credits.map((credit) => (
+                  <li key={credit.url}>
+                    {credit.caption ? `${credit.caption}: ` : ''}
+                    <a href={credit.sourceUrl} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
+                      {credit.author}
+                    </a>{' '}
+                    · {credit.license}
+                  </li>
+                ))}
+              </ul>
+            </details>
           )}
         </fieldset>
 

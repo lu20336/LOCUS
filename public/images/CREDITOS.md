@@ -106,3 +106,11 @@ licencias que la tabla anterior.
 | santa-marta/actividad-vida-nocturna.jpg | Vida nocturna | Felipe Restrepo Acosta | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [2019 Santa Marta - Casa azul en el Parque de Los Novios.jpg](https://commons.wikimedia.org/wiki/File:2019_Santa_Marta_-_Casa_azul_en_el_Parque_de_Los_Novios.jpg) |
 | santa-marta/actividad-compras.jpg | Compras | Felipe Restrepo Acosta | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [2018 Santa Marta (Colombia) - Centro Comercial Tesoro del Mar, Malecón de Santa Marta con calle 15 (costado sur del Parque Simón Bolívar).jpg](https://commons.wikimedia.org/wiki/File:2018_Santa_Marta_(Colombia)_-_Centro_Comercial_Tesoro_del_Mar,_Malec%C3%B3n_de_Santa_Marta_con_calle_15_(costado_sur_del_Parque_Sim%C3%B3n_Bol%C3%ADvar).jpg) |
 | guatape/actividad-vida-nocturna.jpg | Vida nocturna | Gabriel Illescas | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | [Guatapé 40.jpg](https://commons.wikimedia.org/wiki/File:Guatap%C3%A9_40.jpg) |
+
+## Fotos automáticas de otros destinos (Paso 2)
+
+Para destinos que no son los 8 destacados (ej. Cali, Pasto, Tunja), la app
+busca en el momento fotos libres del propio lugar en Wikidata y Wikimedia
+Commons (ver `src/lib/itinerary/placePhotos.ts`). Esas fotos no se guardan en
+el proyecto: se cargan desde Wikimedia y el autor y la licencia de cada una se
+muestran en la misma pantalla ("Fotos de Wikimedia Commons · ver autores").
