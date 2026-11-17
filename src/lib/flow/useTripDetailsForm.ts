@@ -15,7 +15,7 @@
  *   3. Lo guarda en el estado del flujo (useTripFlow) → pasa al Paso 2.
  *      En Modo B también guarda las actividades (el Paso 2 ya las tendrá).
  */
-import { useCallback, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import type { DestinationMode, SuggestionSearch } from '../../types/flow'
 import type { Destination } from '../../types/itinerary'
 import { countTripDays, formatCOP, formatThousands, parseBudget, todayISO } from '../format'
@@ -23,6 +23,7 @@ import { osmClient, suggestionDeps } from '../itinerary/browserClient'
 import { ItineraryError } from '../itinerary/errors'
 import { geocodeDestination } from '../itinerary/generateItinerary'
 import { resolveDestination } from './resolveDestination'
+import { prefetchDestinationPhotos } from './useDestinationPhotos'
 import { useTripFlow } from './tripFlowContext'
 import { hasErrors, validateTripDetails, type TripDetailsDraft, type TripDetailsErrors } from './validateTripDetails'
 
@@ -102,6 +103,13 @@ export function useTripDetailsForm() {
 
   // En Modo B, el "destino" es la sugerencia elegida.
   const selectedSuggestion = search.result?.suggestions.find((s) => s.candidate.id === search.selectedId) ?? null
+
+  // Las fotos del Paso 2 tardan: se empiezan a buscar apenas hay destino
+  // elegido (sugerencia del buscador, tarjeta o sugerencia del Modo B).
+  const prefetchTarget = mode === 'known' ? knownDestination : (selectedSuggestion?.destination ?? null)
+  useEffect(() => {
+    prefetchDestinationPhotos(prefetchTarget)
+  }, [prefetchTarget])
   const validation = validateTripDetails(
     { ...draft, destination: mode === 'known' ? draft.destination : (selectedSuggestion?.candidate.name ?? '') },
     today,
@@ -196,6 +204,7 @@ export function useTripDetailsForm() {
       } finally {
         setIsGeocoding(false)
       }
+      prefetchDestinationPhotos(destination)
     }
 
     // 3. Guardar en el estado del flujo y avanzar al Paso 2.

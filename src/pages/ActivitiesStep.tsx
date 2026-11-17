@@ -19,6 +19,7 @@ import { ACTIVITY_IMAGES, CATEGORY_DESCRIPTIONS, CATEGORY_ICONS } from '../compo
 import { findFeaturedNear } from '../lib/featuredDestinations'
 import { PACE_IDS, PACES } from '../lib/flow/pace'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
+import { assignTilePhotos, type TilePhoto } from '../lib/flow/tilePhotos'
 import { useActivityCounts } from '../lib/flow/useActivityCounts'
 import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
 import type { PlacePhoto } from '../lib/itinerary/placePhotos'
@@ -65,27 +66,24 @@ export function ActivitiesStep() {
   const chosen = visible.filter((c) => selected.includes(c))
 
   /**
-   * Fotos, siempre del destino, en este orden:
-   *   1. Revisadas a mano (destinos destacados).
-   *   2. Automáticas de Wikidata/Commons: un lugar real de esa actividad allí.
-   *   3. La foto de la ciudad.
-   *   4. Solo si no hay ninguna de las anteriores, la genérica de la actividad.
-   * Las automáticas se muestran con su autor y licencia (lista "Créditos").
+   * Fotos, siempre del destino y sin repetir ninguna (ver tilePhotos.ts):
+   * revisadas a mano → lugar real de esa actividad → otra foto del destino →
+   * genérica. Las automáticas se muestran con su autor y licencia ("Créditos").
    */
   const autoPhotos = photosState.status === 'done' ? photosState.photos : null
-  const cityPhoto: { url: string; credit?: PlacePhoto } | null = featured
+  const cityPhoto: TilePhoto | null = featured
     ? { url: featured.image }
     : autoPhotos?.city
       ? { url: autoPhotos.city.url, credit: autoPhotos.city }
       : null
-  function tilePhoto(category: CategoryId): { url: string; credit?: PlacePhoto } | null {
-    const curated = featured?.activityImages?.[category]
-    if (curated) return { url: curated }
-    if (photosState.status === 'loading') return null // aún buscando: se muestra un marcador
-    const auto = autoPhotos?.byCategory[category]
-    if (auto) return { url: auto.url, credit: auto }
-    return cityPhoto ?? { url: ACTIVITY_IMAGES[category] }
-  }
+  const tilePhotos = assignTilePhotos({
+    categories: visible,
+    header: cityPhoto,
+    curated: featured?.activityImages,
+    auto: autoPhotos,
+    generic: ACTIVITY_IMAGES,
+  })
+  const tilePhoto = (category: CategoryId) => tilePhotos[category] ?? null
   // Créditos de las fotos automáticas que se ven en pantalla (sin repetir).
   const credits = [cityPhoto?.credit, ...visible.map((c) => tilePhoto(c)?.credit)].filter(
     (credit, i, all): credit is PlacePhoto => Boolean(credit) && all.findIndex((x) => x?.url === credit?.url) === i,

@@ -19,7 +19,8 @@ const data: AvailabilityData = {
     cartagena: [15, 40, 500, 6, 120, 10],
   },
   towns: {
-    'node/pasto': [0, 8, 120, 3, 25, 2],
+    // Geoapify cuenta 1 "playa" cerca de Pasto (orilla de río o laguna).
+    'node/pasto': [1, 8, 120, 3, 25, 2],
   },
 }
 
@@ -73,5 +74,15 @@ describe('activityAvailability', () => {
   it('countsForTown busca por id y devuelve null si no está', () => {
     expect(countsForTown(data, 'node/pasto')?.gastronomia).toBe(120)
     expect(countsForTown(data, 'node/otro')).toBeNull()
+  })
+
+  it('Pasto no tiene "Playa" aunque OSM marque una orilla como playa (está lejos del mar)', () => {
+    const counts = countsNear({ lat: 1.2136, lon: -77.2811, displayName: 'Pasto, Nariño, Colombia' }, data, towns)
+    expect(counts?.playa).toBe(0)
+    expect(counts?.cultura).toBe(8)
+  })
+
+  it('Cartagena conserva sus playas', () => {
+    expect(countsNear({ lat: 10.424, lon: -75.548 }, data, towns)?.playa).toBe(15)
   })
 })

@@ -7,6 +7,7 @@
  */
 import type { CategoryId, GeoPoint } from '../../types/itinerary'
 import { SAME_NAME_KM, SAME_PLACE_KM, findFeaturedNear, placeKey } from '../featuredDestinations'
+import { withoutInlandBeaches } from '../itinerary/coast'
 import { haversineKm } from '../itinerary/geo'
 import type { TownCandidate } from '../itinerary/suggestDestination'
 
@@ -50,7 +51,7 @@ export function countsNear(
   towns: readonly TownCandidate[],
 ): ActivityCounts | null {
   const featured = findFeaturedNear(point)
-  if (featured && data.featured[featured.id]) return toCounts(data.categories, data.featured[featured.id])
+  if (featured && data.featured[featured.id]) return withoutInlandBeaches(point, toCounts(data.categories, data.featured[featured.id]))
 
   const key = point.displayName ? placeKey(point.displayName) : null
   let best: { town: TownCandidate; km: number } | null = null
@@ -59,7 +60,9 @@ export function countsNear(
     const same = km < SAME_PLACE_KM || (key !== null && placeKey(town.name) === key && km < SAME_NAME_KM)
     if (same && (!best || km < best.km)) best = { town, km }
   }
-  return best ? countsForTown(data, best.town.id) : null
+  const counts = best ? countsForTown(data, best.town.id) : null
+  // OSM también llama "playa" a orillas de ríos y lagunas (Pasto): solo cuenta junto al mar.
+  return counts && withoutInlandBeaches(point, counts)
 }
 
 let cache: Promise<AvailabilityData> | null = null

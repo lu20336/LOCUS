@@ -83,6 +83,27 @@
   }
 
   /*
+   * Campos de fecha en el celular: Safari (iPhone) les da un ancho mínimo
+   * propio y un estilo nativo que se sale del recuadro. Se quita el estilo
+   * nativo para que respeten el ancho de la columna y la altura de los demás.
+   */
+  input[type='date'] {
+    -webkit-appearance: none;
+    appearance: none;
+    min-width: 0;
+    max-width: 100%;
+    min-height: 3.125rem;
+    display: block;
+  }
+  input[type='date']::-webkit-date-and-time-value {
+    text-align: left;
+    margin: 0;
+  }
+  input[type='date']::-webkit-calendar-picker-indicator {
+    margin-inline-start: auto;
+  }
+
+  /*
    * "Reducir movimiento" apaga las animaciones de toda la app, EXCEPTO las de
    * la portada marcadas con data-force-motion (lugares de cada destino y
    * carrusel de actividades), que el equipo decidió mostrar siempre. El

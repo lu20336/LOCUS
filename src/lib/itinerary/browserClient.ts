@@ -18,6 +18,7 @@ import {
   type ActivityCounts,
 } from '../flow/activityAvailability'
 import { CATEGORY_IDS } from './categories'
+import { isCoastal, withoutInlandBeaches } from './coast'
 import { createElevationClient } from './elevationClient'
 import { createGeoapifyClient } from './geoapifyClient'
 import { buildActivityCountQuery, parseActivityTotals } from './osm'
@@ -75,18 +76,19 @@ async function checkActivities(centers: GeoPoint[], radiusMeters: number, catego
   const known = centers.map((center) => {
     const id = (center as Partial<TownCandidate>).id
     const counts = id ? countsForTown(data, id) : null
-    return counts ? availableCategories(counts, categories) : null
+    return counts ? availableCategories(withoutInlandBeaches(center, counts), categories) : null
   })
   if (known.every((k): k is CategoryId[] => k !== null)) return known
-  return osmClient.checkActivities(centers, radiusMeters, categories)
+  const live = await osmClient.checkActivities(centers, radiusMeters, categories)
+  return live.map((found, i) => (isCoastal(centers[i]) ? found : found.filter((c) => c !== 'playa')))
 }
 
 /**
  * Conteo en vivo de actividades alrededor de un punto: Overpass y, si falla,
  * Geoapify. Solo se usa para destinos que no están en los datos precalculados.
  */
-export function liveActivityCounts(point: GeoPoint): Promise<ActivityCounts> {
-  return withGeoapifyFallback(
+export async function liveActivityCounts(point: GeoPoint): Promise<ActivityCounts> {
+  const counts = await withGeoapifyFallback(
     async () => {
       const response = await osmClient.queryOverpass(buildActivityCountQuery([point], ACTIVITY_RADIUS_METERS, CATEGORY_IDS))
       return toCounts(CATEGORY_IDS, parseActivityTotals(response, 1, CATEGORY_IDS)[0])
@@ -97,6 +99,7 @@ export function liveActivityCounts(point: GeoPoint): Promise<ActivityCounts> {
         return toCounts(CATEGORY_IDS, CATEGORY_IDS.map((c) => counts[c] ?? 0))
       }),
   )
+  return withoutInlandBeaches(point, counts)
 }
 
 /** Dependencias de la sugerencia de destino (Modo B), sobre el mismo cliente OSM. */

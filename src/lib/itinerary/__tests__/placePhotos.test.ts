@@ -6,6 +6,7 @@ import {
   findDestinationPhotos,
   hasWord,
   isPhotoOfDestination,
+  photoSeries,
   pickWikidataPhotos,
   toPlacePhoto,
 } from '../placePhotos'
@@ -39,6 +40,15 @@ describe('hasWord', () => {
   })
   it('no confunde Cali con California', () => {
     expect(hasWord('Humboldt Sink on the California Trail.jpg', 'Cali')).toBe(false)
+  })
+})
+
+describe('photoSeries', () => {
+  it('agrupa copias numeradas de la misma foto', () => {
+    const a = 'https://thumb.wikimedia.org/wikipedia/commons/thumb/1/15/Universidad_de_Nari%C3%B1o%2C_Centro_-_panoramio.jpg/960px-Universidad_de_Nari%C3%B1o%2C_Centro_-_panoramio.jpg?utm=x'
+    const b = 'https://thumb.wikimedia.org/wikipedia/commons/thumb/6/61/Universidad_de_Nari%C3%B1o%2C_Centro_-_panoramio_%281%29.jpg/960px-Universidad_de_Nari%C3%B1o%2C_Centro_-_panoramio_%281%29.jpg'
+    expect(photoSeries(a)).toBe(photoSeries(b))
+    expect(photoSeries('Centro Cultural Palatino.jpg')).not.toBe(photoSeries(a))
   })
 })
 
@@ -96,6 +106,19 @@ describe('pickWikidataPhotos', () => {
   it('nunca usa la foto de un municipio vecino ni un collage como foto de la ciudad', () => {
     expect(pickWikidataPhotos([row('ciudad', 'Motavita', 'M.jpg', 0.5)], 'Tunja').city).toBeUndefined()
     expect(pickWikidataPhotos([row('ciudad', 'Tunja', 'Collage Tunja.jpg', 0.9)], 'Tunja').city).toBeUndefined()
+  })
+
+  it('guarda otros lugares con foto como extras, sin repetir ni usar municipios vecinos', () => {
+    const picked = pickWikidataPhotos(
+      [
+        row('cultura', 'Catedral', 'Catedral.jpg', 0.1),
+        row('cultura', 'Teatro', 'Teatro.jpg', 0.3),
+        row('cultura', 'Iglesia', 'Catedral.jpg', 0.4),
+        row('ciudad', 'Yumbo', 'Yumbo.jpg', 6),
+      ],
+      'Cali',
+    )
+    expect(picked.extras).toEqual([{ file: 'Teatro.jpg', label: 'Teatro' }])
   })
 
   it('"Aventura" no incluye parques urbanos genéricos (plazas)', () => {

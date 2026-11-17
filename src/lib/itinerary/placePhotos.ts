@@ -35,6 +35,12 @@ export interface DestinationPhotos {
   /** Foto del municipio (encabezado y respaldo de las tarjetas). */
   city?: PlacePhoto
   byCategory: Partial<Record<CategoryId, PlacePhoto>>
+  /**
+   * Más fotos del destino (vistas de la ciudad y otros lugares), todas
+   * distintas: las tarjetas sin foto propia usan una de estas en vez de
+   * repetir la de la ciudad.
+   */
+  extras?: PlacePhoto[]
   /** true si algún servicio falló: el resultado sirve, pero no conviene guardarlo en caché. */
   incomplete?: boolean
 }
@@ -54,6 +60,8 @@ const THUMB_WIDTH = 960
 export const WIKIDATA_RADIUS_KM = 8
 /** Una foto geolocalizada a más de esto ya no es "del destino". */
 export const MAX_PHOTO_KM = 20
+/** Fotos extra del destino (ver DestinationPhotos.extras): alcanza para las 6 actividades. */
+export const MAX_EXTRA_PHOTOS = 6
 
 /**
  * Clases de Wikidata de cada actividad, EN ORDEN
@@ -139,6 +147,27 @@ export function buildWikidataQuery(point: GeoPoint, radiusKm = WIKIDATA_RADIUS_K
 /** Archivos que son montajes de varias fotos (típicos de los artículos de ciudades). */
 const COLLAGE = /collage|montaje|montage|mosaico|mosaic/i
 
+/**
+ * "Serie" de una foto: su nombre de archivo sin número de copia ni sufijos
+ * ("Centro - panoramio (1).jpg" y "Centro - panoramio (2).jpg" son la misma
+ * serie). Fotos de la misma serie suelen ser casi idénticas: no se repiten.
+ */
+export function photoSeries(urlOrFile: string): string {
+  const parts = urlOrFile.split('?')[0].split('/')
+  // Miniatura: .../thumb/a/ab/<Archivo>/960px-<Archivo>; si no, el propio nombre.
+  const file = parts.length >= 2 && /^\d+px-/.test(parts[parts.length - 1]) ? parts[parts.length - 2] : parts[parts.length - 1]
+  let name = file
+  try {
+    name = decodeURIComponent(file)
+  } catch {
+    // Nombre sin codificar: se usa tal cual.
+  }
+  return normalizeText(name.replace(/^File:/i, ''))
+    .replace(/\.(jpe?g|png|webp|tiff?)$/i, '')
+    .replace(/panoramio|\(\d+\)|\d+$/g, '')
+    .replace(/[^a-z0-9]+/g, '')
+}
+
 /** Búsqueda en Commons de una vista general de la ciudad (si Wikidata no dio una foto usable). */
 export const CITY_TERMS = 'panorámica OR panorama OR vista OR view OR skyline OR "plaza de bolívar" OR centro'
 
@@ -156,7 +185,12 @@ interface WikidataRow {
 export function pickWikidataPhotos(
   rows: readonly WikidataRow[],
   cityName: string,
-): { city?: { file: string; label: string }; byCategory: Partial<Record<CategoryId, { file: string; label: string }>> } {
+): {
+  city?: { file: string; label: string }
+  byCategory: Partial<Record<CategoryId, { file: string; label: string }>>
+  /** Otros lugares con foto (los más cercanos), para las tarjetas que no tienen la suya. */
+  extras?: { file: string; label: string }[]
+} {
   const sorted = [...rows].sort((a, b) => Number(a.dist.value) - Number(b.dist.value))
   // La ciudad: SOLO el municipio con ese nombre (nunca uno vecino) y que no sea
   // un collage de varias fotos (como encabezado recortado se ve mal).
@@ -198,6 +232,14 @@ export function pickWikidataPhotos(
     const file = commonsFileName(row.image.value)
     used.add(file)
     result.byCategory[category] = { file, label: row.itemLabel?.value ?? '' }
+  }
+  // Lugares que sobraron (no la foto de un municipio vecino ni collages).
+  for (const r of sorted) {
+    if ((result.extras?.length ?? 0) >= MAX_EXTRA_PHOTOS) break
+    const file = commonsFileName(r.image.value)
+    if (r.cat.value === 'ciudad' || used.has(file) || COLLAGE.test(file)) continue
+    used.add(file)
+    ;(result.extras ??= []).push({ file, label: r.itemLabel?.value ?? '' })
   }
   return result
 }
@@ -320,7 +362,7 @@ export async function findDestinationPhotos(
   }
   if (!wikidataOk) photos.incomplete = true
 
-  const wikidataFiles = [picked.city, ...Object.values(picked.byCategory)].filter(
+  const wikidataFiles = [picked.city, ...Object.values(picked.byCategory), ...(picked.extras ?? [])].filter(
     (x): x is { file: string; label: string } => Boolean(x),
   )
   if (wikidataFiles.length > 0) {
@@ -338,6 +380,8 @@ export async function findDestinationPhotos(
         const photo = photoOf(picked.byCategory[category])
         if (photo) photos.byCategory[category] = photo
       }
+      const placeExtras = (picked.extras ?? []).map(photoOf).filter((p): p is PlacePhoto => Boolean(p))
+      if (placeExtras.length > 0) photos.extras = placeExtras
     } catch {
       // Sin metadatos no podemos dar crédito: preferimos no mostrar esas fotos.
       photos.incomplete = true
@@ -345,27 +389,47 @@ export async function findDestinationPhotos(
   }
 
   // 2. Commons: lo que quedó sin foto (una búsqueda por actividad, en serie).
-  const usedUrls = new Set([photos.city?.url, ...Object.values(photos.byCategory).map((p) => p?.url)])
-  const missing = [...(photos.city ? [] : (['ciudad'] as const)), ...CATEGORY_IDS.filter((c) => !photos.byCategory[c])]
+  // La búsqueda de vistas de la ciudad se hace siempre: además de la foto del
+  // encabezado (si falta) da las fotos extra, que van ANTES que los lugares
+  // sobrantes de Wikidata porque muestran la ciudad en general.
+  const usedUrls = new Set(
+    [photos.city, ...Object.values(photos.byCategory), ...(photos.extras ?? [])].map((p) => p?.url),
+  )
+  const missing = [...CATEGORY_IDS.filter((c) => !photos.byCategory[c]), 'ciudad' as const]
   for (const category of missing) {
     try {
       const data = await getJson<{ query?: { pages?: CommonsPage[] } }>(buildCommonsSearchUrl(query.name, category))
       const pages = (data.query?.pages ?? []).sort((a, b) => (a.index ?? 0) - (b.index ?? 0))
+      const cityViews: PlacePhoto[] = []
       for (const page of pages) {
         if (!isPhotoOfDestination(page, query)) continue
         if (category === 'ciudad' && COLLAGE.test(page.title)) continue
         const photo = toPlacePhoto(page, category === 'ciudad' ? query.name : undefined)
-        if (photo && !usedUrls.has(photo.url)) {
-          if (category === 'ciudad') photos.city = photo
-          else photos.byCategory[category] = photo
-          usedUrls.add(photo.url)
+        if (!photo || usedUrls.has(photo.url)) continue
+        usedUrls.add(photo.url)
+        if (category !== 'ciudad') {
+          photos.byCategory[category] = photo
           break
         }
+        if (!photos.city) photos.city = photo
+        else cityViews.push(photo)
+        if (cityViews.length >= MAX_EXTRA_PHOTOS) break
       }
+      if (cityViews.length > 0) photos.extras = [...cityViews, ...(photos.extras ?? [])].slice(0, MAX_EXTRA_PHOTOS)
     } catch {
       // Esa actividad usará la foto de la ciudad.
       photos.incomplete = true
     }
+  }
+  // Fotos extra: sin repetir la serie de ninguna otra foto ya elegida.
+  if (photos.extras) {
+    const seen = new Set([photos.city, ...Object.values(photos.byCategory)].map((p) => p && photoSeries(p.url)))
+    photos.extras = photos.extras.filter((p) => {
+      const series = photoSeries(p.url)
+      if (seen.has(series)) return false
+      seen.add(series)
+      return true
+    })
   }
   return photos
 }

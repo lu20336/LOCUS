@@ -79,7 +79,7 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
           />
         )}
 
-        <fieldset className="grid gap-6 sm:grid-cols-2">
+        <fieldset className="grid min-w-0 gap-6 sm:grid-cols-2">
           <legend className="sr-only">Fechas del viaje</legend>
           <FormField id="startDate" label="Fecha de salida" error={errors.startDate}>
             {(control) => (
