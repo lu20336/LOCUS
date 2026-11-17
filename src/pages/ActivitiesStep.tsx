@@ -14,7 +14,7 @@
  *   pantalla funcionan sin código extra); el ritmo, radios nativos.
  */
 import { ArrowLeft, ArrowRight, CalendarDays, Check, MapPin, Users } from 'lucide-react'
-import { useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { ACTIVITY_IMAGES, CATEGORY_DESCRIPTIONS, CATEGORY_ICONS } from '../components/choiceOptions'
 import { NearbyTownsPicker } from '../components/NearbyTownsPicker'
 import { findFeaturedNear } from '../lib/featuredDestinations'
@@ -25,6 +25,8 @@ import { assignTilePhotos, type TilePhoto } from '../lib/flow/tilePhotos'
 import { useActivityCounts } from '../lib/flow/useActivityCounts'
 import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
 import { useNearbyTowns } from '../lib/flow/useNearbyTowns'
+import { prefetchPlaces } from '../lib/itinerary/fallbackClient'
+import { EXCURSION_RADIUS_METERS } from '../lib/itinerary/generateItinerary'
 import type { PlacePhoto } from '../lib/itinerary/placePhotos'
 import { countTripDays, formatDateRange } from '../lib/format'
 import { CATEGORIES, CATEGORY_IDS } from '../lib/itinerary/categories'
@@ -57,6 +59,18 @@ export function ActivitiesStep() {
   const availability = useActivityCounts(trip?.destination ?? null)
   const photosState = useDestinationPhotos(trip?.destination ?? null)
   const nearby = useNearbyTowns(trip?.destination ?? null)
+
+  // Los lugares del itinerario se buscan por adelantado (ver prefetchPlaces):
+  // los del destino (por si se llegó sin pasar por el buscador) y los de cada
+  // pueblo que se marca, para que "Generar itinerario" sea casi inmediato.
+  const destination = trip?.destination
+  useEffect(() => {
+    if (destination) prefetchPlaces(destination, destination.radiusMeters)
+  }, [destination])
+  useEffect(() => {
+    if (!wantsTowns || nearby.status !== 'ready') return
+    for (const town of nearby.towns) if (townIds.includes(town.id)) prefetchPlaces(town, EXCURSION_RADIUS_METERS)
+  }, [wantsTowns, nearby, townIds])
 
   if (!trip) return null
 

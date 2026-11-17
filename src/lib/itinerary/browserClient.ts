@@ -58,15 +58,24 @@ async function withGeoapifyFallback<T>(overpass: () => Promise<T>, geoapify: (()
 
 /**
  * Cliente para el motor de itinerarios (generateItinerary): geocodifica con
- * Nominatim y busca lugares en Overpass, con Geoapify de respaldo.
+ * Nominatim y busca lugares en Overpass y en Geoapify A LA VEZ; gana el
+ * primero que responda bien. Antes Geoapify era solo respaldo, y como Overpass
+ * suele agotar sus 5 s, el usuario esperaba esos 5 s más lo de Geoapify.
  */
 export const placesClient: OsmClient = {
   geocode: (query) => osmClient.geocode(query),
-  findPlaces: (center, radiusMeters, categories) =>
-    withGeoapifyFallback(
-      () => osmClient.findPlaces(center, radiusMeters, categories),
-      geoapifyClient && (() => geoapifyClient.findPlaces(center, radiusMeters, categories)),
-    ),
+  findPlaces: (center, radiusMeters, categories) => {
+    const overpass = osmClient.findPlaces(center, radiusMeters, categories)
+    if (!geoapifyClient) return overpass
+    return firstSuccessful([overpass, geoapifyClient.findPlaces(center, radiusMeters, categories)])
+  },
+}
+
+/** El primer resultado exitoso; si todos fallan, el error del primero (Overpass). */
+export function firstSuccessful<T>(promises: Promise<T>[]): Promise<T> {
+  return Promise.any(promises).catch((error: unknown) => {
+    throw error instanceof AggregateError ? error.errors[0] : error
+  })
 }
 
 /**

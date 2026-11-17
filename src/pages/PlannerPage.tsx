@@ -4,7 +4,7 @@
  *   3 · Itinerario   → el motor arma un plan día a día con lugares reales (OSM).
  *   4 · Confirmación → guardas el plan en tu cuenta y sigues con hospedaje.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router'
 import { PlanSummary } from '../components/PlanSummary'
 import { StaysSection } from '../components/StaysSection'
@@ -88,6 +88,13 @@ function ConfirmStep() {
 
 export function PlannerPage() {
   const { step, trip } = useTripFlow()
+  // Los Pasos 2, 3 y 4 comparten la ruta /planear, así que el efecto general
+  // de cambio de página (App.tsx) no se dispara: al cambiar de paso se sube al
+  // inicio y el foco va al título (teclado y lectores de pantalla).
+  useEffect(() => {
+    window.scrollTo({ top: 0 })
+    document.getElementById('step-title')?.focus({ preventScroll: true })
+  }, [step])
   if (!trip || step === 1) return <Navigate to="/" replace />
   return (
     <div className={`mx-auto px-4 py-8 sm:py-12 ${step === 4 ? 'max-w-5xl' : 'max-w-3xl'}`}>

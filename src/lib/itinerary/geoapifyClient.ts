@@ -164,6 +164,20 @@ export function countGeoapifyMatches(response: GeoapifyResponse, category: Categ
   return (response.features ?? []).filter((f) => classifyGeoapify(f.properties.categories ?? [], [category])).length
 }
 
+/** Como Promise.all(items.map(fn)), pero con a lo sumo `limit` tareas en curso. Conserva el orden. */
+export async function mapWithConcurrency<T, R>(items: readonly T[], limit: number, fn: (item: T) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let next = 0
+  const worker = async () => {
+    while (next < items.length) {
+      const i = next++
+      results[i] = await fn(items[i])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker))
+  return results
+}
+
 export interface GeoapifyClient {
   /** Lugares de las actividades pedidas (una petición por actividad). */
   findPlaces(center: GeoPoint, radiusMeters: number, categories: CategoryId[], perCategoryLimit?: number): Promise<Place[]>
@@ -180,8 +194,10 @@ export function createGeoapifyClient(options: {
   apiKey: string
   fetchFn?: typeof fetch
   timeoutMs?: number
+  /** Peticiones simultáneas (el plan gratuito admite 5 por segundo). */
+  concurrency?: number
 }): GeoapifyClient {
-  const { apiKey, fetchFn = (...args) => fetch(...args), timeoutMs = 8000 } = options
+  const { apiKey, fetchFn = (...args) => fetch(...args), timeoutMs = 8000, concurrency = 4 } = options
 
   async function request(url: string): Promise<GeoapifyResponse> {
     const response = await fetchFn(url, { signal: AbortSignal.timeout(timeoutMs) })
@@ -195,25 +211,29 @@ export function createGeoapifyClient(options: {
   // trae también miradores y obras de arte, que en una sola petición ocuparían
   // el cupo de `limit` y dejarían fuera museos y teatros.
   async function byCategory(center: GeoPoint, radiusMeters: number, categories: CategoryId[], limit: number) {
-    const results: { category: CategoryId; response: GeoapifyResponse }[] = []
-    for (const category of categories) {
-      // En serie: el plan gratuito admite 5 peticiones por segundo.
-      const groups = [GEOAPIFY_CATEGORIES[category], GEOAPIFY_GENERIC[category]].filter(
-        (group): group is string[] => Boolean(group?.length),
-      )
+    // Todas las peticiones (una por grupo de cada actividad), de a `concurrency`
+    // a la vez: en serie tardaban ~4,5 s; así, ~1–2 s.
+    const tasks = categories.flatMap((category) =>
+      [GEOAPIFY_CATEGORIES[category], GEOAPIFY_GENERIC[category]]
+        .filter((group): group is string[] => Boolean(group?.length))
+        .map((group) => ({ category, group })),
+    )
+    const responses = await mapWithConcurrency(tasks, concurrency, ({ group }) =>
+      request(buildGeoapifyUrl(center, radiusMeters, group, apiKey, limit)),
+    )
+    return categories.map((category) => {
       const features: GeoapifyFeature[] = []
       const seen = new Set<string>()
-      for (const group of groups) {
-        const response = await request(buildGeoapifyUrl(center, radiusMeters, group, apiKey, limit))
-        for (const feature of response.features ?? []) {
+      tasks.forEach((task, i) => {
+        if (task.category !== category) return
+        for (const feature of responses[i].features ?? []) {
           if (seen.has(feature.properties.place_id)) continue
           seen.add(feature.properties.place_id)
           features.push(feature)
         }
-      }
-      results.push({ category, response: { features } })
-    }
-    return results
+      })
+      return { category, response: { features } }
+    })
   }
 
   return {

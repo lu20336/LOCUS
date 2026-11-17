@@ -110,6 +110,33 @@ export function itineraryToIcs(it: Itinerary, now: Date = new Date()): string {
     .join('\r\n')
 }
 
+/**
+ * Enlace que abre Google Calendar con el viaje ya escrito (un evento de día
+ * completo desde la salida hasta el regreso, con el plan día por día en la
+ * descripción). Funciona en el computador y en Android (abre la app).
+ */
+export function googleCalendarUrl(it: Itinerary): string {
+  const city = placeName(it)
+  const details = [
+    ...it.days.flatMap((day) => [
+      dayTitle(day),
+      ...(day.places.length === 0
+        ? ['  Día libre']
+        : stopsByPart(day).map(([part, names]) => `  ${part}: ${names.join(' → ')}`)),
+    ]),
+    '',
+    `Planeado con LOCUS · ${APP_URL}`,
+  ].join('\n')
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: `Viaje a ${city}`,
+    dates: `${icsDate(it.input.startDate)}/${icsDate(nextDay(it.input.endDate))}`,
+    location: it.destination.displayName,
+    details,
+  })
+  return `https://calendar.google.com/calendar/render?${params}`
+}
+
 /** Nombre del archivo: "viaje-cartagena-de-indias-2026-12-10.ics" */
 export function icsFileName(it: Itinerary): string {
   const slug = placeName(it)

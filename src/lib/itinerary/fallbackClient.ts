@@ -13,6 +13,8 @@ import { osmClient, placesClient as overpassPlacesClient } from './browserClient
 import { placesViaNominatim } from './nominatimPlaces'
 import { haversineKm } from './geo'
 import type { OsmClient } from './osmClient'
+import { CATEGORY_IDS } from './categories'
+import { createPrefetchingClient } from './prefetchPlaces'
 
 interface StaticPlaces {
   generatedAt: string
@@ -44,7 +46,7 @@ export async function staticPlacesFor(center: GeoPoint, categories: CategoryId[]
   return filtered.length > 0 ? filtered : null
 }
 
-export const placesClient: OsmClient = {
+const livePlacesClient: OsmClient = {
   geocode: (query) => osmClient.geocode(query),
   async findPlaces(center, radiusMeters, categories) {
     try {
@@ -73,4 +75,20 @@ export const placesClient: OsmClient = {
       throw error
     }
   },
+}
+
+/**
+ * Cliente que usa el Paso 3. Busca los lugares de TODAS las actividades por
+ * adelantado (prefetchPlaces, desde que se elige el destino en el Paso 1 o
+ * un pueblo en el Paso 2), así al pulsar "Generar itinerario" ya están.
+ */
+const prefetching = createPrefetchingClient(livePlacesClient, CATEGORY_IDS)
+
+export const placesClient: OsmClient = { geocode: livePlacesClient.geocode, findPlaces: prefetching.findPlaces }
+
+/** Empieza a buscar en segundo plano los lugares alrededor de un punto. */
+export const prefetchPlaces = (center: GeoPoint, radiusMeters: number) => {
+  prefetching.prefetch(center, radiusMeters).catch(() => {
+    // Si falla, el Paso 3 vuelve a intentarlo con su propia búsqueda.
+  })
 }
