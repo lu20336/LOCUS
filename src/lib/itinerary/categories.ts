@@ -8,6 +8,12 @@ import type { CategoryId } from '../../types/itinerary'
 export interface OsmFilter {
   key: string
   values: string[]
+  /**
+   * Filtro amplio: solo se usa si el lugar no coincide con un filtro más
+   * específico de otra actividad pedida. Ej. la Piedra del Peñol es
+   * natural=peak (Aventura) y además tourism=attraction: queda en Aventura.
+   */
+  generic?: boolean
 }
 
 export interface CategoryDefinition {
@@ -37,6 +43,8 @@ export const CATEGORIES: Record<CategoryId, CategoryDefinition> = {
       { key: 'tourism', values: ['museum', 'gallery'] },
       { key: 'historic', values: ['monument', 'castle', 'fort', 'archaeological_site'] },
       { key: 'amenity', values: ['theatre', 'arts_centre'] },
+      // Atracciones turísticas sin una etiqueta más precisa (ej. Catedral de Sal de Zipaquirá).
+      { key: 'tourism', values: ['attraction'], generic: true },
     ],
   },
   gastronomia: {
@@ -87,6 +95,7 @@ const KIND_LABELS: Record<string, string> = {
   archaeological_site: 'Sitio arqueológico',
   theatre: 'Teatro',
   arts_centre: 'Centro cultural',
+  attraction: 'Atracción turística',
   restaurant: 'Restaurante',
   cafe: 'Café',
   viewpoint: 'Mirador',

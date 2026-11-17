@@ -47,6 +47,17 @@ export const GEOAPIFY_CATEGORIES: Record<CategoryId, string[]> = {
   compras: ['commercial.shopping_mall', 'commercial.department_store', 'commercial.marketplace'],
 }
 
+/**
+ * Categorías amplias (como `generic` en categories.ts): una atracción turística
+ * sin tipo más preciso cuenta como Cultura. En Geoapify un mirador también
+ * trae "tourism.attraction"; por eso solo se acepta si NO tiene ninguna
+ * subcategoría "tourism.attraction.*" y si ningún filtro específico coincidió.
+ */
+export const GEOAPIFY_GENERIC: Partial<Record<CategoryId, string[]>> = {
+  cultura: ['tourism.attraction'],
+}
+
+
 /** Forma (parcial) de la respuesta GeoJSON de /v2/places. */
 export interface GeoapifyFeature {
   properties: {
@@ -96,6 +107,14 @@ export function classifyGeoapify(
       if (matches.length === 0) continue
       // Para el tipo legible usamos la categoría elegida (ej. "restaurant"), no la cocina.
       return { category, tagValue: key.split('.').at(-1)! }
+    }
+  }
+  // Segundo intento: categorías amplias, solo si el lugar no tiene un tipo más preciso.
+  for (const category of categories) {
+    for (const key of GEOAPIFY_GENERIC[category] ?? []) {
+      if (placeCategories.includes(key) && !placeCategories.some((c) => c.startsWith(`${key}.`))) {
+        return { category, tagValue: key.split('.').at(-1)! }
+      }
     }
   }
   return null
@@ -171,13 +190,28 @@ export function createGeoapifyClient(options: {
   }
 
   // Una petición por actividad: así cada una trae sus propios resultados (un
-  // solo pedido con todas devolvería casi solo restaurantes).
+  // solo pedido con todas devolvería casi solo restaurantes). Las categorías
+  // amplias (GEOAPIFY_GENERIC) van en una petición APARTE: "tourism.attraction"
+  // trae también miradores y obras de arte, que en una sola petición ocuparían
+  // el cupo de `limit` y dejarían fuera museos y teatros.
   async function byCategory(center: GeoPoint, radiusMeters: number, categories: CategoryId[], limit: number) {
     const results: { category: CategoryId; response: GeoapifyResponse }[] = []
     for (const category of categories) {
       // En serie: el plan gratuito admite 5 peticiones por segundo.
-      const response = await request(buildGeoapifyUrl(center, radiusMeters, GEOAPIFY_CATEGORIES[category], apiKey, limit))
-      results.push({ category, response })
+      const groups = [GEOAPIFY_CATEGORIES[category], GEOAPIFY_GENERIC[category]].filter(
+        (group): group is string[] => Boolean(group?.length),
+      )
+      const features: GeoapifyFeature[] = []
+      const seen = new Set<string>()
+      for (const group of groups) {
+        const response = await request(buildGeoapifyUrl(center, radiusMeters, group, apiKey, limit))
+        for (const feature of response.features ?? []) {
+          if (seen.has(feature.properties.place_id)) continue
+          seen.add(feature.properties.place_id)
+          features.push(feature)
+        }
+      }
+      results.push({ category, response: { features } })
     }
     return results
   }

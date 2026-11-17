@@ -241,15 +241,20 @@ export function parseActivityCounts(
 /**
  * Determina a qué categoría (de las pedidas) pertenece un elemento según sus
  * etiquetas, y qué etiqueta lo hizo coincidir (para el "tipo" legible).
+ * Primero los filtros específicos de todas las categorías y, solo si ninguno
+ * coincide, los amplios (generic), como tourism=attraction.
  */
 export function classifyElement(
   tags: Record<string, string>,
   categories: CategoryId[],
 ): { category: CategoryId; tagValue: string } | null {
-  for (const categoryId of categories) {
-    for (const filter of CATEGORIES[categoryId].filters) {
-      const value = tags[filter.key]
-      if (value && filter.values.includes(value)) return { category: categoryId, tagValue: value }
+  for (const generic of [false, true]) {
+    for (const categoryId of categories) {
+      for (const filter of CATEGORIES[categoryId].filters) {
+        if (Boolean(filter.generic) !== generic) continue
+        const value = tags[filter.key]
+        if (value && filter.values.includes(value)) return { category: categoryId, tagValue: value }
+      }
     }
   }
   return null

@@ -6,6 +6,7 @@ import {
   buildActivityCountQuery,
   buildNominatimUrl,
   buildOverpassQuery,
+  classifyElement,
   parseActivityCounts,
   type OverpassElement,
   parseNominatimResponse,
@@ -181,5 +182,25 @@ describe('conteo de actividades por lotes (out count)', () => {
 
   it('una respuesta incompleta es un error, no "sin actividades"', () => {
     expect(() => parseActivityCounts({ elements: [] }, 2, ['cultura'])).toThrow(/conteos/)
+  })
+})
+
+describe('atracciones turísticas (tourism=attraction) en Cultura', () => {
+  it('la Catedral de Sal entra en Cultura como atracción turística', () => {
+    expect(classifyElement({ tourism: 'attraction', name: 'Catedral de Sal' }, ['cultura', 'aventura'])).toEqual({
+      category: 'cultura',
+      tagValue: 'attraction',
+    })
+  })
+
+  it('un lugar con una etiqueta más precisa queda en esa actividad (Piedra del Peñol → Aventura)', () => {
+    const penol = { natural: 'peak', tourism: 'attraction', name: 'Piedra del Peñol' }
+    expect(classifyElement(penol, ['cultura', 'aventura'])?.category).toBe('aventura')
+    // Si solo se pidió Cultura, sí cuenta como atracción.
+    expect(classifyElement(penol, ['cultura'])?.category).toBe('cultura')
+  })
+
+  it('la consulta de Overpass pide también tourism=attraction', () => {
+    expect(buildOverpassQuery({ lat: 5, lon: -74 }, 3000, ['cultura'])).toContain('nwr["tourism"~"^(attraction)$"]')
   })
 })

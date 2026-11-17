@@ -18,12 +18,13 @@ import { useRef, useState, type FormEvent } from 'react'
 import { ACTIVITY_IMAGES, CATEGORY_DESCRIPTIONS, CATEGORY_ICONS } from '../components/choiceOptions'
 import { NearbyTownsPicker } from '../components/NearbyTownsPicker'
 import { findFeaturedNear } from '../lib/featuredDestinations'
-import { maxExcursions, nearbyTowns } from '../lib/flow/nearbyTowns'
+import { maxExcursions } from '../lib/flow/nearbyTowns'
 import { PACE_IDS, PACES } from '../lib/flow/pace'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { assignTilePhotos, type TilePhoto } from '../lib/flow/tilePhotos'
 import { useActivityCounts } from '../lib/flow/useActivityCounts'
 import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
+import { useNearbyTowns } from '../lib/flow/useNearbyTowns'
 import type { PlacePhoto } from '../lib/itinerary/placePhotos'
 import { countTripDays, formatDateRange } from '../lib/format'
 import { CATEGORIES, CATEGORY_IDS } from '../lib/itinerary/categories'
@@ -55,6 +56,7 @@ export function ActivitiesStep() {
   const firstCheckbox = useRef<HTMLInputElement | null>(null)
   const availability = useActivityCounts(trip?.destination ?? null)
   const photosState = useDestinationPhotos(trip?.destination ?? null)
+  const nearby = useNearbyTowns(trip?.destination ?? null)
 
   if (!trip) return null
 
@@ -62,7 +64,7 @@ export function ActivitiesStep() {
   const [placeName, ...region] = trip.destination.displayName.split(',').map((part) => part.trim())
   const featured = findFeaturedNear(trip.destination)
   const placesPerDay = PACES[pace].placesPerDay
-  const towns = nearbyTowns(trip.destination)
+  const towns = nearby.status === 'ready' ? nearby.towns : []
   const maxTowns = maxExcursions(days)
   // Solo los pueblos de ESTE destino y dentro del máximo (por si cambiaron destino o fechas).
   const chosenTowns = wantsTowns ? towns.filter((t) => townIds.includes(t.id)).slice(0, maxTowns) : []
@@ -310,6 +312,8 @@ export function ActivitiesStep() {
           placeName={placeName}
           tripDays={days}
           towns={towns}
+          loading={nearby.status === 'loading'}
+          byRoad={nearby.status === 'ready' && nearby.byRoad}
           enabled={wantsTowns}
           onEnabledChange={setWantsTowns}
           selectedIds={chosenTowns.map((t) => t.id)}

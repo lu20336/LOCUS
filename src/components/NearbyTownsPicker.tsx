@@ -7,12 +7,18 @@
  * tantos como días tenga el viaje menos uno.
  */
 import { Check, MapPinned } from 'lucide-react'
+import { formatDuration } from '../lib/format'
+import { FALLBACK_MAX_KM, MAX_DRIVE_MINUTES } from '../lib/flow/nearbyTowns'
 import type { Excursion } from '../types/itinerary'
 
 interface NearbyTownsPickerProps {
   placeName: string
   tripDays: number
   towns: readonly Excursion[]
+  /** Calculando los tiempos en carro. */
+  loading: boolean
+  /** true si los pueblos se filtraron por tiempo en carro (si no, por línea recta). */
+  byRoad: boolean
   enabled: boolean
   onEnabledChange: (enabled: boolean) => void
   selectedIds: readonly string[]
@@ -24,13 +30,21 @@ export function NearbyTownsPicker({
   placeName,
   tripDays,
   towns,
+  loading,
+  byRoad,
   enabled,
   onEnabledChange,
   selectedIds,
   onToggle,
   max,
 }: NearbyTownsPickerProps) {
-  const unavailable = tripDays < 2 ? 'Necesitas un viaje de al menos 2 días.' : towns.length === 0 ? `Aún no tenemos pueblos turísticos registrados cerca de ${placeName}.` : null
+  const limit = byRoad ? `a ${formatDuration(MAX_DRIVE_MINUTES)} en carro` : `a ${FALLBACK_MAX_KM} km`
+  const unavailable =
+    tripDays < 2
+      ? 'Necesitas un viaje de al menos 2 días.'
+      : !loading && towns.length === 0
+        ? `No tenemos pueblos turísticos registrados ${limit} o menos de ${placeName}.`
+        : null
   const full = selectedIds.length >= max
 
   return (
@@ -63,12 +77,18 @@ export function NearbyTownsPicker({
             Quiero conocer pueblos cerca de {placeName}
           </span>
           <span id="towns-help" className="mt-0.5 block text-sm text-muted">
-            {unavailable ?? 'Cada pueblo que elijas será un día de excursión en tu itinerario, con sus propios lugares.'}
+            {unavailable ??
+              `Pueblos ${limit} o menos. Cada uno que elijas será un día de excursión en tu itinerario.`}
           </span>
         </span>
       </label>
 
-      {enabled && !unavailable && (
+      {enabled && !unavailable && loading && (
+        <p className="mt-4 text-sm text-muted" aria-live="polite">
+          Calculando cuánto se tarda en carro a cada pueblo…
+        </p>
+      )}
+      {enabled && !unavailable && !loading && (
         <div className="mt-4">
           <p className="text-sm text-muted" aria-live="polite">
             {selectedIds.length === 0
@@ -103,7 +123,10 @@ export function NearbyTownsPicker({
                       <span className="block font-semibold text-ink">{town.name}</span>
                       <span className="block text-sm text-ink">{town.tagline}</span>
                       <span className="mt-1 block text-xs text-muted">
-                        {town.region} · a {town.distanceKm} km en línea recta
+                        {town.region} ·{' '}
+                        {town.driveMinutes !== undefined
+                          ? `≈ ${formatDuration(town.driveMinutes)} en carro`
+                          : `a ${town.distanceKm} km en línea recta`}
                       </span>
                     </span>
                   </label>
@@ -112,8 +135,9 @@ export function NearbyTownsPicker({
             })}
           </ul>
           <p className="mt-3 text-xs text-muted">
-            Por carretera la distancia puede ser bastante mayor, sobre todo en la montaña. Revisa el tiempo de viaje antes
-            de ir.
+            {byRoad
+              ? 'Tiempos estimados sin tráfico (Geoapify); en temporada o fines de semana pueden ser mayores.'
+              : 'Distancias en línea recta: por carretera pueden ser bastante mayores. Revisa el tiempo de viaje antes de ir.'}
           </p>
         </div>
       )}

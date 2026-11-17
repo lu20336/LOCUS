@@ -34,6 +34,14 @@ describe('classifyGeoapify', () => {
     expect(classifyGeoapify(['adult.nightclub'], CATEGORY_IDS)?.category).toBe('vidaNocturna')
   })
 
+  it('una atracción turística sin tipo preciso es Cultura, pero un mirador sigue siendo Aventura', () => {
+    expect(classifyGeoapify(['tourism', 'tourism.attraction'], CATEGORY_IDS)).toEqual({ category: 'cultura', tagValue: 'attraction' })
+    const mirador = ['tourism', 'tourism.attraction', 'tourism.attraction.viewpoint']
+    expect(classifyGeoapify(mirador, CATEGORY_IDS)?.category).toBe('aventura')
+    // Aunque solo se pida Cultura, un mirador no se cuela como atracción cultural.
+    expect(classifyGeoapify(mirador, ['cultura'])).toBeNull()
+  })
+
   it('no confunde prefijos parecidos ni categorías ajenas', () => {
     expect(classifyGeoapify(['beachfront'], CATEGORY_IDS)).toBeNull()
     expect(classifyGeoapify(['service.vehicle.fuel'], CATEGORY_IDS)).toBeNull()
@@ -80,7 +88,7 @@ describe('parseGeoapifyPlaces', () => {
 })
 
 describe('createGeoapifyClient', () => {
-  it('cuenta actividades con una petición por actividad', async () => {
+  it('cuenta actividades con una petición por actividad (y otra para atracciones)', async () => {
     const fetchFn = vi.fn(async (url: string | URL | Request) => {
       const categories = new URL(String(url)).searchParams.get('categories')!
       const features = categories.startsWith('beach') ? [] : [feature('Lugar A', categories.split(',')), feature('Lugar B', categories.split(','))]
@@ -88,7 +96,8 @@ describe('createGeoapifyClient', () => {
     })
     const client = createGeoapifyClient({ apiKey: 'clave', fetchFn: fetchFn as typeof fetch })
     const counts = await client.countActivities({ lat: 4.6, lon: -74.08 }, 7000)
-    expect(fetchFn).toHaveBeenCalledTimes(CATEGORY_IDS.length)
+    // Una por actividad, más una aparte para las atracciones de Cultura.
+    expect(fetchFn).toHaveBeenCalledTimes(CATEGORY_IDS.length + 1)
     expect(counts.playa).toBe(0)
     expect(counts.cultura).toBe(2)
   })
@@ -99,5 +108,28 @@ describe('createGeoapifyClient', () => {
       fetchFn: (async () => new Response('{}', { status: 401 })) as typeof fetch,
     })
     await expect(client.findPlaces({ lat: 4.6, lon: -74.08 }, 7000, ['cultura'])).rejects.toMatchObject({ status: 401 })
+  })
+})
+
+describe('atracciones en una petición aparte', () => {
+  it('Cultura pide museos y atracciones por separado y suma ambos sin repetir', async () => {
+    const urls: string[] = []
+    const fetchFn = (async (input: string | URL | Request) => {
+      const url = new URL(String(input))
+      urls.push(url.searchParams.get('categories') ?? '')
+      const features = url.searchParams.get('categories') === 'tourism.attraction'
+        ? [
+            feature('Catedral de Sal', ['tourism', 'tourism.attraction']),
+            feature('Mirador', ['tourism', 'tourism.attraction', 'tourism.attraction.viewpoint']),
+            feature('Museo', ['entertainment', 'entertainment.museum']), // repetido
+          ]
+        : [feature('Museo', ['entertainment', 'entertainment.museum'])]
+      return new Response(JSON.stringify({ features }), { status: 200 })
+    }) as typeof fetch
+    const client = createGeoapifyClient({ apiKey: 'k', fetchFn })
+    const counts = await client.countActivities({ lat: 5, lon: -74 }, 6000, 100, ['cultura'])
+    expect(urls).toHaveLength(2)
+    expect(urls[1]).toBe('tourism.attraction')
+    expect(counts.cultura).toBe(2) // museo + catedral (el mirador no cuenta como cultura)
   })
 })
