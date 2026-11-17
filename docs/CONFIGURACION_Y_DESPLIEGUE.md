@@ -72,15 +72,20 @@ La configuración web de Firebase (`src/lib/firebase/client.ts`) es pública por
 6. **Restricciones de la API key web** (Google Cloud → Credenciales): limítala a los dominios de LOCUS. Y revisa **alertas de presupuesto**.
 7. *(Opcional)* **Mapillary:** crea una cuenta en <https://www.mapillary.com/dashboard/developers>, genera un **token de cliente** y ponlo en `VITE_MAPILLARY_TOKEN`. Confirma ahí los términos de uso de las imágenes.
 
-## 5. Despliegue automático desde GitHub (opcional, recomendado)
+## 5. Despliegue automático desde GitHub (configurado)
 
-Para que `git push` a `main` publique solo:
+Cada `push`/merge a `main` corre `.github/workflows/deploy.yml`: pruebas → compilar → reglas e índices de Firestore → Hosting.
 
-1. Consola de Google Cloud → IAM → **Cuentas de servicio** → crea una (p. ej. `github-deploy`) con los roles **Firebase Hosting Admin**, **Firebase Rules Admin** y **Cloud Datastore Index Admin** (*más* `Service Usage Consumer`). Genera una **clave JSON**.
-2. GitHub → repositorio → *Settings → Secrets and variables → Actions*:
-   - **Secret** `FIREBASE_SERVICE_ACCOUNT` = el contenido del JSON (⚠ es sensible; bórralo de tu computador después).
-   - **Variables** (públicas): `VITE_NOMINATIM_EMAIL`, `VITE_APPCHECK_SITE_KEY`, `VITE_MAPILLARY_TOKEN`, `VITE_GEMINI_MODEL` (las que uses).
-3. *(Recomendado)* *Settings → Environments → production → Required reviewers* = tú: así cada despliegue pide tu aprobación.
+**Autenticación sin claves (Workload Identity Federation), ya creada en `locus-bb57e`:**
+- Cuenta de servicio `github-deploy@locus-bb57e.iam.gserviceaccount.com` con permisos mínimos: Firebase Hosting Admin, Firebase Rules Admin, Cloud Datastore Index Admin, Service Usage Consumer y Firebase Viewer.
+- Grupo de identidades `github` con el proveedor `locus-repo` (emisor `https://token.actions.githubusercontent.com`), que **solo** acepta el repositorio `lu20336/LOCUS` en la rama `main`.
+- No hay secretos en GitHub: GitHub entrega un token de identidad del repositorio y Google lo cambia por permisos de la cuenta anterior.
+
+**Lo único que se configura en GitHub** (*Settings → Secrets and variables → Actions → pestaña Variables*), con los mismos valores de `.env.local`:
+- `VITE_APPCHECK_SITE_KEY` y `VITE_GEOAPIFY_KEY` (**obligatorias**: sin ellas el despliegue se detiene con un aviso, porque la app publicada quedaría sin asistente de IA y con itinerarios lentos).
+- `VITE_NOMINATIM_EMAIL` (recomendada), `VITE_MAPILLARY_TOKEN` y `VITE_GEMINI_MODEL` (opcionales).
+
+*(Recomendado)* *Settings → Environments → production → Required reviewers*: así cada despliegue pide aprobación.
 
 Alternativa más simple solo para Hosting: `firebase init hosting:github` (crea su propia cuenta de servicio). Las reglas se publicarían a mano con `npm run deploy:rules`.
 
