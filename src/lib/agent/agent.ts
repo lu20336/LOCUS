@@ -4,6 +4,9 @@
  *  - La API key de Gemini vive en el proyecto de Firebase, NUNCA en este código
  *    ni en el navegador. El SDK habla con el backend de Firebase AI Logic.
  *  - App Check (opcional, VITE_APPCHECK_SITE_KEY) evita que terceros gasten la cuota.
+ *    La clave es de reCAPTCHA ENTERPRISE: Google ya no ofrece claves v3 clásicas
+ *    (las que se crean en google.com/recaptcha también son Enterprise) y con
+ *    Enterprise no hay clave secreta que pegar en la consola de Firebase.
  *  - El modelo usa HERRAMIENTAS para consultar datos reales (tools.ts); no
  *    puede reservar, pagar ni cambiar las respuestas declaradas del usuario.
  *  - Nivel gratuito: sin facturación (plan Spark). OJO: en el nivel gratuito
@@ -11,7 +14,7 @@
  *    no se envía nombre ni correo y la interfaz avisa de no compartir datos sensibles.
  */
 import { getAI, getGenerativeModel, GoogleAIBackend, type ChatSession, type Content, type Part } from 'firebase/ai'
-import { initializeAppCheck, ReCaptchaV3Provider } from 'firebase/app-check'
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from 'firebase/app-check'
 import { app } from '../firebase/client'
 import { TOOL_DECLARATIONS, runTool } from './tools'
 import type { AgentCard, ToolContext } from './types'
@@ -29,7 +32,7 @@ function ensureAppCheck() {
   const siteKey = import.meta.env.VITE_APPCHECK_SITE_KEY as string | undefined
   if (!siteKey) return
   if (import.meta.env.DEV) (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true
-  initializeAppCheck(app, { provider: new ReCaptchaV3Provider(siteKey), isTokenAutoRefreshEnabled: true })
+  initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(siteKey), isTokenAutoRefreshEnabled: true })
 }
 
 export function buildSystemInstruction(today: string, profileSummary: string | null): string {

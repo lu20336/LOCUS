@@ -47,7 +47,7 @@ cuentas de servicio) **no van en el repositorio ni en el frontend**.
 | `VITE_USE_EMULATORS` | No | `true` = emuladores (ya activo en dev) | `.env.development` |
 | `VITE_NOMINATIM_EMAIL` | Recomendada | Contacto que pide la política de Nominatim (queda visible) | `.env.local` / variable de GitHub |
 | `VITE_GEMINI_MODEL` | No | Cambia el modelo (por defecto `gemini-3.8-flash`) | `.env.local` / variable de GitHub |
-| `VITE_APPCHECK_SITE_KEY` | Recomendada en producción | reCAPTCHA v3 para App Check (protege la cuota de Gemini) | `.env.local` / variable de GitHub |
+| `VITE_APPCHECK_SITE_KEY` | Recomendada en producción | Clave del sitio de **reCAPTCHA Enterprise** para App Check (protege la cuota de Gemini) | `.env.local` / variable de GitHub |
 | `VITE_MAPILLARY_TOKEN` | No | Token de **cliente** de Mapillary (fotos de calle) | `.env.local` / variable de GitHub |
 
 La configuración web de Firebase (`src/lib/firebase/client.ts`) es pública por diseño y no cambia.
@@ -62,12 +62,12 @@ La configuración web de Firebase (`src/lib/firebase/client.ts`) es pública por
 4. **App Check (⚠ necesario para que la IA responda):** al activar Firebase AI Logic, la consola **exige App Check** por defecto, y sin un token válido Google responde
    `401 "Firebase App Check token is invalid"` (lo comprobé llamando a la API directamente). Elige UNA de estas dos rutas:
    - **Rápida (demostración):** consola → **App Check → pestaña "APIs" → Firebase AI Logic → ⋮ → Unenforce**. Efecto en pocos minutos. Inconveniente: sin protección, cualquiera con la configuración web (que es pública) podría gastar tu cuota gratuita de Gemini.
-   - **Correcta (recomendada antes de abrirlo al público):**
-     1. Crea una clave **reCAPTCHA v3** en <https://www.google.com/recaptcha/admin/create> con los dominios `localhost`, `locus-bb57e.firebaseapp.com` y `locus-bb57e.web.app`. Guarda la *clave del sitio* y la *clave secreta*.
-     2. Consola → **App Check → Apps →** tu app web → **reCAPTCHA** → pega la **clave secreta** → Guardar.
-     3. Pon la *clave del sitio* en `.env.local`: `VITE_APPCHECK_SITE_KEY=...` y reinicia `npm run dev`.
-     4. En local, abre la consola del navegador (F12): aparece **"AppCheck debug token: …"**. Cópialo en **App Check → ⋮ de tu app → Manage debug tokens → Add**.
-     5. Deja **Enforce** activo para Firebase AI Logic. En producción añade `VITE_APPCHECK_SITE_KEY` como variable de GitHub.
+   - **Correcta (recomendada, ya configurada en `locus-bb57e`):** reCAPTCHA **Enterprise**. Google ya no ofrece claves v3 "clásicas": las que se crean en google.com/recaptcha también son Enterprise, y la consola de Firebase muestra el aviso *"reCAPTCHA Classic está obsoleto"* con el campo de clave secreta bloqueado. Con Enterprise **no hay clave secreta** que pegar.
+     1. Google Cloud → **Seguridad → reCAPTCHA** (Fraud Defense) → crear clave **web**, tipo *puntuación*, con los dominios `locus-bb57e.firebaseapp.com` y `locus-bb57e.web.app`. (En el proyecto ya existe la clave **"Locus"**.)
+     2. Consola de Firebase → **App Check → Apps →** la app web → **reCAPTCHA Enterprise** → pega la **clave del sitio** → Guardar.
+     3. Pon la misma *clave del sitio* en `.env.local`: `VITE_APPCHECK_SITE_KEY=...`. El código usa `ReCaptchaEnterpriseProvider` (`src/lib/agent/agent.ts`).
+     4. En local (`npm run dev`) se usa un token de depuración: la consola del navegador (F12) muestra **"AppCheck debug token: …"**; cópialo en **App Check → ⋮ de tu app → Manage debug tokens → Add**.
+     5. Deja **Enforce** activo para Firebase AI Logic. En producción por GitHub añade `VITE_APPCHECK_SITE_KEY` como variable.
 5. **Primer administrador:** crea una cuenta en el sitio, copia su **UID** (Authentication → Usuarios) y en Firestore crea la colección `admins` con un documento cuyo **ID sea ese UID** (cualquier campo, p. ej. `createdAt`).
 6. **Restricciones de la API key web** (Google Cloud → Credenciales): limítala a los dominios de LOCUS. Y revisa **alertas de presupuesto**.
 7. *(Opcional)* **Mapillary:** crea una cuenta en <https://www.mapillary.com/dashboard/developers>, genera un **token de cliente** y ponlo en `VITE_MAPILLARY_TOKEN`. Confirma ahí los términos de uso de las imágenes.
