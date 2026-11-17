@@ -1,13 +1,15 @@
 /**
- * Guardar el viaje en el calendario del CELULAR, sin que el usuario tenga que
- * buscar un archivo descargado:
- *   - iPhone/iPad: se abre el evento (.ics) directamente; Safari muestra la
- *     hoja "Agregar al calendario" del Calendario de iOS.
- *   - Android (Samsung, Xiaomi…): el menú de compartir del sistema con el
- *     evento, y ahí se elige la app de calendario (Samsung Calendar, Google
- *     Calendar…). Si el navegador no puede compartir archivos, se abre el
- *     evento y Android ofrece las apps de calendario.
- *   - Computador: no aplica (se usa Google Calendar).
+ * Guardar el viaje en el calendario del CELULAR, sin archivos de por medio:
+ *
+ *   - Android (Samsung, Xiaomi, Motorola…): un enlace "intent" de Android que
+ *     abre la pantalla "Nuevo evento" de la app de calendario del teléfono
+ *     (Samsung Calendar, Google Calendar…) con el viaje ya escrito; el usuario
+ *     solo toca Guardar. Si el navegador no puede abrir apps, va a Google
+ *     Calendar en la web (S.browser_fallback_url).
+ *   - iPhone/iPad: iOS no deja que una página agregue eventos directamente.
+ *     Lo más cercano es abrir el evento como "text/calendar": Safari muestra
+ *     la hoja nativa "Agregar al calendario" (no un archivo en Descargas).
+ *   - Computador: no aplica (se usa el botón de Google Calendar).
  */
 export type Platform = 'ios' | 'android' | 'desktop'
 
@@ -26,24 +28,42 @@ export function phoneCalendarLabel(platform: Platform): string {
   return platform === 'ios' ? 'Calendario del iPhone' : 'Calendario del celular'
 }
 
-function openEvent(file: File) {
-  const url = URL.createObjectURL(file)
-  window.location.href = url
-  setTimeout(() => URL.revokeObjectURL(url), 60_000)
+export interface PhoneEvent {
+  title: string
+  location: string
+  details: string
+  /** ISO "AAAA-MM-DD": primer día y el día siguiente al último. */
+  startDate: string
+  endDateExclusive: string
 }
 
-/** Devuelve false si el usuario cerró el menú de compartir sin elegir nada. */
-export async function addToPhoneCalendar(ics: string, fileName: string, title: string, platform: Platform): Promise<boolean> {
-  const file = new File([ics], fileName, { type: 'text/calendar' })
-  if (platform === 'android' && navigator.canShare?.({ files: [file] })) {
-    try {
-      await navigator.share({ files: [file], title })
-      return true
-    } catch (error) {
-      if ((error as Error).name === 'AbortError') return false
-      // Si compartir falla por otra razón, se abre el evento.
-    }
-  }
-  openEvent(file)
-  return true
+/** Medianoche UTC de una fecha ISO, en milisegundos (así los guarda Android para eventos de día completo). */
+const utcMidnight = (iso: string) => Date.parse(`${iso}T00:00:00Z`)
+
+/**
+ * Enlace intent de Android: acción INSERT sobre un evento (CalendarContract).
+ * Formato: intent:#Intent;action=…;type=…;S.title=…;l.beginTime=…;end
+ */
+export function androidCalendarIntent(event: PhoneEvent, fallbackUrl: string): string {
+  const extras = [
+    `S.title=${encodeURIComponent(event.title)}`,
+    `S.eventLocation=${encodeURIComponent(event.location)}`,
+    `S.description=${encodeURIComponent(event.details)}`,
+    `l.beginTime=${utcMidnight(event.startDate)}`,
+    `l.endTime=${utcMidnight(event.endDateExclusive)}`,
+    'B.allDay=true',
+    `S.browser_fallback_url=${encodeURIComponent(fallbackUrl)}`,
+  ]
+  return `intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.item/event;${extras.join(';')};end`
+}
+
+/** El evento (.ics) como dirección "data:" de tipo text/calendar, para que iOS lo abra en el Calendario. */
+export const iosCalendarUrl = (ics: string) => `data:text/calendar;charset=utf-8,${encodeURIComponent(ics)}`
+
+/** Abre el calendario del celular con el viaje. */
+export function addToPhoneCalendar(
+  platform: Platform,
+  { event, ics, fallbackUrl }: { event: PhoneEvent; ics: string; fallbackUrl: string },
+): void {
+  window.location.href = platform === 'android' ? androidCalendarIntent(event, fallbackUrl) : iosCalendarUrl(ics)
 }

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import type { TripDetails } from '../../../types/flow'
 import type { CategoryId, Itinerary, Place } from '../../../types/itinerary'
-import { googleCalendarUrl } from '../exportItinerary'
+import { googleCalendarUrl, tripEvent } from '../exportItinerary'
 import { buildItineraryPdf, pdfSafe } from '../itineraryPdf'
-import { detectPlatform } from '../phoneCalendar'
+import { androidCalendarIntent, detectPlatform, iosCalendarUrl } from '../phoneCalendar'
 
 const place = (name: string, category: CategoryId, i: number): Place => ({
   id: `${name}-${i}`,
@@ -70,6 +70,25 @@ describe('calendario', () => {
     expect(url.searchParams.get('text')).toBe('Viaje a Cartagena de Indias')
     expect(url.searchParams.get('dates')).toBe('20261210/20261214') // el fin es exclusivo
     expect(url.searchParams.get('details')).toContain('Día 2 · vie 11 dic · Excursión a Turbaco')
+  })
+
+  it('Android: abre "Nuevo evento" del calendario del teléfono, de día completo y ya escrito', () => {
+    const event = tripEvent(plan(2))
+    const intent = androidCalendarIntent(event, 'https://calendar.google.com/x?y=1')
+    expect(intent.startsWith('intent:#Intent;action=android.intent.action.INSERT;type=vnd.android.cursor.item/event;')).toBe(true)
+    expect(intent.endsWith(';end')).toBe(true)
+    expect(intent).toContain('S.title=Viaje%20a%20Cartagena%20de%20Indias')
+    expect(intent).toContain(`l.beginTime=${Date.UTC(2026, 11, 10)}`)
+    expect(intent).toContain(`l.endTime=${Date.UTC(2026, 11, 14)}`) // el día siguiente al regreso
+    expect(intent).toContain('B.allDay=true')
+    expect(intent).toContain('S.browser_fallback_url=https%3A%2F%2Fcalendar.google.com')
+    // Ningún valor rompe el formato del intent (los ; y = van codificados).
+    const extras = intent.split(';').filter((part) => /^[SlB]\./.test(part))
+    expect(extras.every((part) => part.split('=').length === 2)).toBe(true)
+  })
+
+  it('iPhone: el evento se abre como text/calendar, no como descarga', () => {
+    expect(iosCalendarUrl('BEGIN:VCALENDAR\r\nEND:VCALENDAR')).toBe('data:text/calendar;charset=utf-8,BEGIN%3AVCALENDAR%0D%0AEND%3AVCALENDAR')
   })
 
   it('reconoce iPhone, iPad, Android y computador', () => {

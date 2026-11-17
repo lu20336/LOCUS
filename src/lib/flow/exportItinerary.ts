@@ -116,7 +116,29 @@ export function itineraryToIcs(it: Itinerary, now: Date = new Date()): string {
  * descripción). Funciona en el computador y en Android (abre la app).
  */
 export function googleCalendarUrl(it: Itinerary): string {
-  const city = placeName(it)
+  const event = tripEvent(it)
+  const params = new URLSearchParams({
+    action: 'TEMPLATE',
+    text: event.title,
+    dates: `${icsDate(event.startDate)}/${icsDate(event.endDateExclusive)}`,
+    location: event.location,
+    details: event.details,
+  })
+  return `https://calendar.google.com/calendar/render?${params}`
+}
+
+/** El viaje como UN evento de día completo (Google Calendar y el calendario de Android). */
+export interface TripEvent {
+  title: string
+  location: string
+  /** El plan día por día, en texto. */
+  details: string
+  /** Primer día (ISO) y el día SIGUIENTE al último (el fin no se incluye). */
+  startDate: string
+  endDateExclusive: string
+}
+
+export function tripEvent(it: Itinerary): TripEvent {
   const details = [
     ...it.days.flatMap((day) => [
       dayTitle(day),
@@ -127,14 +149,13 @@ export function googleCalendarUrl(it: Itinerary): string {
     '',
     `Planeado con LOCUS · ${APP_URL}`,
   ].join('\n')
-  const params = new URLSearchParams({
-    action: 'TEMPLATE',
-    text: `Viaje a ${city}`,
-    dates: `${icsDate(it.input.startDate)}/${icsDate(nextDay(it.input.endDate))}`,
+  return {
+    title: `Viaje a ${placeName(it)}`,
     location: it.destination.displayName,
     details,
-  })
-  return `https://calendar.google.com/calendar/render?${params}`
+    startDate: it.input.startDate,
+    endDateExclusive: nextDay(it.input.endDate),
+  }
 }
 
 /** Nombre del archivo: "viaje-cartagena-de-indias-2026-12-10.ics" */
