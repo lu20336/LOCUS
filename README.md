@@ -24,7 +24,12 @@ Todo está en [`src/lib/itinerary/`](src/lib/itinerary/); el archivo principal, 
 2. `searchPlaces()` — lugares reales cercanos por categoría (Overpass).
 3. `selectPlaces()` — elige los más relevantes alternando categorías.
 4. `optimizeRoute()` — **heurística del vecino más cercano** (TSP), O(n²).
-5. `buildDailyPlan()` — reparte por zonas entre los días y optimiza cada día.
+5. `buildDailyPlan()` — reparte los lugares entre los días y optimiza cada día:
+   - **Algoritmo de barrido** (`sweepOrder()`, O(n log n)): ordena los lugares por su ángulo visto desde el centro, así cada día cubre una "tajada" de la ciudad.
+   - `splitByCategory()`: cada día recibe su parte de cada actividad elegida (no un día solo de restaurantes).
+   - Vecino más cercano dentro de cada día; la vida nocturna va al final.
+
+En la app, el Paso 3 usa `planItinerary()` (pasos 2 a 5) con el destino ya resuelto en el Paso 1, y muestra el plan con un mapa por día ([Leaflet](https://leafletjs.com/) con los mapas de OpenStreetMap, cargado solo en ese paso).
 
 | Archivo | Rol |
 |---|---|

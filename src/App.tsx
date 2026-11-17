@@ -6,7 +6,7 @@ import { usesGeoapify } from './lib/itinerary/browserClient'
 import { useTripFlow } from './lib/flow/tripFlowContext'
 import { ActivitiesStep } from './pages/ActivitiesStep'
 import { HomePage } from './pages/HomePage'
-import { ItineraryStepPlaceholder } from './pages/ItineraryStepPlaceholder'
+import { ItineraryStep } from './pages/ItineraryStep'
 
 /** Muestra la pantalla del paso actual. El Paso 1 es la pantalla de inicio. */
 function CurrentStep() {
@@ -31,7 +31,7 @@ function CurrentStep() {
       <Stepper current={step} />
       <div className="mt-6">
         {step === 2 && <ActivitiesStep />}
-        {step === 3 && <ItineraryStepPlaceholder />}
+        {step === 3 && <ItineraryStep />}
       </div>
     </div>
   )

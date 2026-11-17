@@ -13,9 +13,12 @@
  *   4. optimizeRoute()       → ordena lugares con la heurística del VECINO MÁS
  *                              CERCANO para minimizar la distancia recorrida.
  *   5. buildDailyPlan()      → reparte los lugares entre los días del viaje y
- *                              optimiza la ruta de cada día.
+ *                              optimiza la ruta de cada día (la vida nocturna
+ *                              va al final del día).
  *
- * generateItinerary() encadena los cinco pasos.
+ * generateItinerary() encadena los cinco pasos. planItinerary() hace los pasos
+ * 2 a 5 para un destino que ya tiene coordenadas (el de la app, que se
+ * resolvió en el Paso 1).
  *
  * Todas las funciones de optimización (3, 4 y 5) son PURAS: con la misma
  * entrada siempre dan la misma salida y no hacen peticiones de red. Por eso se
@@ -123,7 +126,7 @@ export interface PlaceSearchResult {
 export async function searchPlaces(
   destination: Destination,
   categories: CategoryId[],
-  client: OsmClient,
+  client: Pick<OsmClient, 'findPlaces'>,
 ): Promise<PlaceSearchResult> {
   if (categories.length === 0) {
     throw new ItineraryError('INVALID_INPUT', 'Elige al menos una actividad.')
@@ -273,22 +276,87 @@ export function splitEvenly<T>(items: readonly T[], parts: number): T[][] {
 }
 
 /**
+ * Algoritmo de BARRIDO (sweep), clásico en planificación de rutas: ordena los
+ * lugares por el ángulo (rumbo) en que se ven desde el punto de partida.
+ *
+ *   1. Para cada lugar se calcula su ángulo con atan2 (0° = este, 90° = norte).
+ *   2. Se ordenan por ángulo, como si una aguja girara alrededor del centro.
+ *   3. El barrido empieza justo después del MAYOR hueco entre ángulos
+ *      consecutivos, para no partir en dos un grupo de lugares vecinos.
+ *
+ * El vecino más cercano no sirve para esto: deja para el final los lugares
+ * sueltos, que pueden estar en extremos opuestos de la ciudad. Con el barrido,
+ * dos lugares en direcciones opuestas nunca quedan seguidos.
+ * Complejidad: O(n log n) por el ordenamiento.
+ */
+export function sweepOrder<T extends GeoPoint>(start: GeoPoint, places: readonly T[]): T[] {
+  if (places.length < 2) return [...places]
+  const cosLat = Math.cos((start.lat * Math.PI) / 180) // 1° de longitud mide menos lejos del ecuador
+  const withAngle = places
+    .map((place) => ({ place, angle: Math.atan2(place.lat - start.lat, (place.lon - start.lon) * cosLat) }))
+    .sort((a, b) => a.angle - b.angle)
+  // Mayor hueco (circular) entre ángulos consecutivos.
+  let startIndex = 0
+  let biggestGap = -1
+  for (let i = 0; i < withAngle.length; i++) {
+    const previous = withAngle[(i - 1 + withAngle.length) % withAngle.length].angle
+    const gap = (withAngle[i].angle - previous + 2 * Math.PI) % (2 * Math.PI)
+    if (gap > biggestGap) {
+      biggestGap = gap
+      startIndex = i
+    }
+  }
+  return [...withAngle.slice(startIndex), ...withAngle.slice(0, startIndex)].map((x) => x.place)
+}
+
+/**
+ * Reparte una ruta entre `parts` días de modo que cada día reciba la misma
+ * cantidad de cada categoría (±1), respetando el orden de la ruta dentro de
+ * cada categoría. Los sobrantes de cada categoría van rotando de día, para
+ * que todos los días queden con un número parecido de lugares.
+ * Ej. 4 museos y 4 bares en 3 días → museos 2·1·1, bares 1·2·1.
+ */
+export function splitByCategory<T extends { category: CategoryId }>(route: readonly T[], parts: number): T[][] {
+  const days: T[][] = Array.from({ length: parts }, () => [])
+  const categories = [...new Set(route.map((p) => p.category))]
+  let nextExtra = 0 // día que recibe el próximo sobrante
+  for (const category of categories) {
+    const items = route.filter((p) => p.category === category)
+    const sizes = Array.from({ length: parts }, () => Math.floor(items.length / parts))
+    for (let k = 0; k < items.length % parts; k++) sizes[(nextExtra + k) % parts]++
+    nextExtra = (nextExtra + (items.length % parts)) % parts
+    let from = 0
+    sizes.forEach((size, day) => {
+      days[day].push(...items.slice(from, from + size))
+      from += size
+    })
+  }
+  return days
+}
+
+/**
  * Arma el plan día por día:
  *
- *   a) Primero ordena TODOS los lugares con el vecino más cercano. Así los
- *      lugares que quedan seguidos en la ruta global están cerca entre sí.
- *   b) Corta esa ruta global en tantos tramos como días tenga el viaje.
- *      Cada día recibe entonces una "zona" de la ciudad, en vez de cruzarla
- *      de punta a punta varias veces.
+ *   a) Ordena TODOS los lugares con el algoritmo de BARRIDO (sweepOrder): por
+ *      su dirección vista desde el centro, como la aguja de un reloj. Lugares
+ *      seguidos en ese orden están en la misma "tajada" de la ciudad.
+ *   b) Reparte cada actividad por separado siguiendo ese orden
+ *      (splitByCategory): el día 1 recibe los primeros museos del barrido, los
+ *      primeros restaurantes, etc. Así cada día tiene de TODO lo elegido (no
+ *      un día solo de restaurantes) y sus lugares quedan en la misma zona.
  *   c) Vuelve a optimizar cada día por separado, saliendo del punto de partida
- *      (cada mañana se sale del hotel).
+ *      (cada mañana se sale del hotel). Los lugares de vida nocturna (bares,
+ *      discotecas) van al final del día: la ruta de día se optimiza primero y
+ *      la de la noche sigue desde el último lugar visitado.
  */
 export function buildDailyPlan(start: GeoPoint, places: readonly Place[], dates: readonly string[]): DayPlan[] {
-  const globalRoute = optimizeRoute(start, places) // (a)
-  const chunks = splitEvenly(globalRoute, dates.length) // (b)
+  const sweep = sweepOrder(start, places) // (a)
+  const chunks = splitByCategory(sweep, dates.length) // (b)
 
   return chunks.map((chunk, i) => {
-    const dayRoute = optimizeRoute(start, chunk) // (c)
+    const daytime = optimizeRoute(start, chunk.filter((p) => !isNightPlace(p))) // (c)
+    const lastStop = daytime[daytime.length - 1] ?? start
+    const dayRoute = [...daytime, ...optimizeRoute(lastStop, chunk.filter(isNightPlace))]
     return {
       day: i + 1,
       date: dates[i],
@@ -319,6 +387,9 @@ export function computeStats(start: GeoPoint, selected: readonly Place[], days: 
 
 const round1 = (n: number) => Math.round(n * 10) / 10
 
+/** Bares y discotecas: se visitan de noche, al final del día. */
+const isNightPlace = (place: Place) => place.category === 'vidaNocturna'
+
 // ---------------------------------------------------------------------------
 // Orquestador: los cinco pasos juntos
 // ---------------------------------------------------------------------------
@@ -334,10 +405,8 @@ export async function generateItinerary(
   client: OsmClient,
   options: GenerateOptions = {},
 ): Promise<Itinerary> {
-  const { activitiesPerDay = DEFAULT_ACTIVITIES_PER_DAY, now = () => new Date() } = options
-
   // Validaciones baratas primero, antes de gastar peticiones de red.
-  const dates = tripDates(input.startDate, input.endDate)
+  tripDates(input.startDate, input.endDate)
   if (input.categories.length === 0) {
     throw new ItineraryError('INVALID_INPUT', 'Elige al menos una actividad.')
   }
@@ -346,6 +415,25 @@ export async function generateItinerary(
   }
 
   const destination = await geocodeDestination(input.destination, client) // Paso 1
+  return planItinerary(destination, input, client, options) // Pasos 2 a 5
+}
+
+/**
+ * Pasos 2 a 5 para un destino que ya tiene coordenadas (en la app, el que se
+ * eligió en el Paso 1): no vuelve a consultar Nominatim.
+ */
+export async function planItinerary(
+  destination: Destination,
+  input: TripInput,
+  client: Pick<OsmClient, 'findPlaces'>,
+  options: GenerateOptions = {},
+): Promise<Itinerary> {
+  const { activitiesPerDay = DEFAULT_ACTIVITIES_PER_DAY, now = () => new Date() } = options
+  const dates = tripDates(input.startDate, input.endDate)
+  if (input.categories.length === 0) {
+    throw new ItineraryError('INVALID_INPUT', 'Elige al menos una actividad.')
+  }
+
   const { byCategory, missingCategories } = await searchPlaces(destination, input.categories, client) // Paso 2
   const selected = selectPlaces(byCategory, input.categories, dates.length * activitiesPerDay) // Paso 3
   const days = buildDailyPlan(destination, selected, dates) // Pasos 4 y 5
