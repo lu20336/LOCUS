@@ -59,16 +59,18 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
   }
 
   function saveToPhone() {
-    setShared(
-      platform === 'ios'
-        ? 'Toca "Agregar todos" para guardar el viaje en tu Calendario.'
-        : 'Revisa el evento y toca "Guardar" en tu calendario.',
-    )
-    addToPhoneCalendar(platform, {
+    const action = addToPhoneCalendar(platform, {
       event: tripEvent(itinerary),
       ics: itineraryToIcs(itinerary),
       fallbackUrl: googleCalendarUrl(itinerary),
     })
+    setShared(
+      action === 'ios-invite'
+        ? 'Si Safari pregunta, toca "Permitir" y luego "Agregar todos".'
+        : action === 'android-intent'
+          ? 'Revisa el evento y toca "Guardar" en tu calendario.'
+          : 'Abrimos Google Calendar: toca "Guardar".',
+    )
   }
 
   const button =

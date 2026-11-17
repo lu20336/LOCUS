@@ -3,7 +3,7 @@ import type { TripDetails } from '../../../types/flow'
 import type { CategoryId, Itinerary, Place } from '../../../types/itinerary'
 import { googleCalendarUrl, tripEvent } from '../exportItinerary'
 import { buildItineraryPdf, pdfSafe } from '../itineraryPdf'
-import { androidCalendarIntent, detectPlatform, iosCalendarUrl } from '../phoneCalendar'
+import { androidCalendarIntent, detectPlatform, phoneCalendarAction } from '../phoneCalendar'
 
 const place = (name: string, category: CategoryId, i: number): Place => ({
   id: `${name}-${i}`,
@@ -87,8 +87,14 @@ describe('calendario', () => {
     expect(extras.every((part) => part.split('=').length === 2)).toBe(true)
   })
 
-  it('iPhone: el evento se abre como text/calendar, no como descarga', () => {
-    expect(iosCalendarUrl('BEGIN:VCALENDAR\r\nEND:VCALENDAR')).toBe('data:text/calendar;charset=utf-8,BEGIN%3AVCALENDAR%0D%0AEND%3AVCALENDAR')
+  it('iPhone: invitación de calendario en Safari; Google Calendar en Chrome u otros navegadores', () => {
+    const safari =
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1'
+    const chrome =
+      'Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) CriOS/131.0 Mobile/15E148 Safari/604.1'
+    expect(phoneCalendarAction('ios', safari)).toBe('ios-invite')
+    expect(phoneCalendarAction('ios', chrome)).toBe('google')
+    expect(phoneCalendarAction('android', chrome)).toBe('android-intent')
   })
 
   it('reconoce iPhone, iPad, Android y computador', () => {
