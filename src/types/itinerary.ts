@@ -47,6 +47,18 @@ export interface TripInput {
   categories: CategoryId[]
 }
 
+/** Pueblo cercano que el usuario eligió visitar en una excursión de un día (Paso 2). */
+export interface Excursion extends GeoPoint {
+  id: string
+  name: string
+  /** Departamento, ej. "Antioquia". */
+  region: string
+  /** Qué tiene de especial, ej. "El pueblo de piedra". */
+  tagline: string
+  /** Distancia en línea recta desde el destino principal. */
+  distanceKm: number
+}
+
 /** Un día del itinerario, con sus lugares ya en orden optimizado. */
 export interface DayPlan {
   /** Número de día empezando en 1. */
@@ -54,8 +66,10 @@ export interface DayPlan {
   /** Fecha ISO "AAAA-MM-DD". */
   date: string
   places: Place[]
-  /** Distancia en línea recta del recorrido del día, saliendo del centro del destino. */
+  /** Distancia en línea recta del recorrido del día, saliendo del centro del destino (o del pueblo). */
   distanceKm: number
+  /** Si es un día de excursión: el pueblo que se visita (el recorrido sale de su centro). */
+  excursion?: Excursion
 }
 
 export interface ItineraryStats {

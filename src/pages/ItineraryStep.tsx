@@ -17,6 +17,7 @@ import {
   ExternalLink,
   Gauge,
   MapPin,
+  MapPinned,
   Moon,
   Navigation,
   RefreshCw,
@@ -39,8 +40,8 @@ import type { DayPlan, Itinerary } from '../types/itinerary'
 const DayMap = lazy(() => import('../components/DayMap'))
 
 export function ItineraryStep() {
-  const { trip, categories, pace, goToStep } = useTripFlow()
-  const { state, retry } = useItinerary(trip, categories, pace)
+  const { trip, categories, pace, excursions, goToStep } = useTripFlow()
+  const { state, retry } = useItinerary(trip, categories, pace, excursions)
   const photos = useDestinationPhotos(trip?.destination ?? null)
   if (!trip) return null
 
@@ -145,7 +146,7 @@ function LoadingPlan({ placeName }: { placeName: string }) {
     <div>
       <p className="flex items-center gap-2 text-sm text-muted">
         <Route aria-hidden="true" className="size-4 animate-pulse text-teal-soft" />
-        Buscando lugares reales en {placeName} y armando la ruta más corta…
+        Buscando lugares reales en {placeName} (y en los pueblos que elegiste) y armando la ruta más corta…
       </p>
       <div aria-hidden="true" className="mt-4 flex gap-2">
         {[0, 1, 2].map((i) => (
@@ -166,6 +167,7 @@ function PlanView({ itinerary, budgetCOP }: { itinerary: Itinerary; budgetCOP: n
   const [selected, setSelected] = useState(0)
   const tabs = useRef<(HTMLButtonElement | null)[]>([])
   const totalPlaces = itinerary.days.reduce((sum, d) => sum + d.places.length, 0)
+  const cityDays = itinerary.days.filter((d) => !d.excursion).length
   const { stats } = itinerary
   const savedKm = Math.max(0, stats.unoptimizedKm - stats.optimizedKm)
   const day = itinerary.days[Math.min(selected, itinerary.days.length - 1)]
@@ -189,7 +191,11 @@ function PlanView({ itinerary, budgetCOP }: { itinerary: Itinerary; budgetCOP: n
       {/* Resumen */}
       <dl className={`grid grid-cols-2 gap-3 ${stats.savingPercent > 0 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
         <Stat label="Lugares" value={String(totalPlaces)} />
-        <Stat label="Recorrido total" value={formatDistance(stats.optimizedKm)} hint="en línea recta" />
+        <Stat
+          label="Recorrido total"
+          value={formatDistance(stats.optimizedKm)}
+          hint={cityDays < itinerary.days.length ? `en línea recta, días en ${itinerary.destination.displayName.split(',')[0]}` : 'en línea recta'}
+        />
         {/* Solo si la optimización acortó el recorrido frente al orden sin optimizar. */}
         {stats.savingPercent > 0 && (
           <Stat
@@ -235,6 +241,12 @@ function PlanView({ itinerary, budgetCOP }: { itinerary: Itinerary; budgetCOP: n
               >
                 <span className="block text-sm font-semibold">Día {d.day}</span>
                 <span className={`block text-xs ${active ? 'text-white/80' : 'text-muted'}`}>{formatDayTab(d.date)}</span>
+                {d.excursion && (
+                  <span className={`mt-0.5 flex items-center gap-1 text-xs font-semibold ${active ? 'text-white' : 'text-teal-soft'}`}>
+                    <MapPinned aria-hidden="true" className="size-3" />
+                    {d.excursion.name}
+                  </span>
+                )}
               </button>
             )
           })}
@@ -263,7 +275,10 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
 
 function DayPanel({ day, itinerary }: { day: DayPlan; itinerary: Itinerary }) {
   const [activeId, setActiveId] = useState<string | null>(null)
-  const start = itinerary.destination
+  // En un día de excursión el recorrido sale del centro del pueblo.
+  const start = day.excursion ?? itinerary.destination
+  const startName = day.excursion?.name ?? itinerary.destination.displayName.split(',')[0]
+  const cityName = itinerary.destination.displayName.split(',')[0]
   const legs = legDistancesKm(start, day.places)
   const routeUrl = googleMapsRouteUrl(start, day.places)
   const firstNight = day.places.findIndex((p) => p.category === 'vidaNocturna')
@@ -276,10 +291,36 @@ function DayPanel({ day, itinerary }: { day: DayPlan; itinerary: Itinerary }) {
       tabIndex={0}
       className="mt-4 focus:outline-none"
     >
+      {day.excursion && (
+        <div className="mb-4 flex flex-col gap-2 rounded-2xl bg-teal/10 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="flex items-center gap-2 font-semibold text-ink">
+              <MapPinned aria-hidden="true" className="size-4 text-teal-soft" />
+              Excursión de un día a {day.excursion.name}
+            </p>
+            <p className="text-sm text-ink">{day.excursion.tagline}</p>
+            <p className="text-xs text-muted">
+              {day.excursion.region} · a {day.excursion.distanceKm} km de {cityName} en línea recta
+            </p>
+          </div>
+          <a
+            href={googleMapsRouteUrl(itinerary.destination, [day.excursion], 'driving') ?? undefined}
+            target="_blank"
+            rel="noreferrer"
+            className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-teal-soft underline-offset-2 hover:underline"
+          >
+            <Navigation aria-hidden="true" className="size-4" />
+            Cómo llegar desde {cityName}
+            <span className="sr-only">(se abre en otra pestaña)</span>
+          </a>
+        </div>
+      )}
       {day.places.length === 0 ? (
         <p className="flex items-start gap-3 rounded-2xl border border-dashed border-line p-5 text-ink">
           <Coffee aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-teal-soft" />
-          Día libre: no hubo más lugares para este día. Descansa o explora {start.displayName.split(',')[0]} a tu ritmo.
+          {day.excursion
+            ? `No encontramos lugares registrados en ${day.excursion.name}. Recorre su plaza y sus calles a tu ritmo.`
+            : `Día libre: no hubo más lugares para este día. Descansa o explora ${startName} a tu ritmo.`}
         </p>
       ) : (
         <>
@@ -315,7 +356,7 @@ function DayPanel({ day, itinerary }: { day: DayPlan; itinerary: Itinerary }) {
               </span>
               <span className="flex items-center gap-1.5">
                 <MapPin aria-hidden="true" className="size-4" />
-                Salida desde el centro de {start.displayName.split(',')[0]}
+                Salida desde el centro de {startName}
               </span>
             </li>
             {day.places.map((place, i) => {
