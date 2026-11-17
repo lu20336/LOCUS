@@ -3,11 +3,13 @@ import type { CategoryId, GeoPoint, Place, TripInput } from '../../../types/itin
 import { ItineraryError, OsmHttpError } from '../errors'
 import {
   buildDailyPlan,
+  cleanPlaces,
   excursionDayIndexes,
   planExcursionDay,
   generateItinerary,
   geocodeDestination,
   optimizeRoute,
+  placeNameKey,
   planItinerary,
   routeDistanceKm,
   searchPlaces,
@@ -533,5 +535,67 @@ describe('planExcursionDay', () => {
     const client = { findPlaces: async () => [near('r1', 'gastronomia'), near('r2', 'gastronomia', 1, 0.02)] }
     const day = await planExcursionDay(town, '2026-12-02', ['cultura'], client, 3)
     expect(day.places.map((p) => p.id).sort()).toEqual(['r1', 'r2'])
+  })
+})
+
+describe('limpieza de lugares (sin repetidos ni sin interés)', () => {
+  it('"Playas de Marbella" y "Playa de Marbella" son el mismo lugar', () => {
+    expect(placeNameKey('Playas de Marbella')).toBe(placeNameKey('Playa de Marbella'))
+    expect(placeNameKey('Museo del Oro')).not.toBe(placeNameKey('Museo Naval'))
+  })
+
+  it('se queda con el más relevante de los repetidos y quita canteras y notas de mapeadores', () => {
+    const cleaned = cleanPlaces(
+      [
+        { ...place('a', 10.43, -75.53, 'playa', 1), name: 'Playa de Marbella' },
+        { ...place('b', 10.431, -75.531, 'playa', 3), name: 'Playas de Marbella' },
+        { ...place('c', 10.3, -75.4, 'aventura'), name: 'Mirador de la cantera Cementos Argos' },
+        { ...place('d', 10.3, -75.4, 'aventura'), name: "not a proper track here/ don't get there" },
+        { ...place('e', 10.4, -75.5, 'cultura'), name: 'Castillo San Felipe' },
+      ],
+      { lat: 10.42, lon: -75.54 },
+    )
+    expect(cleaned.map((p) => p.id).sort()).toEqual(['b', 'e'])
+  })
+
+  it('dos lugares con el mismo nombre en lugares distintos de la ciudad se conservan', () => {
+    const cleaned = cleanPlaces(
+      [
+        { ...place('a', 10.4, -75.5, 'cultura'), name: 'Iglesia de San Pedro' },
+        { ...place('b', 10.5, -75.5, 'cultura'), name: 'Iglesia de San Pedro' },
+      ],
+      { lat: 10.42, lon: -75.54 },
+    )
+    expect(cleaned).toHaveLength(2)
+  })
+})
+
+describe('excursión: lo imperdible del pueblo y alternativas', () => {
+  const town = {
+    id: 'turbaco', name: 'Turbaco', region: 'Bolívar', tagline: 'Jardín Botánico', lat: 10.33, lon: -75.41, distanceKm: 18,
+    highlight: { name: 'Jardín Botánico Guillermo Piñeres', category: 'aventura' as const, lat: 10.345, lon: -75.415 },
+  }
+
+  it('el imperdible entra siempre y no se repite si OSM también lo trae', async () => {
+    const client = {
+      findPlaces: async () => [
+        { ...place('osm-jardin', 10.3451, -75.4151, 'aventura', 5), name: 'Jardín Botánico Guillermo Piñeres' },
+        place('mirador', 10.34, -75.41, 'aventura', 2),
+        place('fonda', 10.33, -75.411, 'gastronomia'),
+        place('iglesia', 10.331, -75.41, 'cultura'),
+      ],
+    }
+    const day = await planExcursionDay(town, '2026-12-02', ['cultura'], client, 4)
+    const ids = day.places.map((p) => p.id)
+    expect(ids).toContain('imperdible/turbaco')
+    expect(ids).not.toContain('osm-jardin')
+    expect(ids).toHaveLength(3)
+    expect(day.alternatives?.every((a) => !ids.includes(a.id))).toBe(true)
+  })
+
+  it('sin servicio, el día queda al menos con lo imperdible', async () => {
+    const client = { findPlaces: async () => { throw new OsmHttpError(504, 'caído') } }
+    const day = await planExcursionDay(town, '2026-12-02', ['cultura'], client, 4)
+    expect(day.places.map((p) => p.name)).toEqual(['Jardín Botánico Guillermo Piñeres'])
   })
 })

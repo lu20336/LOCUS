@@ -9,6 +9,8 @@
  * - Cada día: mapa con la ruta numerada (MapLibre, carga diferida) y la lista
  *   de paradas con la distancia desde la anterior.
  * - Mientras busca: marcadores de carga. Si falla: mensaje y "Reintentar".
+ * - Las paradas se agrupan en mañana, tarde y noche, y cada una se puede
+ *   quitar o cambiar por otra de la misma actividad (con "Deshacer").
  */
 import {
   ArrowLeft,
@@ -22,7 +24,12 @@ import {
   Navigation,
   RefreshCw,
   Route,
+  Shuffle,
+  Sun,
+  Sunset,
+  Trash,
   TriangleAlert,
+  Undo2,
   Users,
 } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
@@ -30,6 +37,7 @@ import { WeatherChip } from '../components/ItineraryView'
 import { Alert } from '../components/ui'
 import { CATEGORY_ICONS } from '../components/choiceOptions'
 import { findFeaturedNear } from '../lib/featuredDestinations'
+import { alternativeFor, dayParts, DAY_PART_LABELS, removeStop, replaceStop, type DayPart } from '../lib/flow/editItinerary'
 import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm, osmPlaceUrl } from '../lib/flow/itineraryView'
 import { PACES } from '../lib/flow/pace'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
@@ -48,10 +56,27 @@ export function ItineraryStep() {
   const { trip, categories, pace, excursions, goToStep, itinerary: savedItinerary, setItinerary } = useTripFlow()
   const { state, retry } = useItinerary(trip, categories, pace, excursions)
   const ready = state.status === 'done' ? state.itinerary : null
-  // El Paso 4 (guardar) lee el plan desde el contexto del flujo.
+  // El Paso 4 (guardar) lee el plan desde el contexto del flujo. Si el usuario
+  // lo editó (quitar o cambiar paradas), se muestra y se guarda esa versión.
+  const shown = ready && savedItinerary?.generatedAt === ready.generatedAt ? savedItinerary : ready
   useEffect(() => {
-    if (ready && ready !== savedItinerary) setItinerary(ready)
+    if (ready && savedItinerary?.generatedAt !== ready.generatedAt) setItinerary(ready)
   }, [ready, savedItinerary, setItinerary])
+  const [history, setHistory] = useState<Itinerary[]>([])
+  const [notice, setNotice] = useState('')
+  function applyEdit(next: Itinerary, message: string) {
+    if (!shown) return
+    setHistory((h) => [...h, shown])
+    setItinerary(next)
+    setNotice(message)
+  }
+  function undo() {
+    const previous = history.at(-1)
+    if (!previous) return
+    setHistory((h) => h.slice(0, -1))
+    setItinerary(previous)
+    setNotice('Deshicimos el último cambio.')
+  }
   const photos = useDestinationPhotos(trip?.destination ?? null)
   if (!trip) return null
 
@@ -126,7 +151,15 @@ export function ItineraryStep() {
               </div>
             </div>
           )}
-          {state.status === 'done' && <PlanView itinerary={state.itinerary} budgetCOP={trip.budgetCOP} />}
+          {shown && (
+            <PlanView
+              itinerary={shown}
+              budgetCOP={trip.budgetCOP}
+              onEdit={applyEdit}
+              onUndo={history.length > 0 ? undo : undefined}
+              notice={notice}
+            />
+          )}
         </div>
 
         <div className="flex flex-wrap gap-3 border-t border-line pt-6">
@@ -182,7 +215,16 @@ function LoadingPlan({ placeName }: { placeName: string }) {
   )
 }
 
-function PlanView({ itinerary, budgetCOP }: { itinerary: Itinerary; budgetCOP: number }) {
+interface PlanViewProps {
+  itinerary: Itinerary
+  budgetCOP: number
+  onEdit: (next: Itinerary, message: string) => void
+  onUndo?: () => void
+  /** Mensaje del último cambio (se anuncia a lectores de pantalla). */
+  notice: string
+}
+
+function PlanView({ itinerary, budgetCOP, onEdit, onUndo, notice }: PlanViewProps) {
   const [selected, setSelected] = useState(0)
   const tabs = useRef<(HTMLButtonElement | null)[]>([])
   const totalPlaces = itinerary.days.reduce((sum, d) => sum + d.places.length, 0)
@@ -285,7 +327,28 @@ function PlanView({ itinerary, budgetCOP }: { itinerary: Itinerary; budgetCOP: n
           })}
         </div>
 
-        <DayPanel key={day.day} day={day} itinerary={itinerary} forecast={forecastByDate.get(day.date)} />
+        <div className="mt-3 flex min-h-9 flex-wrap items-center gap-3 text-sm" aria-live="polite">
+          {notice && <span className="text-ink">{notice}</span>}
+          {onUndo && (
+            <button
+              type="button"
+              onClick={onUndo}
+              className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold text-teal-soft hover:bg-surface-2"
+            >
+              <Undo2 aria-hidden="true" className="size-4" />
+              Deshacer
+            </button>
+          )}
+        </div>
+
+        <DayPanel
+          key={day.day}
+          day={day}
+          dayIndex={itinerary.days.indexOf(day)}
+          itinerary={itinerary}
+          forecast={forecastByDate.get(day.date)}
+          onEdit={onEdit}
+        />
       </div>
 
       <p className="text-xs text-muted">
@@ -306,7 +369,17 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   )
 }
 
-function DayPanel({ day, itinerary, forecast }: { day: DayPlan; itinerary: Itinerary; forecast?: DailyForecast }) {
+const DAY_PART_ICONS: Record<DayPart, typeof Sun> = { mañana: Sun, tarde: Sunset, noche: Moon }
+
+interface DayPanelProps {
+  day: DayPlan
+  dayIndex: number
+  itinerary: Itinerary
+  forecast?: DailyForecast
+  onEdit: (next: Itinerary, message: string) => void
+}
+
+function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps) {
   const [activeId, setActiveId] = useState<string | null>(null)
   // En un día de excursión el recorrido sale del centro del pueblo.
   const start = day.excursion ?? itinerary.destination
@@ -314,7 +387,7 @@ function DayPanel({ day, itinerary, forecast }: { day: DayPlan; itinerary: Itine
   const cityName = itinerary.destination.displayName.split(',')[0]
   const legs = legDistancesKm(start, day.places)
   const routeUrl = googleMapsRouteUrl(start, day.places)
-  const firstNight = day.places.findIndex((p) => p.category === 'vidaNocturna')
+  const parts = dayParts(day.places)
 
   return (
     <div
@@ -404,12 +477,7 @@ function DayPanel({ day, itinerary, forecast }: { day: DayPlan; itinerary: Itine
               const Icon = CATEGORY_ICONS[place.category]
               return (
                 <li key={place.id} className="relative">
-                  {i === firstNight && (
-                    <p className="mb-2 ml-11 flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-muted">
-                      <Moon aria-hidden="true" className="size-3.5" />
-                      De noche
-                    </p>
-                  )}
+                  {parts[i] !== parts[i - 1] && <DayPartHeading part={parts[i]} />}
                   <p className="mb-2 ml-11 text-xs text-muted">
                     {formatDistance(legs[i])} {i === 0 ? 'desde el centro' : 'desde la parada anterior'}
                   </p>
@@ -446,12 +514,65 @@ function DayPanel({ day, itinerary, forecast }: { day: DayPlan; itinerary: Itine
                       <span className="sr-only">Ver {place.name} en OpenStreetMap (se abre en otra pestaña)</span>
                     </a>
                   </div>
+                  <StopActions itinerary={itinerary} dayIndex={dayIndex} placeIndex={i} onEdit={onEdit} />
                 </li>
               )
             })}
           </ol>
         </>
       )}
+    </div>
+  )
+}
+
+function DayPartHeading({ part }: { part: DayPart }) {
+  const Icon = DAY_PART_ICONS[part]
+  return (
+    <h3 className="mb-2 ml-11 flex items-center gap-1.5 font-sans text-xs font-semibold uppercase tracking-wider text-muted">
+      <Icon aria-hidden="true" className="size-3.5" />
+      {DAY_PART_LABELS[part]}
+    </h3>
+  )
+}
+
+/** "Cambiar" (por otro lugar de la misma actividad) y "Quitar" de cada parada. */
+function StopActions({
+  itinerary,
+  dayIndex,
+  placeIndex,
+  onEdit,
+}: {
+  itinerary: Itinerary
+  dayIndex: number
+  placeIndex: number
+  onEdit: (next: Itinerary, message: string) => void
+}) {
+  const day = itinerary.days[dayIndex]
+  const place = day.places[placeIndex]
+  const next = alternativeFor(itinerary, dayIndex, placeIndex)
+  return (
+    <div className="-mt-2 mb-3 ml-11 flex gap-1">
+      <button
+        type="button"
+        disabled={!next}
+        title={next ? `Cambiar por ${next.name}` : 'No hay otro lugar de esta actividad cerca'}
+        onClick={() => {
+          const changed = replaceStop(itinerary, dayIndex, placeIndex)
+          if (changed && next) onEdit(changed, `Cambiamos ${place.name} por ${next.name}.`)
+        }}
+        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        <Shuffle aria-hidden="true" className="size-3.5" />
+        Cambiar<span className="sr-only"> {place.name}</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => onEdit(removeStop(itinerary, dayIndex, placeIndex), `Quitamos ${place.name} del día ${day.day}.`)}
+        className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-danger"
+      >
+        <Trash aria-hidden="true" className="size-3.5" />
+        Quitar<span className="sr-only"> {place.name}</span>
+      </button>
     </div>
   )
 }

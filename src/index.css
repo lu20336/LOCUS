@@ -181,3 +181,25 @@
     transform: translateX(0);
   }
 }
+
+/*
+ * Impresión / "Guardar como PDF" del Paso 4: en la hoja solo sale el resumen
+ * del plan (.locus-print). Se oculta todo lo demás con visibility para no
+ * depender de la estructura de la página.
+ */
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  .locus-print,
+  .locus-print * {
+    visibility: visible;
+  }
+  .locus-print {
+    position: absolute;
+    inset: 0 0 auto 0;
+    border: 0;
+    box-shadow: none;
+    padding: 0;
+  }
+}

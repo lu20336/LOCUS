@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T02:40:03.779Z",
+  "generatedAt": "2026-11-17T03:39:03.830Z",
   "source": "Coordenadas: Nominatim / OpenStreetMap",
   "towns": [
     {
@@ -8,7 +8,13 @@
       "region": "Antioquia",
       "tagline": "Piedra del Peñol y zócalos de colores",
       "lat": 6.23422,
-      "lon": -75.16175
+      "lon": -75.16175,
+      "highlight": {
+        "name": "Piedra del Peñol",
+        "category": "aventura",
+        "lat": 6.22002,
+        "lon": -75.17943
+      }
     },
     {
       "id": "santa-fe-de-antioquia",
@@ -16,7 +22,13 @@
       "region": "Antioquia",
       "tagline": "Centro colonial y Puente de Occidente",
       "lat": 6.54019,
-      "lon": -75.91599
+      "lon": -75.91599,
+      "highlight": {
+        "name": "Puente de Occidente",
+        "category": "cultura",
+        "lat": 6.57796,
+        "lon": -75.79823
+      }
     },
     {
       "id": "jardin",
@@ -56,7 +68,13 @@
       "region": "Cundinamarca",
       "tagline": "Catedral de Sal",
       "lat": 5.02347,
-      "lon": -74.00398
+      "lon": -74.00398,
+      "highlight": {
+        "name": "Catedral de Sal",
+        "category": "cultura",
+        "lat": 5.01871,
+        "lon": -74.01033
+      }
     },
     {
       "id": "guatavita",
@@ -64,7 +82,13 @@
       "region": "Cundinamarca",
       "tagline": "Laguna de Guatavita y la leyenda de El Dorado",
       "lat": 4.90434,
-      "lon": -73.77995
+      "lon": -73.77995,
+      "highlight": {
+        "name": "Laguna de Guatavita",
+        "category": "aventura",
+        "lat": 4.97774,
+        "lon": -73.77529
+      }
     },
     {
       "id": "suesca",
@@ -72,7 +96,13 @@
       "region": "Cundinamarca",
       "tagline": "Escalada en roca junto al río Bogotá",
       "lat": 5.10334,
-      "lon": -73.79901
+      "lon": -73.79901,
+      "highlight": {
+        "name": "Rocas de Suesca",
+        "category": "aventura",
+        "lat": 5.09856,
+        "lon": -73.78167
+      }
     },
     {
       "id": "nemocon",
@@ -80,7 +110,13 @@
       "region": "Cundinamarca",
       "tagline": "Mina de sal",
       "lat": 5.09723,
-      "lon": -73.87473
+      "lon": -73.87473,
+      "highlight": {
+        "name": "Mina de Sal de Nemocón",
+        "category": "cultura",
+        "lat": 5.06389,
+        "lon": -73.87462
+      }
     },
     {
       "id": "choachi",
@@ -120,7 +156,13 @@
       "region": "Boyacá",
       "tagline": "Plaza mayor empedrada y casas coloniales",
       "lat": 5.66199,
-      "lon": -73.52838
+      "lon": -73.52838,
+      "highlight": {
+        "name": "Plaza Mayor de Villa de Leyva",
+        "category": "cultura",
+        "lat": 5.63377,
+        "lon": -73.52359
+      }
     },
     {
       "id": "raquira",
@@ -144,7 +186,13 @@
       "region": "Boyacá",
       "tagline": "Aguas termales y lago Sochagota",
       "lat": 5.78127,
-      "lon": -73.11765
+      "lon": -73.11765,
+      "highlight": {
+        "name": "Lago Sochagota",
+        "category": "aventura",
+        "lat": 5.76045,
+        "lon": -73.11933
+      }
     },
     {
       "id": "nobsa",
@@ -160,7 +208,13 @@
       "region": "Boyacá",
       "tagline": "Lago de Tota",
       "lat": 5.51758,
-      "lon": -72.88315
+      "lon": -72.88315,
+      "highlight": {
+        "name": "Lago de Tota",
+        "category": "aventura",
+        "lat": 5.54253,
+        "lon": -72.9137
+      }
     },
     {
       "id": "iza",
@@ -200,7 +254,13 @@
       "region": "Santander",
       "tagline": "Turismo de aventura: rafting y parapente",
       "lat": 6.55529,
-      "lon": -73.13124
+      "lon": -73.13124,
+      "highlight": {
+        "name": "Parque El Gallineral",
+        "category": "aventura",
+        "lat": 6.54991,
+        "lon": -73.12815
+      }
     },
     {
       "id": "giron",
@@ -240,7 +300,13 @@
       "region": "Quindío",
       "tagline": "Valle de Cocora y palmas de cera",
       "lat": 4.6373,
-      "lon": -75.5698
+      "lon": -75.5698,
+      "highlight": {
+        "name": "Valle de Cocora",
+        "category": "aventura",
+        "lat": 4.63711,
+        "lon": -75.47833
+      }
     },
     {
       "id": "filandia",
@@ -264,7 +330,13 @@
       "region": "Quindío",
       "tagline": "Parque del Café",
       "lat": 4.56642,
-      "lon": -75.75071
+      "lon": -75.75071,
+      "highlight": {
+        "name": "Parque del Café",
+        "category": "aventura",
+        "lat": 4.53733,
+        "lon": -75.76927
+      }
     },
     {
       "id": "quimbaya",
@@ -272,7 +344,13 @@
       "region": "Quindío",
       "tagline": "Pueblo cafetero de las velas y faroles",
       "lat": 4.62245,
-      "lon": -75.76313
+      "lon": -75.76313,
+      "highlight": {
+        "name": "Panaca",
+        "category": "aventura",
+        "lat": 4.60708,
+        "lon": -75.81883
+      }
     },
     {
       "id": "santa-rosa-de-cabal",
@@ -280,7 +358,13 @@
       "region": "Risaralda",
       "tagline": "Termales y chorizo santarrosano",
       "lat": 4.86507,
-      "lon": -75.62116
+      "lon": -75.62116,
+      "highlight": {
+        "name": "Termales de Santa Rosa de Cabal",
+        "category": "aventura",
+        "lat": 4.83763,
+        "lon": -75.54875
+      }
     },
     {
       "id": "salamina",
@@ -304,7 +388,13 @@
       "region": "Valle del Cauca",
       "tagline": "Basílica del Señor de los Milagros",
       "lat": 3.90006,
-      "lon": -76.30201
+      "lon": -76.30201,
+      "highlight": {
+        "name": "Basílica del Señor de los Milagros",
+        "category": "cultura",
+        "lat": 3.89725,
+        "lon": -76.30199
+      }
     },
     {
       "id": "ginebra",
@@ -320,7 +410,13 @@
       "region": "Valle del Cauca",
       "tagline": "Lago Calima y deportes de viento",
       "lat": 3.93182,
-      "lon": -76.48424
+      "lon": -76.48424,
+      "highlight": {
+        "name": "Lago Calima",
+        "category": "aventura",
+        "lat": 3.89249,
+        "lon": -76.49548
+      }
     },
     {
       "id": "roldanillo",
@@ -328,7 +424,13 @@
       "region": "Valle del Cauca",
       "tagline": "Museo Rayo y parapente",
       "lat": 4.40912,
-      "lon": -76.15437
+      "lon": -76.15437,
+      "highlight": {
+        "name": "Museo Rayo",
+        "category": "cultura",
+        "lat": 4.40962,
+        "lon": -76.15365
+      }
     },
     {
       "id": "el-cerrito",
@@ -336,7 +438,13 @@
       "region": "Valle del Cauca",
       "tagline": "Hacienda El Paraíso, escenario de María",
       "lat": 3.68292,
-      "lon": -76.30715
+      "lon": -76.30715,
+      "highlight": {
+        "name": "Hacienda El Paraíso",
+        "category": "cultura",
+        "lat": 3.6407,
+        "lon": -76.19798
+      }
     },
     {
       "id": "cartago",
@@ -368,7 +476,13 @@
       "region": "Huila",
       "tagline": "Parque Arqueológico",
       "lat": 1.88208,
-      "lon": -76.2729
+      "lon": -76.2729,
+      "highlight": {
+        "name": "Parque Arqueológico de San Agustín",
+        "category": "cultura",
+        "lat": 1.88333,
+        "lon": -76.29536
+      }
     },
     {
       "id": "villavieja",
@@ -376,7 +490,13 @@
       "region": "Huila",
       "tagline": "Desierto de la Tatacoa",
       "lat": 3.21954,
-      "lon": -75.21903
+      "lon": -75.21903,
+      "highlight": {
+        "name": "Desierto de la Tatacoa",
+        "category": "aventura",
+        "lat": 3.25361,
+        "lon": -75.14677
+      }
     },
     {
       "id": "honda",
@@ -408,7 +528,49 @@
       "region": "Bolívar",
       "tagline": "Jardín Botánico cerca de Cartagena",
       "lat": 10.33059,
-      "lon": -75.41273
+      "lon": -75.41273,
+      "highlight": {
+        "name": "Jardín Botánico Guillermo Piñeres",
+        "category": "aventura",
+        "lat": 10.35427,
+        "lon": -75.42932
+      }
+    },
+    {
+      "id": "baru",
+      "name": "Barú",
+      "region": "Bolívar",
+      "tagline": "Playa Blanca y aguas turquesa",
+      "lat": 10.14179,
+      "lon": -75.6849,
+      "highlight": {
+        "name": "Playa Blanca",
+        "category": "playa",
+        "lat": 10.22431,
+        "lon": -75.60779
+      }
+    },
+    {
+      "id": "santa-catalina",
+      "name": "Santa Catalina",
+      "region": "Bolívar",
+      "tagline": "Volcán de lodo El Totumo",
+      "lat": 10.65239,
+      "lon": -75.26989,
+      "highlight": {
+        "name": "Volcán del Totumo",
+        "category": "aventura",
+        "lat": 10.74692,
+        "lon": -75.24556
+      }
+    },
+    {
+      "id": "san-basilio-de-palenque",
+      "name": "San Basilio de Palenque",
+      "region": "Bolívar",
+      "tagline": "Primer pueblo libre de América",
+      "lat": 10.10433,
+      "lon": -75.19884
     },
     {
       "id": "santiago-de-tolu",
@@ -456,7 +618,13 @@
       "region": "Magdalena",
       "tagline": "Casa natal de Gabriel García Márquez",
       "lat": 10.5906,
-      "lon": -74.18768
+      "lon": -74.18768,
+      "highlight": {
+        "name": "Casa Museo Gabriel García Márquez",
+        "category": "cultura",
+        "lat": 10.59239,
+        "lon": -74.19281
+      }
     },
     {
       "id": "cienaga",
@@ -496,7 +664,13 @@
       "region": "La Guajira",
       "tagline": "Desierto y mar en La Guajira",
       "lat": 12.20713,
-      "lon": -72.18022
+      "lon": -72.18022,
+      "highlight": {
+        "name": "Pilón de Azúcar",
+        "category": "aventura",
+        "lat": 12.23819,
+        "lon": -72.14272
+      }
     },
     {
       "id": "valledupar",
@@ -528,7 +702,13 @@
       "region": "Nariño",
       "tagline": "Santuario de Las Lajas",
       "lat": 0.82365,
-      "lon": -77.63486
+      "lon": -77.63486,
+      "highlight": {
+        "name": "Santuario de Las Lajas",
+        "category": "cultura",
+        "lat": 0.8056,
+        "lon": -77.58601
+      }
     },
     {
       "id": "el-encano",
@@ -536,7 +716,13 @@
       "region": "Nariño",
       "tagline": "Laguna de La Cocha",
       "lat": 1.16269,
-      "lon": -77.15631
+      "lon": -77.15631,
+      "highlight": {
+        "name": "Laguna de La Cocha",
+        "category": "aventura",
+        "lat": 1.07714,
+        "lon": -77.15336
+      }
     }
   ]
 }

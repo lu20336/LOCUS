@@ -6,6 +6,7 @@
  */
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router'
+import { PlanSummary } from '../components/PlanSummary'
 import { StaysSection } from '../components/StaysSection'
 import { Stepper } from '../components/Stepper'
 import { ActivitiesStep } from './ActivitiesStep'
@@ -69,6 +70,8 @@ function ConfirmStep() {
           <Button variant="ghost" className="self-start border border-line" onClick={() => goToStep(3)}>← Volver al itinerario</Button>
         </div>
       </Card>
+
+      <PlanSummary itinerary={itinerary} trip={trip} />
 
       <StaysSection lat={itinerary.destination.lat} lon={itinerary.destination.lon} placeName={name} checkIn={trip.startDate} checkOut={trip.endDate} guests={trip.travelers} />
 

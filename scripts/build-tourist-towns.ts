@@ -86,6 +86,9 @@ const TOWNS: Entry[] = [
   // Caribe
   { name: 'Mompox', region: 'Bolívar', tagline: 'Centro histórico patrimonio de la humanidad', query: 'Santa Cruz de Mompox', near: [9.24, -74.43] },
   { name: 'Turbaco', region: 'Bolívar', tagline: 'Jardín Botánico cerca de Cartagena' },
+  { name: 'Barú', region: 'Bolívar', tagline: 'Playa Blanca y aguas turquesa', near: [10.2, -75.6] },
+  { name: 'Santa Catalina', region: 'Bolívar', tagline: 'Volcán de lodo El Totumo' },
+  { name: 'San Basilio de Palenque', region: 'Bolívar', tagline: 'Primer pueblo libre de América', near: [10.1, -75.2] },
   { name: 'Santiago de Tolú', region: 'Sucre', tagline: 'Playas del golfo de Morrosquillo' },
   { name: 'Coveñas', region: 'Sucre', tagline: 'Playas del golfo de Morrosquillo' },
   { name: 'Lorica', region: 'Córdoba', tagline: 'Mercado y arquitectura junto al río Sinú', near: [9.24, -75.81] },
@@ -105,6 +108,41 @@ const TOWNS: Entry[] = [
   { name: 'Ipiales', region: 'Nariño', tagline: 'Santuario de Las Lajas' },
   { name: 'El Encano', region: 'Nariño', tagline: 'Laguna de La Cocha' },
 ]
+
+/**
+ * Lo imperdible de cada pueblo: entra siempre en su día de excursión, aunque
+ * OpenStreetMap no lo traiga en la búsqueda (ej. el Jardín Botánico de Turbaco).
+ * Se acepta solo si Nominatim lo ubica a menos de 15 km del pueblo.
+ */
+const HIGHLIGHTS: Record<string, { name: string; category: 'cultura' | 'aventura' | 'playa'; query?: string }> = {
+  Guatapé: { name: 'Piedra del Peñol', category: 'aventura' },
+  'Santa Fe de Antioquia': { name: 'Puente de Occidente', category: 'cultura' },
+  Zipaquirá: { name: 'Catedral de Sal', category: 'cultura', query: 'Catedral de Sal de Zipaquirá' },
+  Guatavita: { name: 'Laguna de Guatavita', category: 'aventura' },
+  Nemocón: { name: 'Mina de Sal de Nemocón', category: 'cultura' },
+  Suesca: { name: 'Rocas de Suesca', category: 'aventura' },
+  'Villa de Leyva': { name: 'Plaza Mayor de Villa de Leyva', category: 'cultura' },
+  Paipa: { name: 'Lago Sochagota', category: 'aventura' },
+  Aquitania: { name: 'Lago de Tota', category: 'aventura' },
+  'San Gil': { name: 'Parque El Gallineral', category: 'aventura' },
+  Salento: { name: 'Valle de Cocora', category: 'aventura' },
+  Montenegro: { name: 'Parque del Café', category: 'aventura' },
+  Quimbaya: { name: 'Panaca', category: 'aventura' },
+  'Santa Rosa de Cabal': { name: 'Termales de Santa Rosa de Cabal', category: 'aventura' },
+  'Guadalajara de Buga': { name: 'Basílica del Señor de los Milagros', category: 'cultura', query: 'Basílica del Señor de los Milagros, Buga' },
+  Calima: { name: 'Lago Calima', category: 'aventura' },
+  Roldanillo: { name: 'Museo Rayo', category: 'cultura' },
+  'El Cerrito': { name: 'Hacienda El Paraíso', category: 'cultura' },
+  'San Agustín': { name: 'Parque Arqueológico de San Agustín', category: 'cultura' },
+  Villavieja: { name: 'Desierto de la Tatacoa', category: 'aventura' },
+  Turbaco: { name: 'Jardín Botánico Guillermo Piñeres', category: 'aventura' },
+  Barú: { name: 'Playa Blanca', category: 'playa', query: 'Playa Blanca' },
+  'Santa Catalina': { name: 'Volcán del Totumo', category: 'aventura', query: 'Volcán del Totumo' },
+  Aracataca: { name: 'Casa Museo Gabriel García Márquez', category: 'cultura', query: 'Casa Museo Gabriel García Márquez, Aracataca' },
+  'Cabo de la Vela': { name: 'Pilón de Azúcar', category: 'aventura', query: 'Pilón de Azúcar' },
+  Ipiales: { name: 'Santuario de Las Lajas', category: 'cultura' },
+  'El Encano': { name: 'Laguna de La Cocha', category: 'aventura' },
+}
 
 const osm = createOsmClient({
   userAgent: 'Locus/0.1 (prototipo academico, curso Ingenieria Aplicada)',
@@ -132,15 +170,27 @@ for (const entry of TOWNS) {
     missing.push(`${entry.name} (${result?.displayName ?? 'sin resultado'})`)
     continue
   }
+  const round = (n: number) => Math.round(n * 1e5) / 1e5
+  let highlight: { name: string; category: string; lat: number; lon: number } | undefined
+  const wanted = HIGHLIGHTS[entry.name]
+  if (wanted) {
+    const spot = await osm.geocode(`${wanted.query ?? wanted.name}, ${entry.region}, Colombia`)
+    if (spot && haversineKm(spot, result) < 15) {
+      highlight = { name: wanted.name, category: wanted.category, lat: round(spot.lat), lon: round(spot.lon) }
+    } else {
+      missing.push(`imperdible de ${entry.name}: ${wanted.name} (${spot ? `${haversineKm(spot, result).toFixed(0)} km` : 'sin resultado'})`)
+    }
+  }
   towns.push({
     id: slug(entry.name),
     name: entry.name,
     region: entry.region,
     tagline: entry.tagline,
-    lat: Math.round(result.lat * 1e5) / 1e5,
-    lon: Math.round(result.lon * 1e5) / 1e5,
+    lat: round(result.lat),
+    lon: round(result.lon),
+    ...(highlight ? { highlight } : {}),
   })
-  console.log(`✓ ${entry.name}: ${result.displayName} (${result.lat.toFixed(4)}, ${result.lon.toFixed(4)})`)
+  console.log(`✓ ${entry.name}${highlight ? ` + ${highlight.name}` : ''}`)
 }
 
 writeFileSync(
