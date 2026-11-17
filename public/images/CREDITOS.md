@@ -85,3 +85,32 @@ mencionar al autor y la licencia: ver la tabla "Lugares" al final.
 | guatape/zocalos-de-colores.jpg | Zócalos de colores | Alejandro Rojas (SajoR) | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Zócalos de Guatapé 3.jpg](https://commons.wikimedia.org/wiki/File:Z%C3%B3calos_de_Guatap%C3%A9_3.jpg) |
 | guatape/malecon-de-guatape.jpg | Malecón de Guatapé | Yurek48 | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Malecón de Guatapé..jpg](https://commons.wikimedia.org/wiki/File:Malec%C3%B3n_de_Guatap%C3%A9..jpg) |
 | guatape/paseo-en-lancha-por-el-embalse.jpg | Paseo en lancha por el embalse | Dtarazona | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | [Embalse de Guatapé 5 30062011.jpg](https://commons.wikimedia.org/wiki/File:Embalse_de_Guatap%C3%A9_5_30062011.jpg) |
+
+## Actividades por destino (lugares/<destino>/actividad-*.jpg)
+
+Fotos de cada actividad en un destino destacado (Paso 2). Misma fuente y
+licencias que la tabla anterior.
+
+| Archivo | Actividad | Autor | Licencia | Fuente (Wikimedia Commons) |
+|---|---|---|---|---|
+| cartagena/actividad-compras.jpg | Compras | Joe Ross from Lansing, Michigan | [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0) | [Galeria de las Bovedas, Cartagena, Colombia (24051810139).jpg](https://commons.wikimedia.org/wiki/File:Galeria_de_las_Bovedas,_Cartagena,_Colombia_(24051810139).jpg) |
+| medellin/actividad-gastronomia.jpg | Gastronomía | Dtarazona | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | [Bandeja paisa 30062011.jpg](https://commons.wikimedia.org/wiki/File:Bandeja_paisa_30062011.jpg) |
+| medellin/actividad-vida-nocturna.jpg | Vida nocturna | Xemenendura | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Provenza, Medellín o.jpg](https://commons.wikimedia.org/wiki/File:Provenza,_Medell%C3%ADn_o.jpg) |
+| medellin/actividad-compras.jpg | Compras | Secretaría de Movilidad de Medellín | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0) | [Unicentro Medellín - Puerta San Joaquín, 2017.jpg](https://commons.wikimedia.org/wiki/File:Unicentro_Medell%C3%ADn_-_Puerta_San_Joaqu%C3%ADn,_2017.jpg) |
+| bogota/actividad-gastronomia.jpg | Gastronomía | jeison Rodriguez Sandoval | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [Ajiaco-santafereño.colombia.jpg](https://commons.wikimedia.org/wiki/File:Ajiaco-santafere%C3%B1o.colombia.jpg) |
+| bogota/actividad-vida-nocturna.jpg | Vida nocturna | by amanderson2 | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0) | [Zona T Bogota.jpg](https://commons.wikimedia.org/wiki/File:Zona_T_Bogota.jpg) |
+| villa-de-leyva/actividad-compras.jpg | Compras | Paco Godoy | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | [Artesanías dentro y fuera.JPG](https://commons.wikimedia.org/wiki/File:Artesan%C3%ADas_dentro_y_fuera.JPG) |
+| villa-de-leyva/actividad-vida-nocturna.jpg | Vida nocturna | Nelsonc | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | [S2010655 VILLA DE LEYVA EN LA NOCHE.jpg](https://commons.wikimedia.org/wiki/File:S2010655_VILLA_DE_LEYVA_EN_LA_NOCHE.jpg) |
+| san-andres/actividad-cultura.jpg | Cultura | Jimysantandef, originally laloking97 | [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0) | [La iglesia de San Luis en las islas de San Andres Colombia retouched.jpg](https://commons.wikimedia.org/wiki/File:La_iglesia_de_San_Luis_en_las_islas_de_San_Andres_Colombia_retouched.jpg) |
+| santa-marta/actividad-gastronomia.jpg | Gastronomía | Felipe Restrepo Acosta | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [2018 Santa Marta (Colombia) - Restaurantes en el malecón de Santa Marta hacia la calle 18.jpg](https://commons.wikimedia.org/wiki/File:2018_Santa_Marta_(Colombia)_-_Restaurantes_en_el_malec%C3%B3n_de_Santa_Marta_hacia_la_calle_18.jpg) |
+| santa-marta/actividad-vida-nocturna.jpg | Vida nocturna | Felipe Restrepo Acosta | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [2019 Santa Marta - Casa azul en el Parque de Los Novios.jpg](https://commons.wikimedia.org/wiki/File:2019_Santa_Marta_-_Casa_azul_en_el_Parque_de_Los_Novios.jpg) |
+| santa-marta/actividad-compras.jpg | Compras | Felipe Restrepo Acosta | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | [2018 Santa Marta (Colombia) - Centro Comercial Tesoro del Mar, Malecón de Santa Marta con calle 15 (costado sur del Parque Simón Bolívar).jpg](https://commons.wikimedia.org/wiki/File:2018_Santa_Marta_(Colombia)_-_Centro_Comercial_Tesoro_del_Mar,_Malec%C3%B3n_de_Santa_Marta_con_calle_15_(costado_sur_del_Parque_Sim%C3%B3n_Bol%C3%ADvar).jpg) |
+| guatape/actividad-vida-nocturna.jpg | Vida nocturna | Gabriel Illescas | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0) | [Guatapé 40.jpg](https://commons.wikimedia.org/wiki/File:Guatap%C3%A9_40.jpg) |
+
+## Fotos automáticas de otros destinos (Paso 2)
+
+Para destinos que no son los 8 destacados (ej. Cali, Pasto, Tunja), la app
+busca en el momento fotos libres del propio lugar en Wikidata y Wikimedia
+Commons (ver `src/lib/itinerary/placePhotos.ts`). Esas fotos no se guardan en
+el proyecto: se cargan desde Wikimedia y el autor y la licencia de cada una se
+muestran en la misma pantalla ("Fotos de Wikimedia Commons · ver autores").

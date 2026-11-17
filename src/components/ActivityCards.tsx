@@ -1,17 +1,7 @@
 import { CATEGORY_IDS, CATEGORIES } from '../lib/itinerary/categories'
 import type { CategoryId } from '../types/itinerary'
-import { CATEGORY_ICONS } from './choiceOptions'
+import { ACTIVITY_IMAGES, CATEGORY_ICONS } from './choiceOptions'
 import { PhotoCard } from './PhotoCard'
-
-/** Foto de cada actividad en /public/images/actividades (ver public/images/CREDITOS.md). */
-const ACTIVITY_IMAGES: Record<CategoryId, string> = {
-  playa: '/images/actividades/playa.jpg',
-  cultura: '/images/actividades/cultura.jpg',
-  gastronomia: '/images/actividades/gastronomia.jpg',
-  aventura: '/images/actividades/aventura.jpg',
-  vidaNocturna: '/images/actividades/vida-nocturna.jpg',
-  compras: '/images/actividades/compras.jpg',
-}
 
 /**
  * Sección "¿Qué te gustaría hacer?": una tarjeta por categoría. Al elegir una,
@@ -24,24 +14,26 @@ const ACTIVITY_IMAGES: Record<CategoryId, string> = {
  *    ver index.css).
  */
 export function ActivityCards({ onChoose }: { onChoose: (category: CategoryId) => void }) {
-
-  const renderCard = (category: CategoryId, copy = '') => (
-    <li key={`${category}${copy}`} className="shrink-0">
-      <PhotoCard
-        image={ACTIVITY_IMAGES[category]}
-        title={CATEGORIES[category].label}
-        srPrefix="Buscar destinos para"
-        titleClassName="text-xl"
-        className="h-60 w-44 sm:h-64 sm:w-52 lg:h-72 lg:w-56"
-        badge={
-          <span aria-hidden="true" className="grid size-10 place-items-center rounded-full bg-surface/90 text-lg shadow-sm backdrop-blur">
-            {CATEGORY_ICONS[category]}
-          </span>
-        }
-        onClick={() => onChoose(category)}
-      />
-    </li>
-  )
+  const renderCard = (category: CategoryId, copy = '') => {
+    const Icon = CATEGORY_ICONS[category]
+    return (
+      <li key={`${category}${copy}`} className="shrink-0">
+        <PhotoCard
+          image={ACTIVITY_IMAGES[category]}
+          title={CATEGORIES[category].label}
+          srPrefix="Buscar destinos para"
+          titleClassName="text-xl"
+          className="h-60 w-44 sm:h-64 sm:w-52 lg:h-72 lg:w-56"
+          badge={
+            <span aria-hidden="true" className="grid size-10 place-items-center rounded-full bg-surface/90 shadow-sm backdrop-blur">
+              <Icon className="size-5 text-teal-soft" strokeWidth={2} />
+            </span>
+          }
+          onClick={() => onChoose(category)}
+        />
+      </li>
+    )
+  }
 
   return (
     <section aria-labelledby="activities-title" data-force-motion>

@@ -1,6 +1,7 @@
 /**
  * Cliente de lugares con RESPALDOS. Los servidores públicos de Overpass se
- * saturan con frecuencia; si la consulta en vivo falla se usa, en orden:
+ * saturan con frecuencia; la consulta en vivo (Overpass y, si hay clave,
+ * Geoapify, ver browserClient.ts) y, si falla, en orden:
  *   1. los lugares precalculados de los destinos destacados
  *      (src/data/featuredPlaces.json, generado con `npm run data:reference`),
  *   2. Nominatim en vivo (búsqueda por categoría),
@@ -8,7 +9,7 @@
  */
 import type { CategoryId, GeoPoint, Place } from '../../types/itinerary'
 import { FEATURED_DESTINATIONS } from '../featuredDestinations'
-import { osmClient } from './browserClient'
+import { osmClient, placesClient as overpassPlacesClient } from './browserClient'
 import { placesViaNominatim } from './nominatimPlaces'
 import { haversineKm } from './geo'
 import type { OsmClient } from './osmClient'
@@ -47,7 +48,8 @@ export const placesClient: OsmClient = {
   geocode: (query) => osmClient.geocode(query),
   async findPlaces(center, radiusMeters, categories) {
     try {
-      const live = await osmClient.findPlaces(center, radiusMeters, categories)
+      // Overpass y, si falla y hay clave, Geoapify (cliente de browserClient).
+      const live = await overpassPlacesClient.findPlaces(center, radiusMeters, categories)
       placesSource.last = 'live'
       return live
     } catch (error) {

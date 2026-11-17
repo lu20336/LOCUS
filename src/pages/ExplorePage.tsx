@@ -4,6 +4,7 @@
  * (reservables). Si no hay resultados, se ofrecen alojamientos de referencia de
  * OpenStreetMap, claramente separados y marcados como no reservables.
  */
+import { Users } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { Counter } from '../components/Counter'
@@ -155,7 +156,7 @@ export default function ExplorePage() {
           <label htmlFor="salida" className="text-sm font-semibold text-ink">Salida</label>
           <input id="salida" type="date" min={checkIn || today} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className={`${inputClassName} mt-1`} />
         </div>
-        <Counter label="Huéspedes" icon="👥" unit="un huésped" value={guests} min={1} max={20} onChange={setGuests} />
+        <Counter label="Huéspedes" icon={Users} unit="un huésped" value={guests} min={1} max={20} onChange={setGuests} />
       </form>
 
       <div className="mb-5 flex flex-wrap items-center gap-2" role="group" aria-label="Destinos populares">

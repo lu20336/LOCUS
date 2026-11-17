@@ -4,6 +4,7 @@
  * docs/PROVEEDORES.md). Se sugieren aeropuertos y se abre la búsqueda en el
  * proveedor elegido, donde el usuario ve las tarifas reales y compra.
  */
+import { User } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router'
 import { Counter } from '../components/Counter'
@@ -46,7 +47,7 @@ export default function FlightsPage() {
           <div><label htmlFor="f-d" className="text-sm font-semibold text-ink">Destino</label><select id="f-d" value={dest} onChange={(e) => setDest(e.target.value)} className={`${selectClassName} mt-1`}>{airportOptions}</select></div>
           <div><label htmlFor="f-date" className="text-sm font-semibold text-ink">Ida</label><input id="f-date" type="date" min={today} value={date} onChange={(e) => setDate(e.target.value)} className={`${inputClassName} mt-1`} /></div>
           <div><label htmlFor="f-ret" className="text-sm font-semibold text-ink">Regreso (opcional)</label><input id="f-ret" type="date" min={date || today} value={returnDate} onChange={(e) => setReturnDate(e.target.value)} className={`${inputClassName} mt-1`} /></div>
-          <div className="sm:col-span-2"><Counter label="Pasajeros" icon="🧑" unit="un pasajero" value={passengers} min={1} max={9} onChange={setPassengers} /></div>
+          <div className="sm:col-span-2"><Counter label="Pasajeros" icon={User} unit="un pasajero" value={passengers} min={1} max={9} onChange={setPassengers} /></div>
         </form>
         {problem && <p className="mt-3 text-sm text-muted" aria-live="polite">{problem}</p>}
       </Card>

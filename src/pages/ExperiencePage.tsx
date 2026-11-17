@@ -1,3 +1,4 @@
+import { Users } from 'lucide-react'
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router'
 import { doc, getDoc } from 'firebase/firestore'
@@ -128,7 +129,7 @@ export default function ExperiencePage() {
             <div className="mt-4 flex flex-col gap-3">
               <div><label htmlFor="xdate" className="text-sm font-semibold">Fecha</label><input id="xdate" type="date" min={today} value={date} onChange={(ev) => setDate(ev.target.value)} className={`${inputClassName} mt-1`} />{!dayOk && <p className="mt-1 text-sm font-medium text-danger">Se ofrece solo: {e.weekdays.map((d) => DAY_NAMES[d]).join(', ')}.</p>}</div>
               <div><label htmlFor="xtime" className="text-sm font-semibold">Horario</label><select id="xtime" value={time} onChange={(ev) => setTime(ev.target.value)} className={`${selectClassName} mt-1`}><option value="">Elige…</option>{e.startTimes.map((t) => <option key={t}>{t}</option>)}</select></div>
-              <Counter label="Personas" icon="👥" unit="una persona" value={people} min={1} max={peopleMax} onChange={setPeople} />
+              <Counter label="Personas" icon={Users} unit="una persona" value={people} min={1} max={peopleMax} onChange={setPeople} />
               {slotKey && !booked.loading && <p className="text-sm text-muted" aria-live="polite">{remaining > 0 ? `Quedan ${remaining} cupos en esa sesión.` : 'Esa sesión está llena. Prueba otro horario o fecha.'}</p>}
             </div>
             {ready && <dl className="mt-4 border-t border-line pt-3 text-sm"><div className="flex justify-between text-base font-semibold"><dt>{people} × {formatCOP(e.pricePerPerson)}</dt><dd>{formatCOP(quote.total)}</dd></div></dl>}

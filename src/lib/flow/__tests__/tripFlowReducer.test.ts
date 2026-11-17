@@ -30,6 +30,42 @@ describe('tripFlowReducer', () => {
     expect(back.trip).toEqual(trip)
   })
 
+  it('completar el Paso 2 guarda actividades y ritmo, y avanza al Paso 3', () => {
+    const atStep2 = tripFlowReducer(initialTripFlowState, { type: 'COMPLETE_TRIP_DETAILS', trip })
+    const state = tripFlowReducer(atStep2, {
+      type: 'COMPLETE_ACTIVITIES',
+      categories: ['playa', 'gastronomia', 'playa'],
+      pace: 'intenso',
+    })
+    expect(state.step).toBe(3)
+    expect(state.categories).toEqual(['playa', 'gastronomia']) // sin repetidas
+    expect(state.pace).toBe('intenso')
+  })
+
+  it('el Paso 2 no avanza sin actividades ni sin haber completado el Paso 1', () => {
+    const atStep2 = tripFlowReducer(initialTripFlowState, { type: 'COMPLETE_TRIP_DETAILS', trip })
+    expect(tripFlowReducer(atStep2, { type: 'COMPLETE_ACTIVITIES', categories: [], pace: 'normal' })).toBe(atStep2)
+    expect(
+      tripFlowReducer(initialTripFlowState, { type: 'COMPLETE_ACTIVITIES', categories: ['cultura'], pace: 'normal' }),
+    ).toBe(initialTripFlowState)
+  })
+
+  it('no deja ir al Paso 3 sin actividades elegidas', () => {
+    const atStep2 = tripFlowReducer(initialTripFlowState, { type: 'COMPLETE_TRIP_DETAILS', trip })
+    expect(tripFlowReducer(atStep2, { type: 'GO_TO_STEP', step: 3 }).step).toBe(2)
+  })
+
+  it('volver del Paso 3 al Paso 2 conserva actividades y ritmo', () => {
+    const atStep2 = tripFlowReducer(initialTripFlowState, { type: 'COMPLETE_TRIP_DETAILS', trip })
+    const atStep3 = tripFlowReducer(atStep2, { type: 'COMPLETE_ACTIVITIES', categories: ['cultura'], pace: 'tranquilo' })
+    const back = tripFlowReducer(atStep3, { type: 'GO_TO_STEP', step: 2 })
+    expect(back).toMatchObject({ step: 2, categories: ['cultura'], pace: 'tranquilo' })
+  })
+
+  it('el ritmo empieza en "normal"', () => {
+    expect(initialTripFlowState.pace).toBe('normal')
+  })
+
   it('en Modo B guarda también las actividades elegidas en el Paso 1', () => {
     const state = tripFlowReducer(initialTripFlowState, {
       type: 'COMPLETE_TRIP_DETAILS',
@@ -37,5 +73,13 @@ describe('tripFlowReducer', () => {
       categories: ['cultura', 'aventura'],
     })
     expect(state.categories).toEqual(['cultura', 'aventura'])
+  })
+
+  it('al cambiar las actividades o el ritmo se descarta el itinerario generado; si no cambian, se conserva', () => {
+    const itinerary = { input: {}, destination: trip.destination, days: [], missingCategories: [], stats: {}, generatedAt: '' } as never
+    const at3 = { ...tripFlowReducer(tripFlowReducer(initialTripFlowState, { type: 'COMPLETE_TRIP_DETAILS', trip }), { type: 'COMPLETE_ACTIVITIES', categories: ['cultura'], pace: 'normal' }), itinerary }
+    expect(tripFlowReducer(at3, { type: 'COMPLETE_ACTIVITIES', categories: ['cultura'], pace: 'normal' }).itinerary).toBe(itinerary)
+    expect(tripFlowReducer(at3, { type: 'COMPLETE_ACTIVITIES', categories: ['cultura', 'playa'], pace: 'normal' }).itinerary).toBeNull()
+    expect(tripFlowReducer(at3, { type: 'COMPLETE_ACTIVITIES', categories: ['cultura'], pace: 'intenso' }).itinerary).toBeNull()
   })
 })

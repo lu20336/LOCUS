@@ -1,3 +1,4 @@
+import type { LucideIcon } from 'lucide-react'
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import type { PlaceToVisit } from '../lib/featuredDestinations'
 
@@ -200,10 +201,10 @@ function PinIcon() {
 }
 
 /** Chip claro para poner sobre una foto (mismo estilo que los chips de la app). */
-export function PhotoChip({ icon, children }: { icon?: string; children: ReactNode }) {
+export function PhotoChip({ icon: Icon, children }: { icon?: LucideIcon; children: ReactNode }) {
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full border border-white/50 bg-surface/90 px-3 py-1 text-xs font-semibold text-ink shadow-sm backdrop-blur">
-      {icon && <span aria-hidden="true">{icon}</span>}
+      {Icon && <Icon aria-hidden="true" className="size-3.5 shrink-0 text-teal-soft" strokeWidth={2.25} />}
       {children}
     </span>
   )

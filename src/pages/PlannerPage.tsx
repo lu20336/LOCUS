@@ -4,97 +4,85 @@
  *   3 · Itinerario   → el motor arma un plan día a día con lugares reales (OSM).
  *   4 · Confirmación → guardas el plan en tu cuenta y sigues con hospedaje.
  */
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router'
-import { ChipGroup } from '../components/ChipGroup'
-import { CATEGORY_OPTIONS } from '../components/choiceOptions'
 import { ItineraryView } from '../components/ItineraryView'
 import { StaysSection } from '../components/StaysSection'
 import { Stepper } from '../components/Stepper'
-import { Alert, Button, ButtonLink, Card } from '../components/ui'
+import { ActivitiesStep } from './ActivitiesStep'
+import { Alert, Button, ButtonLink, Card, Spinner } from '../components/ui'
 import { useAuth } from '../lib/auth/authContext'
 import { db } from '../lib/firebase/client'
-import { countTripDays, formatCOP, formatDate } from '../lib/format'
+import { formatCOP, formatDate } from '../lib/format'
+import { PACES } from '../lib/flow/pace'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { placesClient, placesSource } from '../lib/itinerary/fallbackClient'
 import { ItineraryError } from '../lib/itinerary/errors'
 import { buildItinerary } from '../lib/itinerary/generateItinerary'
 import { saveNewItinerary, toPayload } from '../lib/itinerary/itineraryStore'
-import type { CategoryId } from '../types/itinerary'
 
-function ActivitiesStep() {
-  const { trip, categories, setCategories, setItinerary, goToStep } = useTripFlow()
+/**
+ * Paso 3: genera el itinerario con el motor (lugares reales + ruta más corta) usando
+ * las actividades y el ritmo elegidos en el Paso 2, y lo muestra día a día con mapa.
+ * Si ya hay uno generado para estos datos, se reutiliza.
+ */
+function ItineraryStep() {
+  const { trip, categories, pace, itinerary, setItinerary, goToStep } = useTripFlow()
   const [error, setError] = useState<string | null>(null)
-  const [loading, setLoading] = useState(false)
+  const [attempt, setAttempt] = useState(0)
+
+  useEffect(() => {
+    if (!trip || itinerary || categories.length === 0) return
+    let cancelled = false
+    setError(null)
+    buildItinerary(
+      trip.destination,
+      { destination: trip.destination.displayName, startDate: trip.startDate, endDate: trip.endDate, budgetCOP: trip.budgetCOP, categories },
+      placesClient,
+      { activitiesPerDay: PACES[pace].placesPerDay },
+    )
+      .then((result) => {
+        if (!cancelled) setItinerary(result)
+      })
+      .catch((e: unknown) => {
+        if (!cancelled) setError(e instanceof ItineraryError ? e.message : 'Ocurrió un error inesperado. Inténtalo de nuevo.')
+      })
+    return () => {
+      cancelled = true
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trip, categories, pace, itinerary, attempt])
+
   if (!trip) return null
 
-  async function generate(selected: CategoryId[]) {
-    if (!trip) return
-    if (selected.length === 0) {
-      setError('Elige al menos una actividad.')
-      return
-    }
-    setError(null)
-    setLoading(true)
-    try {
-      const itinerary = await buildItinerary(
-        trip.destination,
-        { destination: trip.destination.displayName, startDate: trip.startDate, endDate: trip.endDate, budgetCOP: trip.budgetCOP, categories: selected },
-        placesClient,
-      )
-      setItinerary(itinerary)
-      goToStep(3)
-    } catch (e) {
-      setError(e instanceof ItineraryError ? e.message : 'Ocurrió un error inesperado. Inténtalo de nuevo.')
-    } finally {
-      setLoading(false)
-    }
+  if (!itinerary) {
+    return (
+      <Card>
+        <p className="text-sm font-semibold uppercase tracking-wider text-teal-soft">Paso 3 de 4</p>
+        <h1 id="step-title" tabIndex={-1} className="mt-1 text-3xl font-semibold text-navy focus:outline-none sm:text-4xl">
+          Armando tu itinerario por {trip.destination.displayName.split(',')[0]}
+        </h1>
+        {error ? (
+          <div className="mt-5 flex flex-col gap-4">
+            <Alert>{error}</Alert>
+            <div className="flex flex-wrap gap-3">
+              <Button variant="ghost" className="border border-line" onClick={() => goToStep(2)}>← Cambiar actividades</Button>
+              <Button onClick={() => setAttempt((n) => n + 1)}>Reintentar</Button>
+            </div>
+          </div>
+        ) : (
+          <div role="status" aria-live="polite">
+            <Spinner label="Buscando lugares reales y calculando la ruta que menos te hace recorrer…" />
+          </div>
+        )}
+      </Card>
+    )
   }
 
-  const days = countTripDays(trip.startDate, trip.endDate)
-  return (
-    <Card>
-      <p className="text-sm font-semibold uppercase tracking-wider text-teal-soft">Paso 2 de 4</p>
-      <h1 id="step-title" tabIndex={-1} className="mt-1 text-3xl font-semibold text-navy focus:outline-none sm:text-4xl">
-        ¿Qué te gustaría hacer?
-      </h1>
-      <p className="mt-2 text-muted">
-        {trip.destination.displayName.split(',')[0]} · {days} {days === 1 ? 'día' : 'días'} · {formatCOP(trip.budgetCOP)}. Con esto buscamos lugares reales cerca y armamos tu plan en el orden que menos te hace recorrer.
-      </p>
-
-      <form
-        className="mt-6 flex flex-col gap-5"
-        onSubmit={(e) => {
-          e.preventDefault()
-          void generate(categories)
-        }}
-      >
-        <ChipGroup
-          name="categories"
-          legend="Actividades"
-          type="checkbox"
-          options={CATEGORY_OPTIONS}
-          value={categories}
-          onChange={(next) => {
-            setError(null)
-            setCategories(next)
-          }}
-          disabled={loading}
-        />
-        {error && <Alert>{error}</Alert>}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Button variant="ghost" className="border border-line" onClick={() => goToStep(1)} disabled={loading}>← Editar mi viaje</Button>
-          <Button type="submit" disabled={loading}>
-            {loading ? 'Buscando lugares reales…' : 'Armar mi itinerario →'}
-          </Button>
-        </div>
-        <p className="sr-only" aria-live="polite">{loading ? 'Armando tu itinerario' : ''}</p>
-      </form>
-    </Card>
-  )
+  return <ItineraryResult />
 }
 
-function ItineraryStep() {
+function ItineraryResult() {
   const { trip, itinerary, goToStep } = useTripFlow()
   if (!trip || !itinerary) return <Navigate to="/planear" replace />
   return (
@@ -194,7 +182,7 @@ export function PlannerPage() {
   const { step, trip } = useTripFlow()
   if (!trip || step === 1) return <Navigate to="/" replace />
   return (
-    <div className="mx-auto max-w-5xl px-4 py-8 sm:py-12">
+    <div className={`mx-auto px-4 py-8 sm:py-12 ${step === 2 ? 'max-w-3xl' : 'max-w-5xl'}`}>
       <Stepper current={step} />
       <div className="mt-6">
         {step === 2 && <ActivitiesStep />}

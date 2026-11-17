@@ -1,3 +1,4 @@
+import { Users } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router'
 import { doc, getDoc } from 'firebase/firestore'
@@ -243,7 +244,7 @@ export default function ListingPage() {
               <div><p className="font-semibold">Salida</p><p>{checkOut ? formatDate(checkOut) : 'Elige una fecha'}</p></div>
             </div>
             <div className="mt-3">
-              <Counter label="Huéspedes" icon="👥" unit="un huésped" value={guests} min={1} max={listing.capacity} onChange={setGuests} hint={guests > listing.includedGuests ? `Incluye ${listing.includedGuests}; cada huésped extra cuesta ${formatCOP(listing.extraGuestFee)} por noche.` : undefined} />
+              <Counter label="Huéspedes" icon={Users} unit="un huésped" value={guests} min={1} max={listing.capacity} onChange={setGuests} hint={guests > listing.includedGuests ? `Incluye ${listing.includedGuests}; cada huésped extra cuesta ${formatCOP(listing.extraGuestFee)} por noche.` : undefined} />
             </div>
 
             {stay.problem && <div className="mt-3"><Alert tone="info">{stay.problem}</Alert></div>}

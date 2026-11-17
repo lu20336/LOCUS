@@ -1,5 +1,16 @@
 import { describe, expect, it } from 'vitest'
-import { FEATURED_DESTINATIONS } from '../featuredDestinations'
+import { FEATURED_DESTINATIONS, findFeaturedNear } from '../featuredDestinations'
+
+describe('findFeaturedNear', () => {
+  it('reconoce un destacado aunque las coordenadas vengan de Nominatim (un poco distintas)', () => {
+    // Centro de Cartagena según Nominatim vs. el de la tarjeta (10.424, -75.548).
+    expect(findFeaturedNear({ lat: 10.4265566, lon: -75.5441671 })?.id).toBe('cartagena')
+  })
+
+  it('devuelve null lejos de cualquier destacado', () => {
+    expect(findFeaturedNear({ lat: 1.214, lon: -77.2785 })).toBeNull() // Pasto
+  })
+})
 
 /** Fotos que existen en public/images/lugares (se publican con la app). */
 const PLACE_PHOTOS = new Set(
@@ -20,8 +31,19 @@ describe('FEATURED_DESTINATIONS', () => {
     },
   )
 
+  it.each(FEATURED_DESTINATIONS.map((d) => [d.name, d.activityImages] as const))(
+    '%s: cada foto de actividad existe',
+    (_, activityImages) => {
+      for (const image of Object.values(activityImages)) {
+        expect(PLACE_PHOTOS.has(image), `falta la foto ${image}`).toBe(true)
+      }
+    },
+  )
+
   it('no hay fotos de lugares sin usar', () => {
-    const used = new Set(FEATURED_DESTINATIONS.flatMap((d) => d.places.map((p) => p.image)))
+    const used = new Set(
+      FEATURED_DESTINATIONS.flatMap((d) => [...d.places.map((p) => p.image), ...Object.values(d.activityImages)]),
+    )
     expect([...PLACE_PHOTOS].filter((photo) => !used.has(photo))).toEqual([])
   })
 })

@@ -61,6 +61,7 @@ Prototipo funcional de Locus (curso de Ingeniería Aplicada). React + Vite + Typ
 | `npm run demo:engine -- --offline` | Igual, con datos de ejemplo (sin red). |
 | `npm run demo:suggest -- frio cultura,gastronomia` | Sugerencia de destino (Modo B) **en vivo**: clima + actividades → 3 lugares. |
 | `npm run build` | Compila para producción en `dist/`. |
+| `npm run data:activities` | Regenera `src/data/activityAvailability.json` (actividades cerca de cada municipio) desde Overpass. |
 | `npm run data:towns` | Regenera `src/data/colombiaTowns.json` (pueblos candidatos del Modo B) desde Overpass + Open-Elevation. |
 
 ## El motor de itinerarios
@@ -89,6 +90,15 @@ Todo está en [`src/lib/itinerary/`](src/lib/itinerary/); el archivo principal, 
 La app llama a OpenStreetMap **directo desde el navegador** (sin servidor intermedio). Para respetar la [política de uso de Nominatim](https://operations.osmfoundation.org/policies/nominatim/): máximo 1 petición/segundo (`throttle.ts`), el navegador envía el `Referer` con el dominio de la app y se agrega el parámetro `email` de contacto.
 
 **Configuración:** copia `.env.example` como `.env.local` y pon un correo real en `VITE_NOMINATIM_EMAIL` (queda visible en el código público de la app). Para el script de demo: `NOMINATIM_EMAIL=correo@ejemplo.com npm run demo:engine`.
+
+### Fuentes de lugares y respaldo
+
+| Fuente | Para qué | Configuración |
+|---|---|---|
+| `src/data/activityAvailability.json` | Qué actividades hay a menos de 7 km de cada municipio y destino destacado (Paso 2 y Modo B). Funciona sin red. | Se regenera con `npm run data:activities` (usa Overpass; tarda varios minutos). |
+| Overpass (en vivo) | Lugares reales para el itinerario. | Sin clave. |
+| [Geoapify Places](https://apidocs.geoapify.com/docs/places/) | **Respaldo** si Overpass no responde. Mismos datos de OpenStreetMap. | Opcional: `VITE_GEOAPIFY_KEY` en `.env.local` (plan gratuito, 3.000 consultas/día). Limitar la clave a los dominios de la app (ver `.env.example`). Con clave, el pie de página muestra "Powered by Geoapify", obligatorio en el plan gratuito. |
+| Wikidata + Wikimedia Commons | Fotos reales de cualquier destino en el Paso 2: un lugar de cada actividad (ej. Cali · Cultura: Museo del Oro Calima) y la foto de la ciudad. Con autor y licencia en pantalla. | Sin clave. `src/lib/itinerary/placePhotos.ts`. |
 
 ## Firebase y despliegue
 

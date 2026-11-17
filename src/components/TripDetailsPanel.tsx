@@ -3,6 +3,7 @@
  * Modo A: fechas + presupuesto (el destino está en la barra).
  * Modo B: clima + actividades → sugerencias, y luego fechas + presupuesto.
  */
+import { BedDouble, Users } from 'lucide-react'
 import { MAX_TRAVELERS, type TripDetailsForm } from '../lib/flow/useTripDetailsForm'
 import { formatThousands, parseBudget } from '../lib/format'
 import { Counter } from './Counter'
@@ -78,7 +79,7 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
           />
         )}
 
-        <fieldset className="grid gap-6 sm:grid-cols-2">
+        <fieldset className="grid min-w-0 gap-6 sm:grid-cols-2">
           <legend className="sr-only">Fechas del viaje</legend>
           <FormField id="startDate" label="Fecha de salida" error={errors.startDate}>
             {(control) => (
@@ -116,7 +117,7 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
           <legend className="sr-only">Viajeros y habitaciones</legend>
           <Counter
             label="Viajeros"
-            icon="👥"
+            icon={Users}
             unit="un viajero"
             value={form.travelers}
             min={1}
@@ -126,7 +127,7 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
           />
           <Counter
             label="Habitaciones"
-            icon="🛏"
+            icon={BedDouble}
             unit="una habitación"
             value={form.rooms}
             min={1}

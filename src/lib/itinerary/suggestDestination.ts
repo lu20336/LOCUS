@@ -201,6 +201,13 @@ export interface SuggestionDeps {
    */
   checkActivities: (centers: GeoPoint[], radiusMeters: number, categories: CategoryId[]) => Promise<CategoryId[][]>
   elevation: ElevationLookup
+  /**
+   * Cuántos candidatos con el clima pedido se revisan por actividades y de a
+   * cuántos por llamada. Por defecto CANDIDATES_TO_CHECK en una sola consulta
+   * (Overpass en vivo); con datos precalculados se pueden revisar todos.
+   */
+  candidatesToCheck?: number
+  batchSize?: number
 }
 
 export interface SuggestOptions {
@@ -286,7 +293,7 @@ export async function suggestDestination(
     .map((candidate) => ({ candidate, elevation: candidate.elevation ?? looked.get(candidate.id) ?? null }))
     .filter((c): c is { candidate: TownCandidate; elevation: number } => c.elevation !== null)
     .filter((c) => climateForElevation(c.elevation) === climate)
-    .slice(0, CANDIDATES_TO_CHECK)
+    .slice(0, deps.candidatesToCheck ?? CANDIDATES_TO_CHECK)
 
   if (inClimate.length === 0) {
     throw new ItineraryError(
@@ -297,12 +304,13 @@ export async function suggestDestination(
     )
   }
 
-  // Paso 4: actividades cerca de cada candidato, en grupos de ACTIVITY_BATCH_SIZE.
+  // Paso 4: actividades cerca de cada candidato, en grupos de batchSize.
+  const batchSize = deps.batchSize ?? ACTIVITY_BATCH_SIZE
   const checked: DestinationSuggestion[] = []
   let failedChecks = 0
-  for (let start = 0; start < inClimate.length; start += ACTIVITY_BATCH_SIZE) {
+  for (let start = 0; start < inClimate.length; start += batchSize) {
     throwIfAborted(signal)
-    const batch = inClimate.slice(start, start + ACTIVITY_BATCH_SIZE)
+    const batch = inClimate.slice(start, start + batchSize)
     const done = start + batch.length
     onProgress?.({
       phase: 'activities',

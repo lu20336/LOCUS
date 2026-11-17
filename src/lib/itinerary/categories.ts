@@ -99,6 +99,8 @@ const KIND_LABELS: Record<string, string> = {
   nightclub: 'Discoteca',
   pub: 'Pub',
   mall: 'Centro comercial',
+  shopping_mall: 'Centro comercial', // nombre en Geoapify
+  culture: 'Centro cultural', // categoría general de Geoapify (teatros, galerías…)
   department_store: 'Tienda por departamentos',
   marketplace: 'Mercado',
 }

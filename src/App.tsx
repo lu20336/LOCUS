@@ -5,6 +5,7 @@ import { Spinner } from './components/ui'
 import { AuthProvider } from './lib/auth/AuthProvider'
 import { useAuth } from './lib/auth/authContext'
 import { TripFlowProvider } from './lib/flow/TripFlowProvider'
+import { usesGeoapify } from './lib/itinerary/browserClient'
 import { FavoritesProvider } from './lib/profile/favorites'
 import { HomePage } from './pages/HomePage'
 import { PlannerPage } from './pages/PlannerPage'
@@ -73,6 +74,15 @@ function Footer() {
         <a href="https://openfreemap.org" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
           OpenFreeMap
         </a>
+        {/* El plan gratuito de Geoapify exige su atribución cuando se usa como respaldo. */}
+        {usesGeoapify && (
+          <>
+            {' · '}
+            <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
+              Powered by Geoapify
+            </a>
+          </>
+        )}
         {' · '}Clima por{' '}
         <a href="https://open-meteo.com" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
           Open-Meteo

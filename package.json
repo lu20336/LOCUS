@@ -22,10 +22,12 @@
     "deploy:hosting": "npm run build && firebase deploy --only hosting --project locus-bb57e",
     "deploy": "npm run build && firebase deploy --only firestore,hosting --project locus-bb57e",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview --project locus-bb57e",
-    "data:reference": "tsx scripts/build-reference-data.ts"
+    "data:reference": "tsx scripts/build-reference-data.ts",
+    "data:activities": "tsx scripts/build-activity-availability.ts"
   },
   "dependencies": {
     "firebase": "^12.19.0",
+    "lucide-react": "1.61.0",
     "maplibre-gl": "^6.18.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

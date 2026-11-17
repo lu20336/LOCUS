@@ -9,7 +9,7 @@
  * transiciones del flujo están en un solo lugar y se pueden probar.
  */
 import { createContext, useContext } from 'react'
-import type { FlowStep, SuggestionSearch, TripDetails, TripFlowState } from '../../types/flow'
+import type { FlowStep, SuggestionSearch, TripDetails, TripFlowState, TripPace } from '../../types/flow'
 import type { CategoryId, Itinerary } from '../../types/itinerary'
 
 export type TripFlowAction =
@@ -20,6 +20,7 @@ export type TripFlowAction =
       categories?: CategoryId[]
       suggestionSearch?: SuggestionSearch | null
     }
+  | { type: 'COMPLETE_ACTIVITIES'; categories: CategoryId[]; pace: TripPace }
   | { type: 'GO_TO_STEP'; step: FlowStep }
   | { type: 'SET_CATEGORIES'; categories: CategoryId[] }
   | { type: 'SET_ITINERARY'; itinerary: Itinerary | null }
@@ -28,6 +29,7 @@ export const initialTripFlowState: TripFlowState = {
   step: 1,
   trip: null,
   categories: [],
+  pace: 'normal',
   suggestionSearch: null,
   itinerary: null,
 }
@@ -45,9 +47,19 @@ export function tripFlowReducer(state: TripFlowState, action: TripFlowAction): T
         itinerary: null,
         step: 2,
       }
+    case 'COMPLETE_ACTIVITIES': {
+      // Guarda las actividades y el ritmo del Paso 2 y avanza al Paso 3.
+      // Sin Paso 1 o sin ninguna actividad no hay itinerario posible.
+      if (!state.trip || action.categories.length === 0) return state
+      const categories = [...new Set(action.categories)]
+      // Si cambiaron las actividades o el ritmo, el itinerario anterior ya no corresponde y se vuelve a generar.
+      const unchanged = action.pace === state.pace && categories.length === state.categories.length && categories.every((c) => state.categories.includes(c))
+      return { ...state, categories, pace: action.pace, itinerary: unchanged ? state.itinerary : null, step: 3 }
+    }
     case 'GO_TO_STEP':
-      // No se puede saltar a un paso posterior sin haber completado el Paso 1.
+      // No se puede saltar a un paso posterior sin haber completado los anteriores.
       if (action.step > 1 && !state.trip) return state
+      if (action.step > 2 && state.categories.length === 0) return state
       return { ...state, step: action.step }
     case 'SET_CATEGORIES':
       // Cambiar las actividades invalida el itinerario ya generado.
@@ -62,6 +74,7 @@ export interface TripFlowContextValue extends TripFlowState {
     trip: TripDetails,
     extras?: { categories?: CategoryId[]; suggestionSearch?: SuggestionSearch | null },
   ) => void
+  completeActivities: (categories: CategoryId[], pace: TripPace) => void
   goToStep: (step: FlowStep) => void
   setCategories: (categories: CategoryId[]) => void
   setItinerary: (itinerary: Itinerary | null) => void
