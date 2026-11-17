@@ -50,6 +50,7 @@ La app llama a OpenStreetMap **directo desde el navegador** (sin servidor interm
 | `src/data/activityAvailability.json` | Qué actividades hay a menos de 7 km de cada municipio y destino destacado (Paso 2 y Modo B). Funciona sin red. | Se regenera con `npm run data:activities` (usa Overpass; tarda varios minutos). |
 | Overpass (en vivo) | Lugares reales para el itinerario. | Sin clave. |
 | [Geoapify Places](https://apidocs.geoapify.com/docs/places/) | **Respaldo** si Overpass no responde. Mismos datos de OpenStreetMap. | Opcional: `VITE_GEOAPIFY_KEY` en `.env.local` (plan gratuito, 3.000 consultas/día). Limitar la clave a los dominios de la app (ver `.env.example`). Con clave, el pie de página muestra "Powered by Geoapify", obligatorio en el plan gratuito. |
+| Wikidata + Wikimedia Commons | Fotos reales de cualquier destino en el Paso 2: un lugar de cada actividad (ej. Cali · Cultura: Museo del Oro Calima) y la foto de la ciudad. Con autor y licencia en pantalla. | Sin clave. `src/lib/itinerary/placePhotos.ts`. |
 
 ## Firebase y despliegue
 
