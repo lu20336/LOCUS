@@ -13,10 +13,10 @@ import { useState } from 'react'
 import {
   dayTitle,
   googleCalendarUrl,
-  icsFileName,
   itineraryToIcs,
   itineraryToText,
   stopsByPart,
+  tripEvent,
 } from '../lib/flow/exportItinerary'
 import { downloadItineraryPdf } from '../lib/flow/itineraryPdf'
 import { addToPhoneCalendar, detectPlatform, phoneCalendarLabel } from '../lib/flow/phoneCalendar'
@@ -58,9 +58,17 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
     }
   }
 
-  async function saveToPhone() {
-    const saved = await addToPhoneCalendar(itineraryToIcs(itinerary), icsFileName(itinerary), `Viaje a ${city}`, platform)
-    if (saved) setShared('Elige "Agregar" o tu app de calendario para guardar el viaje.')
+  function saveToPhone() {
+    setShared(
+      platform === 'ios'
+        ? 'Toca "Agregar todos" para guardar el viaje en tu Calendario.'
+        : 'Revisa el evento y toca "Guardar" en tu calendario.',
+    )
+    addToPhoneCalendar(platform, {
+      event: tripEvent(itinerary),
+      ics: itineraryToIcs(itinerary),
+      fallbackUrl: googleCalendarUrl(itinerary),
+    })
   }
 
   const button =
