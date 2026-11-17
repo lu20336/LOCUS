@@ -10,7 +10,7 @@
  */
 import { createContext, useContext } from 'react'
 import type { FlowStep, SuggestionSearch, TripDetails, TripFlowState, TripPace } from '../../types/flow'
-import type { CategoryId, Itinerary } from '../../types/itinerary'
+import type { CategoryId, Excursion, Itinerary } from '../../types/itinerary'
 
 export type TripFlowAction =
   | {
@@ -20,7 +20,7 @@ export type TripFlowAction =
       categories?: CategoryId[]
       suggestionSearch?: SuggestionSearch | null
     }
-  | { type: 'COMPLETE_ACTIVITIES'; categories: CategoryId[]; pace: TripPace }
+  | { type: 'COMPLETE_ACTIVITIES'; categories: CategoryId[]; pace: TripPace; excursions?: Excursion[] }
   | { type: 'GO_TO_STEP'; step: FlowStep }
   | { type: 'SET_CATEGORIES'; categories: CategoryId[] }
   | { type: 'SET_ITINERARY'; itinerary: Itinerary | null }
@@ -30,31 +30,44 @@ export const initialTripFlowState: TripFlowState = {
   trip: null,
   categories: [],
   pace: 'normal',
+  excursions: [],
   suggestionSearch: null,
   itinerary: null,
 }
 
 export function tripFlowReducer(state: TripFlowState, action: TripFlowAction): TripFlowState {
   switch (action.type) {
-    case 'COMPLETE_TRIP_DETAILS':
+    case 'COMPLETE_TRIP_DETAILS': {
       // Guarda los datos del Paso 1 y avanza al Paso 2.
+      // Si cambió el destino, los pueblos elegidos para excursiones ya no aplican.
+      const sameDestination =
+        state.trip?.destination.lat === action.trip.destination.lat &&
+        state.trip?.destination.lon === action.trip.destination.lon
       return {
         ...state,
         trip: action.trip,
+        excursions: sameDestination ? state.excursions : [],
         categories: action.categories ?? state.categories,
         suggestionSearch: action.suggestionSearch !== undefined ? action.suggestionSearch : state.suggestionSearch,
         // Cambiaron los datos del viaje: el itinerario anterior ya no corresponde.
         itinerary: null,
         step: 2,
       }
+    }
     case 'COMPLETE_ACTIVITIES': {
       // Guarda las actividades y el ritmo del Paso 2 y avanza al Paso 3.
       // Sin Paso 1 o sin ninguna actividad no hay itinerario posible.
       if (!state.trip || action.categories.length === 0) return state
       const categories = [...new Set(action.categories)]
-      // Si cambiaron las actividades o el ritmo, el itinerario anterior ya no corresponde y se vuelve a generar.
-      const unchanged = action.pace === state.pace && categories.length === state.categories.length && categories.every((c) => state.categories.includes(c))
-      return { ...state, categories, pace: action.pace, itinerary: unchanged ? state.itinerary : null, step: 3 }
+      const excursions = action.excursions ?? []
+      // Si cambiaron las actividades, el ritmo o las excursiones, el itinerario anterior ya no corresponde y se vuelve a generar.
+      const unchanged =
+        action.pace === state.pace &&
+        categories.length === state.categories.length &&
+        categories.every((c) => state.categories.includes(c)) &&
+        excursions.length === state.excursions.length &&
+        excursions.every((e) => state.excursions.some((x) => x.id === e.id))
+      return { ...state, categories, pace: action.pace, excursions, itinerary: unchanged ? state.itinerary : null, step: 3 }
     }
     case 'GO_TO_STEP':
       // No se puede saltar a un paso posterior sin haber completado los anteriores.
@@ -74,7 +87,7 @@ export interface TripFlowContextValue extends TripFlowState {
     trip: TripDetails,
     extras?: { categories?: CategoryId[]; suggestionSearch?: SuggestionSearch | null },
   ) => void
-  completeActivities: (categories: CategoryId[], pace: TripPace) => void
+  completeActivities: (categories: CategoryId[], pace: TripPace, excursions?: Excursion[]) => void
   goToStep: (step: FlowStep) => void
   setCategories: (categories: CategoryId[]) => void
   setItinerary: (itinerary: Itinerary | null) => void

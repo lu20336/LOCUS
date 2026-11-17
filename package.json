@@ -23,7 +23,8 @@
     "deploy": "npm run build && firebase deploy --only firestore,hosting --project locus-bb57e",
     "deploy:preview": "npm run build && firebase hosting:channel:deploy preview --project locus-bb57e",
     "data:reference": "tsx scripts/build-reference-data.ts",
-    "data:activities": "tsx scripts/build-activity-availability.ts"
+    "data:activities": "tsx scripts/build-activity-availability.ts",
+    "data:tourist-towns": "tsx scripts/build-tourist-towns.ts"
   },
   "dependencies": {
     "firebase": "^12.19.0",

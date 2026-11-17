@@ -62,6 +62,18 @@ describe('tripFlowReducer', () => {
     expect(back).toMatchObject({ step: 2, categories: ['cultura'], pace: 'tranquilo' })
   })
 
+  it('guarda los pueblos para excursiones y los olvida si cambia el destino', () => {
+    const turbaco = { id: 'turbaco', name: 'Turbaco', region: 'Bolívar', tagline: 'x', lat: 10.33, lon: -75.41, distanceKm: 18 }
+    const atStep2 = tripFlowReducer(initialTripFlowState, { type: 'COMPLETE_TRIP_DETAILS', trip })
+    const atStep3 = tripFlowReducer(atStep2, { type: 'COMPLETE_ACTIVITIES', categories: ['cultura'], pace: 'normal', excursions: [turbaco] })
+    expect(atStep3.excursions).toEqual([turbaco])
+    // Mismo destino (editar fechas): se conservan.
+    expect(tripFlowReducer(atStep3, { type: 'COMPLETE_TRIP_DETAILS', trip }).excursions).toEqual([turbaco])
+    // Otro destino: ya no aplican.
+    const otro = { ...trip, destination: { ...trip.destination, lat: 6.24, lon: -75.58 } }
+    expect(tripFlowReducer(atStep3, { type: 'COMPLETE_TRIP_DETAILS', trip: otro }).excursions).toEqual([])
+  })
+
   it('el ritmo empieza en "normal"', () => {
     expect(initialTripFlowState.pace).toBe('normal')
   })
