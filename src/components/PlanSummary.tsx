@@ -1,22 +1,33 @@
 /**
  * Paso 4 · Resumen del plan y cómo llevárselo:
  *   - Lista día por día (mañana, tarde, noche), con las excursiones.
- *   - "Descargar PDF": abre la impresión del navegador; el CSS de impresión
- *     (index.css, .locus-print) deja SOLO este resumen en la hoja, y ahí se
- *     elige "Guardar como PDF".
+ *   - "Descargar PDF": un PDF diseñado (itineraryPdf.ts), no la impresión del navegador.
  *   - "Compartir": menú del celular (Web Share API) o, si no existe, copia el
  *     texto para pegarlo en WhatsApp o un correo.
- *   - "Agregar al calendario": archivo .ics con un evento por día.
+ *   - "Google Calendar": abre Google Calendar con el viaje ya escrito.
+ *   - En el celular, "Calendario del iPhone / del celular": lo guarda en el
+ *     calendario del teléfono (Calendario de iOS, Samsung Calendar…).
  */
-import { CalendarPlus, Check, FileDown, MapPinned, Share2 } from 'lucide-react'
+import { CalendarPlus, Check, FileDown, LoaderCircle, MapPinned, Share2, Smartphone } from 'lucide-react'
 import { useState } from 'react'
-import { dayTitle, icsFileName, itineraryToIcs, itineraryToText, stopsByPart } from '../lib/flow/exportItinerary'
+import {
+  dayTitle,
+  googleCalendarUrl,
+  icsFileName,
+  itineraryToIcs,
+  itineraryToText,
+  stopsByPart,
+} from '../lib/flow/exportItinerary'
+import { downloadItineraryPdf } from '../lib/flow/itineraryPdf'
+import { addToPhoneCalendar, detectPlatform, phoneCalendarLabel } from '../lib/flow/phoneCalendar'
 import { formatCOP, formatDateRange } from '../lib/format'
 import type { TripDetails } from '../types/flow'
 import type { Itinerary } from '../types/itinerary'
 
 export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: TripDetails }) {
   const [shared, setShared] = useState<string | null>(null)
+  const [makingPdf, setMakingPdf] = useState(false)
+  const [platform] = useState(() => detectPlatform())
   const city = itinerary.destination.displayName.split(',')[0]
   const places = itinerary.days.reduce((n, d) => n + d.places.length, 0)
 
@@ -35,12 +46,21 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
     }
   }
 
-  function downloadCalendar() {
-    const blob = new Blob([itineraryToIcs(itinerary)], { type: 'text/calendar;charset=utf-8' })
-    const url = URL.createObjectURL(blob)
-    const link = Object.assign(document.createElement('a'), { href: url, download: icsFileName(itinerary) })
-    link.click()
-    setTimeout(() => URL.revokeObjectURL(url), 1000)
+  async function downloadPdf() {
+    setMakingPdf(true)
+    try {
+      await downloadItineraryPdf(itinerary, trip)
+      setShared('Listo: descargamos el PDF de tu plan.')
+    } catch {
+      setShared('No pudimos crear el PDF. Inténtalo de nuevo.')
+    } finally {
+      setMakingPdf(false)
+    }
+  }
+
+  async function saveToPhone() {
+    const saved = await addToPhoneCalendar(itineraryToIcs(itinerary), icsFileName(itinerary), `Viaje a ${city}`, platform)
+    if (saved) setShared('Elige "Agregar" o tu app de calendario para guardar el viaje.')
   }
 
   const button =
@@ -59,18 +79,29 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2 print:hidden">
-        <button type="button" onClick={() => window.print()} className={button}>
-          <FileDown aria-hidden="true" className="size-4" />
-          Descargar PDF
+        <button type="button" onClick={downloadPdf} disabled={makingPdf} className={button}>
+          {makingPdf ? (
+            <LoaderCircle aria-hidden="true" className="size-4 animate-spin" />
+          ) : (
+            <FileDown aria-hidden="true" className="size-4" />
+          )}
+          {makingPdf ? 'Creando PDF…' : 'Descargar PDF'}
         </button>
         <button type="button" onClick={share} className={button}>
           <Share2 aria-hidden="true" className="size-4" />
           Compartir
         </button>
-        <button type="button" onClick={downloadCalendar} className={button}>
+        <a href={googleCalendarUrl(itinerary)} target="_blank" rel="noreferrer" className={button}>
           <CalendarPlus aria-hidden="true" className="size-4" />
-          Agregar al calendario
-        </button>
+          Google Calendar
+          <span className="sr-only">(se abre en otra pestaña)</span>
+        </a>
+        {platform !== 'desktop' && (
+          <button type="button" onClick={saveToPhone} className={button}>
+            <Smartphone aria-hidden="true" className="size-4" />
+            {phoneCalendarLabel(platform)}
+          </button>
+        )}
       </div>
       <p className="mt-2 min-h-5 text-sm text-ink print:hidden" aria-live="polite">
         {shared && (
