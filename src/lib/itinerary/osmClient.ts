@@ -57,7 +57,32 @@ export interface OsmClient {
  * Cliente real: además de lo que necesita el motor, permite enviar cualquier
  * consulta Overpass y contar actividades (los usa suggestDestination.ts).
  */
+/** Resultado (parcial) de Nominatim /search?format=jsonv2&extratags=1. */
+export interface NominatimSearchResult {
+  osm_type: string
+  osm_id: number
+  lat: string
+  lon: string
+  name?: string
+  display_name: string
+  category: string
+  type: string
+  extratags?: Record<string, string> | null
+}
+
+export interface BoundingBox {
+  west: number
+  south: number
+  east: number
+  north: number
+}
+
 export interface FullOsmClient extends OsmClient {
+  /**
+   * Búsqueda por categoría dentro de un rectángulo (ej. q="hotel"). Respaldo
+   * cuando Overpass está saturado. Comparte el límite de 1 petición/s de Nominatim.
+   */
+  nominatimSearch(query: string, box: BoundingBox, limit?: number): Promise<NominatimSearchResult[]>
   queryOverpass(query: string): Promise<OverpassResponse>
   /** Para cada punto, qué categorías tienen al menos un lugar cerca (una sola consulta). */
   checkActivities(centers: GeoPoint[], radiusMeters: number, categories: CategoryId[]): Promise<CategoryId[][]>
@@ -211,6 +236,21 @@ export function createOsmClient(options: OsmClientOptions = {}): FullOsmClient {
     },
 
     queryOverpass,
+
+    async nominatimSearch(query, box, limit = 40) {
+      const params = new URLSearchParams({
+        q: query,
+        format: 'jsonv2',
+        limit: String(limit),
+        extratags: '1',
+        'accept-language': 'es',
+        countrycodes: 'co',
+        viewbox: `${box.west},${box.north},${box.east},${box.south}`,
+        bounded: '1',
+      })
+      if (email) params.set('email', email)
+      return nominatimThrottle(() => requestJson<NominatimSearchResult[]>(`${nominatimUrl}/search?${params}`, { method: 'GET' }))
+    },
 
     async checkActivities(centers, radiusMeters, categories) {
       const response = await queryOverpass(buildActivityCountQuery(centers, radiusMeters, categories))

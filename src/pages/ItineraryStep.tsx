@@ -6,7 +6,7 @@
  * ordenados con la heurística del vecino más cercano.
  *
  * - Pestañas por día (patrón "tabs" accesible: flechas izquierda/derecha).
- * - Cada día: mapa con la ruta numerada (Leaflet, carga diferida) y la lista
+ * - Cada día: mapa con la ruta numerada (MapLibre, carga diferida) y la lista
  *   de paradas con la distancia desde la anterior.
  * - Mientras busca: marcadores de carga. Si falla: mensaje y "Reintentar".
  */
@@ -24,7 +24,9 @@ import {
   TriangleAlert,
   Users,
 } from 'lucide-react'
-import { lazy, Suspense, useRef, useState, type KeyboardEvent } from 'react'
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { WeatherChip } from '../components/ItineraryView'
+import { Alert } from '../components/ui'
 import { CATEGORY_ICONS } from '../components/choiceOptions'
 import { findFeaturedNear } from '../lib/featuredDestinations'
 import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm, osmPlaceUrl } from '../lib/flow/itineraryView'
@@ -34,13 +36,21 @@ import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
 import { useItinerary } from '../lib/flow/useItinerary'
 import { countTripDays, formatCOP, formatDateRange } from '../lib/format'
 import { CATEGORIES } from '../lib/itinerary/categories'
+import { placesSource } from '../lib/itinerary/fallbackClient'
+import { useAsync } from '../lib/useAsync'
+import { fetchForecast, type DailyForecast } from '../lib/weather/openMeteo'
 import type { DayPlan, Itinerary } from '../types/itinerary'
 
 const DayMap = lazy(() => import('../components/DayMap'))
 
 export function ItineraryStep() {
-  const { trip, categories, pace, goToStep } = useTripFlow()
+  const { trip, categories, pace, goToStep, itinerary: savedItinerary, setItinerary } = useTripFlow()
   const { state, retry } = useItinerary(trip, categories, pace)
+  const ready = state.status === 'done' ? state.itinerary : null
+  // El Paso 4 (guardar) lee el plan desde el contexto del flujo.
+  useEffect(() => {
+    if (ready && ready !== savedItinerary) setItinerary(ready)
+  }, [ready, savedItinerary, setItinerary])
   const photos = useDestinationPhotos(trip?.destination ?? null)
   if (!trip) return null
 
@@ -134,6 +144,15 @@ export function ItineraryStep() {
           >
             Cambiar destino o fechas
           </button>
+          {ready && (
+            <button
+              type="button"
+              onClick={() => goToStep(4)}
+              className="inline-flex items-center gap-2 rounded-xl bg-coral px-5 py-3 font-semibold text-on-coral transition hover:brightness-95 sm:ml-auto"
+            >
+              Continuar: guardar y hospedaje →
+            </button>
+          )}
         </div>
       </div>
     </section>
@@ -169,6 +188,12 @@ function PlanView({ itinerary, budgetCOP }: { itinerary: Itinerary; budgetCOP: n
   const { stats } = itinerary
   const savedKm = Math.max(0, stats.unoptimizedKm - stats.optimizedKm)
   const day = itinerary.days[Math.min(selected, itinerary.days.length - 1)]
+  const { lat, lon } = itinerary.destination
+  const weather = useAsync(() => fetchForecast(lat, lon, 16), [lat, lon])
+  const forecastByDate = useMemo(
+    () => new Map((weather.data?.daily ?? []).map((f) => [f.date, f])),
+    [weather.data],
+  )
 
   function onTabKey(event: KeyboardEvent<HTMLButtonElement>, index: number) {
     const last = itinerary.days.length - 1
@@ -200,6 +225,14 @@ function PlanView({ itinerary, budgetCOP }: { itinerary: Itinerary; budgetCOP: n
         )}
         <Stat label="Presupuesto por día" value={formatCOP(Math.round(budgetCOP / itinerary.days.length))} />
       </dl>
+
+      {placesSource.last !== 'live' && (
+        <Alert tone="info">
+          El servicio principal de mapas está ocupado: armamos el plan con{' '}
+          {placesSource.last === 'static' ? 'lugares guardados' : 'una fuente alternativa'} de OpenStreetMap (menos lugares y
+          pueden no estar actualizados).
+        </Alert>
+      )}
 
       {itinerary.missingCategories.length > 0 && (
         <p className="flex items-start gap-2 rounded-2xl bg-surface-2 p-4 text-sm text-ink">
@@ -240,7 +273,7 @@ function PlanView({ itinerary, budgetCOP }: { itinerary: Itinerary; budgetCOP: n
           })}
         </div>
 
-        <DayPanel key={day.day} day={day} itinerary={itinerary} />
+        <DayPanel key={day.day} day={day} itinerary={itinerary} forecast={forecastByDate.get(day.date)} />
       </div>
 
       <p className="text-xs text-muted">
@@ -261,7 +294,7 @@ function Stat({ label, value, hint }: { label: string; value: string; hint?: str
   )
 }
 
-function DayPanel({ day, itinerary }: { day: DayPlan; itinerary: Itinerary }) {
+function DayPanel({ day, itinerary, forecast }: { day: DayPlan; itinerary: Itinerary; forecast?: DailyForecast }) {
   const [activeId, setActiveId] = useState<string | null>(null)
   const start = itinerary.destination
   const legs = legDistancesKm(start, day.places)
@@ -276,6 +309,11 @@ function DayPanel({ day, itinerary }: { day: DayPlan; itinerary: Itinerary }) {
       tabIndex={0}
       className="mt-4 focus:outline-none"
     >
+      {forecast && (
+        <div className="mb-3">
+          <WeatherChip forecast={forecast} />
+        </div>
+      )}
       {day.places.length === 0 ? (
         <p className="flex items-start gap-3 rounded-2xl border border-dashed border-line p-5 text-ink">
           <Coffee aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-teal-soft" />

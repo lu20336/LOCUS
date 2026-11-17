@@ -74,4 +74,12 @@ describe('tripFlowReducer', () => {
     })
     expect(state.categories).toEqual(['cultura', 'aventura'])
   })
+
+  it('al cambiar las actividades o el ritmo se descarta el itinerario generado; si no cambian, se conserva', () => {
+    const itinerary = { input: {}, destination: trip.destination, days: [], missingCategories: [], stats: {}, generatedAt: '' } as never
+    const at3 = { ...tripFlowReducer(tripFlowReducer(initialTripFlowState, { type: 'COMPLETE_TRIP_DETAILS', trip }), { type: 'COMPLETE_ACTIVITIES', categories: ['cultura'], pace: 'normal' }), itinerary }
+    expect(tripFlowReducer(at3, { type: 'COMPLETE_ACTIVITIES', categories: ['cultura'], pace: 'normal' }).itinerary).toBe(itinerary)
+    expect(tripFlowReducer(at3, { type: 'COMPLETE_ACTIVITIES', categories: ['cultura', 'playa'], pace: 'normal' }).itinerary).toBeNull()
+    expect(tripFlowReducer(at3, { type: 'COMPLETE_ACTIVITIES', categories: ['cultura'], pace: 'intenso' }).itinerary).toBeNull()
+  })
 })

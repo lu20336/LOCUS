@@ -1,6 +1,6 @@
 // Tipos del flujo de 4 pasos de la app.
 import type { ClimateId, SuggestionResult } from '../lib/itinerary/suggestDestination'
-import type { CategoryId, Destination } from './itinerary'
+import type { CategoryId, Destination, Itinerary } from './itinerary'
 
 /** 1 = Tu viaje · 2 = Actividades · 3 = Itinerario · 4 = Confirmación */
 export type FlowStep = 1 | 2 | 3 | 4
@@ -48,4 +48,6 @@ export interface TripFlowState {
   /** Ritmo elegido en el Paso 2 (por defecto 'normal'). */
   pace: TripPace
   suggestionSearch: SuggestionSearch | null
+  /** Itinerario generado en el Paso 3 (se descarta si cambian los datos del viaje). */
+  itinerary: Itinerary | null
 }

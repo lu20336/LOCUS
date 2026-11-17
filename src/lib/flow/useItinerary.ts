@@ -1,15 +1,15 @@
 /**
  * Itinerario del Paso 3: llama al motor (planItinerary) con lo elegido en los
- * pasos 1 y 2. Busca lugares en Overpass y, si falla, en Geoapify
- * (placesClient).
+ * pasos 1 y 2. Busca lugares en Overpass y, si falla, en Geoapify,
+ * en los datos estáticos de Colombia o en Nominatim (fallbackClient).
  *
  * El resultado se guarda en sessionStorage: volver al Paso 2 sin cambiar nada
  * y regresar muestra el mismo plan al instante, sin repetir consultas.
  */
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import type { TripDetails, TripPace } from '../../types/flow'
 import type { CategoryId, Itinerary } from '../../types/itinerary'
-import { placesClient } from '../itinerary/browserClient'
+import { placesClient } from '../itinerary/fallbackClient'
 import { ItineraryError } from '../itinerary/errors'
 import { planItinerary } from '../itinerary/generateItinerary'
 import { PACES } from './pace'
@@ -68,7 +68,10 @@ export function useItinerary(
   const key = trip ? itineraryKey(trip, categories, pace) : ''
   const [result, setResult] = useState<{ key: string; state: ItineraryState } | null>(null)
   const [attempt, setAttempt] = useState(0)
-  const cached = key ? readCache(key) : null
+  // Con useMemo el objeto es estable entre renders (readCache hace JSON.parse y devolvería uno nuevo cada vez).
+  // `result` cambia cuando termina una generación y escribe la caché.
+  // oxlint-disable-next-line react-hooks/exhaustive-deps
+  const cached = useMemo(() => (key ? readCache(key) : null), [key, result])
 
   useEffect(() => {
     if (!trip || !key || readCache(key)) return
