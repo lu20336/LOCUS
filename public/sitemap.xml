@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Dominio actual de producción. Si LOCUS usa un dominio propio, reemplaza la base en este archivo y en robots.txt. -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://locus-bb57e.firebaseapp.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/comparar</loc><priority>0.9</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/planear</loc><priority>0.8</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/explorar</loc><priority>0.8</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/experiencias</loc><priority>0.7</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/itinerarios</loc><priority>0.6</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/destinos/cartagena</loc><priority>0.7</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/destinos/medellin</loc><priority>0.7</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/destinos/bogota</loc><priority>0.7</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/destinos/villa-de-leyva</loc><priority>0.7</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/destinos/san-andres</loc><priority>0.7</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/destinos/salento</loc><priority>0.7</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/destinos/santa-marta</loc><priority>0.7</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/destinos/guatape</loc><priority>0.7</priority></url>
+  <url><loc>https://locus-bb57e.firebaseapp.com/como-ganamos-dinero</loc><priority>0.4</priority></url>
+</urlset>

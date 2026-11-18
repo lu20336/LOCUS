@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /perfil
+Disallow: /reservas
+Disallow: /favoritos
+Disallow: /anfitrion
+Sitemap: https://locus-bb57e.firebaseapp.com/sitemap.xml

@@ -82,3 +82,12 @@
 - Se conservó de LOCUS: router, cuentas, favoritos, agente, catálogo propio, fallbacks de lugares (Overpass → Geoapify → datos estáticos → Nominatim), pronóstico por día, aviso de fuente alternativa y guardado del itinerario (Paso 4).
 - El mapa por día (`DayMap`) se reescribió con MapLibre + OpenFreeMap: se eliminó Leaflet y los servidores de teselas de openstreetmap.org (su política limita el uso intensivo).
 - El contexto del flujo expone acciones estables (`dispatch`) para evitar bucles de renderizado en efectos.
+
+## Comparador y estrategia de negocio
+
+- **Comparador** (`/comparar`, ✅): alojamiento (LOCUS con precio verificado + 8 plataformas), vuelos (4 metabuscadores + aerolíneas), experiencias, transporte y seguro; libreta de precios; "mismo alojamiento en otras plataformas"; `/vuelos` redirige aquí.
+- **Paso 4 "Completa tu viaje"** con accesos al comparador y botón **Compartir mi plan**.
+- **Transparencia y legal:** `/como-ganamos-dinero`, `/privacidad`, `/terminos` (borrador; requiere abogado). Enlaces de afiliado con `rel="sponsored"`.
+- **SEO:** meta/OG, títulos por ruta, `robots.txt`, `sitemap.xml`.
+- **Estrategia:** `docs/NEGOCIO.md` (posicionamiento, ingresos, marketing, fases, legal, riesgos).
+- Pendiente (🔒): precios en vivo vía APIs de socios (requiere capa de servidor), analítica, dominio propio.

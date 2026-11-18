@@ -7,6 +7,10 @@ React 19 + Vite + TypeScript + Tailwind, **Firebase** (proyecto `locus-bb57e`, p
 
 > ⚠ Los **pagos son simulados** (no se cobra dinero). Ver [docs/PROVEEDORES.md](docs/PROVEEDORES.md) para saber qué es real y qué está pendiente.
 
+## Comparador y negocio
+
+LOCUS busca ser el lugar donde se **planea, compara y reserva** todo el viaje. El comparador (`/comparar`) abre las principales plataformas de hospedaje, vuelos, tours y transporte con la búsqueda ya puesta; los precios en vivo de terceros llegan en la Fase 2. Estrategia, modelo de ingresos, marketing y hoja de ruta: [`docs/NEGOCIO.md`](docs/NEGOCIO.md).
+
 ## Empezar (local, sin tocar producción)
 
 ```bash

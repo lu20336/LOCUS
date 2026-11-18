@@ -178,3 +178,22 @@ Ninguno es "gratis": cobran comisión por transacción. **Requisito técnico com
 - **Estatuto del consumidor (Ley 1480 de 2011)** y reglas de retracto/cancelación: relevantes cuando existan pagos reales.
 
 **No habilites comercialmente** (cobros reales, publicidad masiva de anfitriones) hasta resolver el RNT de la plataforma, la política de datos y el contrato con la pasarela.
+
+## Comparador (enlaces profundos de plataformas)
+
+Implementado en `src/lib/compare/providers.ts` (alojamiento, vuelos, experiencias, transporte, seguro). **No consulta
+precios de terceros**: arma el enlace de búsqueda de cada plataforma con destino, fechas y viajeros. Formatos usados:
+
+| Plataforma | Formato (resumen) | Pre-llenado |
+|---|---|---|
+| Booking.com | `searchresults.es.html?ss=&checkin=&checkout=&group_adults=&no_rooms=` | completo |
+| Airbnb | `/s/{Ciudad}--Colombia/homes?adults=&checkin=&checkout=` | completo |
+| Expedia / Vrbo | `Hotel-Search?destination=&startDate=&endDate=&adults=` / `search?destination=…` | completo |
+| KAYAK | `/hotels/{lugar}/{ida}/{vuelta}/{n}adults`, `/flights/{O}-{D}/{ida}/{vuelta}/{n}adults` | completo |
+| Google Hoteles / Vuelos | `travel/search?q=` / `travel/flights?q=` | destino / ruta+fechas |
+| Skyscanner | `/transporte/vuelos/{o}/{d}/{aammdd}/{aammdd}/?adultsv2=` | completo |
+| Aviasales | `/search/{O}{ddmm}{D}{ddmm}{pasajeros}` | completo |
+| Despegar, trivago, Busbud, aerolíneas | solo página principal | ninguno (se avisa al usuario) |
+
+Los formatos son los públicos de cada buscador; **revísalos periódicamente** (si uno cambia, el peor caso es que abra el
+buscador sin datos). Prohibido: extraer precios con scraping. Los afiliados se configuran con `VITE_AFF_*` (ver `.env.example`).
