@@ -4,6 +4,7 @@
  * los itinerarios guardados (con `onChange` se puede editar).
  */
 import { useMemo, useState } from 'react'
+import { osmPlaceUrl } from '../lib/flow/itineraryView'
 import { CATEGORIES } from '../lib/itinerary/categories'
 import { movePlace, removePlace, setDayNote } from '../lib/itinerary/itineraryStore'
 import { LocusMap, type MapMarker } from '../lib/maps/MapLazy'
@@ -107,7 +108,7 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
                         </span>
                       </button>
                       <a
-                        href={`https://www.openstreetmap.org/${p.id}`}
+                        href={osmPlaceUrl(p)}
                         target="_blank"
                         rel="noreferrer"
                         className="shrink-0 text-xs font-semibold text-teal-soft underline underline-offset-2"

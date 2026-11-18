@@ -18,6 +18,7 @@ import { FEATURED_DESTINATIONS, climateOf } from '../lib/featuredDestinations'
 import { placesClient } from '../lib/itinerary/fallbackClient'
 import { haversineKm } from '../lib/itinerary/geo'
 import { CATEGORIES } from '../lib/itinerary/categories'
+import { osmPlaceUrl } from '../lib/flow/itineraryView'
 import { CLIMATES } from '../lib/itinerary/suggestDestination'
 import { LocusMap, type MapMarker } from '../lib/maps/MapLazy'
 import { fetchWikiSummary, wikiTitleFor } from '../lib/places/wikipedia'
@@ -101,7 +102,7 @@ export default function DestinationPage() {
                 <><Alert>{places.error}</Alert><Button variant="secondary" onClick={loadPlaces}>Reintentar</Button></>
               ) : (
                 <ul className="max-h-96 overflow-y-auto rounded-2xl border border-line bg-surface p-3 text-sm">
-                  {places.list.map((p) => <li key={p.id} className="border-b border-line py-1.5 last:border-0"><a href={`https://www.openstreetmap.org/${p.id}`} target="_blank" rel="noreferrer" className="font-semibold hover:underline">{p.name}</a> <span className="text-muted">· {p.kind} · {CATEGORIES[p.category].label}</span></li>)}
+                  {places.list.map((p) => <li key={p.id} className="border-b border-line py-1.5 last:border-0"><a href={osmPlaceUrl(p)} target="_blank" rel="noreferrer" className="font-semibold hover:underline">{p.name}</a> <span className="text-muted">· {p.kind} · {CATEGORIES[p.category].label}</span></li>)}
                   {places.list.length === 0 && <li className="text-muted">No encontramos lugares registrados.</li>}
                 </ul>
               )}
