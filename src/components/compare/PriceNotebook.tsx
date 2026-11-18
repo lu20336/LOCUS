@@ -9,6 +9,7 @@ import { useMemo, useState } from 'react'
 import { summarizeQuotes } from '../../lib/compare/priceNotebook'
 import type { PriceQuote } from '../../lib/compare/providers'
 import { formatCOP, parseBudget } from '../../lib/format'
+import { useI18n } from '../../lib/i18n/I18nProvider'
 import { inputClassName } from '../FormField'
 import { Badge } from '../ui'
 
@@ -31,7 +32,7 @@ export function PriceNotebook({
   storageKey,
   rows,
   fixedQuotes = [],
-  unit = 'total del viaje',
+  unit,
 }: {
   storageKey: string
   rows: readonly NotebookRow[]
@@ -39,6 +40,7 @@ export function PriceNotebook({
   fixedQuotes?: readonly PriceQuote[]
   unit?: string
 }) {
+  const { t } = useI18n()
   const [entries, setEntries] = useState<Record<string, string>>(() => readSaved(storageKey))
   // Si cambia la búsqueda, se cargan las notas de la nueva.
   const [loadedKey, setLoadedKey] = useState(storageKey)
@@ -75,8 +77,7 @@ export function PriceNotebook({
   return (
     <div className="flex flex-col gap-4">
       <p className="text-sm text-muted">
-        Abre cada plataforma, anota aquí el <strong className="text-ink">{unit}</strong> que ves (con impuestos y tarifas) y
-        LOCUS te dice cuál conviene. Se guarda en este navegador.
+        {t('compare.note.before')} <strong className="text-ink">{unit}</strong> {t('compare.note.after')}
       </p>
 
       <ul className="flex flex-col gap-2">
@@ -85,7 +86,7 @@ export function PriceNotebook({
           return (
             <li key={q.providerId} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-teal/50 bg-teal/10 p-3">
               <span className="font-semibold text-ink">
-                {q.label} {q.source === 'locus' ? <Badge tone="teal">Precio verificado</Badge> : <Badge tone="warn">Referencia · puede variar</Badge>}
+                {q.label} {q.source === 'locus' ? <Badge tone="teal">{t('compare.note.verified')}</Badge> : <Badge tone="warn">{t('compare.note.reference')}</Badge>}
               </span>
               <span className="flex items-center gap-2 text-ink">
                 <strong>{formatCOP(q.totalCOP)}</strong>
@@ -133,11 +134,11 @@ export function PriceNotebook({
       <div aria-live="polite" className="min-h-6 text-sm">
         {summary.best && summary.ranked.length > 1 ? (
           <p className="rounded-2xl bg-surface-2 p-3 text-ink">
-            <strong>{summary.best.label}</strong> es la opción más barata. Frente a la más cara te ahorras{' '}
+            <strong>{summary.best.label}</strong> {t('compare.note.summaryA')}{' '}
             <strong className="text-teal-soft">{formatCOP(summary.savingsCOP)}</strong>.
           </p>
         ) : (
-          <p className="text-muted">Anota al menos dos precios para compararlos.</p>
+          <p className="text-muted">{t('compare.note.needTwo')}</p>
         )}
       </div>
     </div>
@@ -145,17 +146,19 @@ export function PriceNotebook({
 }
 
 function BestTag() {
+  const { t } = useI18n()
   return (
     <span className="inline-flex items-center gap-1 rounded-full bg-teal px-2 py-0.5 text-xs font-bold text-on-coral">
-      <Trophy aria-hidden="true" className="size-3.5" /> Más barata
+      <Trophy aria-hidden="true" className="size-3.5" /> {t('compare.note.cheapest')}
     </span>
   )
 }
 
 function ExtraTag({ cop, pct }: { cop: number; pct: number }) {
+  const { t } = useI18n()
   return (
     <span className="text-xs font-semibold text-muted">
-      +{formatCOP(cop)} ({pct}% más)
+      {t('compare.note.more', { amount: formatCOP(cop), pct })}
     </span>
   )
 }

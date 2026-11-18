@@ -15,7 +15,7 @@ export function ComparisonTable({ audience, currentPlanId }: { audience: Audienc
   const { t } = useI18n()
   const plans = plansFor(audience)
   return (
-    <div className="overflow-x-auto rounded-3xl border border-line bg-surface">
+    <div className="relative overflow-x-auto rounded-3xl border border-line bg-surface">
       <table className="w-full min-w-[34rem] border-collapse text-left">
         <caption className="sr-only">{t(`plans.compare.caption.${audience}`)}</caption>
         <thead>

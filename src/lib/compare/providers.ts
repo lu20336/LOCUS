@@ -110,14 +110,14 @@ const CIVITATIS_CITIES: Record<string, string> = {
 const P = (id: string, name: string, kind: CompareKind, pitch: string, tags: string[]): CompareProvider => ({ id, name, kind, pitch, tags })
 
 export const STAY_PROVIDERS = {
-  booking: P('booking', 'Booking.com', 'stay', 'La mayor oferta de hoteles; cancelación gratis en muchas tarifas.', ['Hoteles', 'Hostales', 'Apartamentos']),
-  airbnb: P('airbnb', 'Airbnb', 'stay', 'Casas, fincas y apartamentos completos; bueno para grupos y estadías largas.', ['Casas y fincas', 'Apartamentos']),
-  google: P('google-hotels', 'Google Hoteles', 'stay', 'Cruza los precios de muchas agencias en un solo lugar.', ['Metabuscador']),
-  expedia: P('expedia', 'Expedia', 'stay', 'Paquetes y tarifas con programa de puntos (precios en dólares).', ['Hoteles', 'Paquetes']),
-  kayak: P('kayak', 'KAYAK', 'stay', 'Compara precios de varias agencias, con filtros potentes.', ['Metabuscador']),
-  vrbo: P('vrbo', 'Vrbo', 'stay', 'Casas y fincas completas para familias y grupos.', ['Casas y fincas']),
-  despegar: P('despegar', 'Despegar', 'stay', 'Agencia latinoamericana con pago en pesos y cuotas.', ['Hoteles', 'Paquetes']),
-  trivago: P('trivago', 'trivago', 'stay', 'Compara el precio del mismo hotel entre agencias.', ['Metabuscador']),
+  booking: P('booking', 'Booking.com', 'stay', 'compare.pitch.booking', ['compare.tag.hoteles', 'compare.tag.hostales', 'compare.tag.apartamentos']),
+  airbnb: P('airbnb', 'Airbnb', 'stay', 'compare.pitch.airbnb', ['compare.tag.casas-y-fincas', 'compare.tag.apartamentos']),
+  google: P('google-hotels', 'Google Hoteles', 'stay', 'compare.pitch.google-hotels', ['compare.tag.metabuscador']),
+  expedia: P('expedia', 'Expedia', 'stay', 'compare.pitch.expedia', ['compare.tag.hoteles', 'compare.tag.paquetes']),
+  kayak: P('kayak', 'KAYAK', 'stay', 'compare.pitch.kayak', ['compare.tag.metabuscador']),
+  vrbo: P('vrbo', 'Vrbo', 'stay', 'compare.pitch.vrbo', ['compare.tag.casas-y-fincas']),
+  despegar: P('despegar', 'Despegar', 'stay', 'compare.pitch.despegar', ['compare.tag.hoteles', 'compare.tag.paquetes']),
+  trivago: P('trivago', 'trivago', 'stay', 'compare.pitch.trivago', ['compare.tag.metabuscador']),
 } as const
 
 /** Búsqueda de alojamiento en cada plataforma, con lo que cada una permite pre-llenar. */
@@ -186,12 +186,12 @@ export function propertyLinks(name: string, placeName: string, q: Pick<StayQuery
     },
     { provider: STAY_PROVIDERS.google, url: `https://www.google.com/travel/search?q=${enc(query)}`, prefill: 'place' },
     {
-      provider: { ...STAY_PROVIDERS.airbnb, pitch: 'Búsqueda del nombre en Airbnb (vía Google).' },
+      provider: { ...STAY_PROVIDERS.airbnb, pitch: 'compare.pitch.airbnb-property' },
       url: `https://www.google.com/search?q=${enc(`"${name}" ${cleanPlace(placeName)} airbnb.com.co`)}`,
       prefill: 'place',
     },
     {
-      provider: P('tripadvisor', 'Tripadvisor', 'stay', 'Opiniones y precios de varias agencias para ese lugar.', ['Opiniones']),
+      provider: P('tripadvisor', 'Tripadvisor', 'stay', 'compare.pitch.tripadvisor', ['compare.tag.opiniones']),
       url: `https://www.tripadvisor.co/Search?q=${enc(query)}`,
       prefill: 'place',
     },
@@ -222,22 +222,22 @@ export function flightSearchLinks(q: FlightQuery, env?: AffiliateEnv): CompareLi
   const google = `Flights from ${o} to ${d} on ${q.date}${back ? ` returning ${back}` : ''}`
   const raw: Omit<CompareLink, 'sponsored'>[] = [
     {
-      provider: P('google-flights', 'Google Vuelos', 'flight', 'Compara aerolíneas y muestra el calendario de precios más baratos.', ['Metabuscador']),
+      provider: P('google-flights', 'Google Vuelos', 'flight', 'compare.pitch.google-flights', ['compare.tag.metabuscador']),
       url: `https://www.google.com/travel/flights?q=${enc(google)}`,
       prefill: 'full',
     },
     {
-      provider: P('skyscanner', 'Skyscanner', 'flight', 'Metabuscador con alertas de precio y "mes más barato".', ['Metabuscador']),
+      provider: P('skyscanner', 'Skyscanner', 'flight', 'compare.pitch.skyscanner', ['compare.tag.metabuscador']),
       url: `https://www.skyscanner.com.co/transporte/vuelos/${o.toLowerCase()}/${d.toLowerCase()}/${yymmdd(q.date)}/${back ? `${yymmdd(back)}/` : ''}?adultsv2=${people}`,
       prefill: 'full',
     },
     {
-      provider: P('kayak-flights', 'KAYAK', 'flight', 'Compara agencias y aerolíneas; filtros de escalas y equipaje.', ['Metabuscador']),
+      provider: P('kayak-flights', 'KAYAK', 'flight', 'compare.pitch.kayak-flights', ['compare.tag.metabuscador']),
       url: `https://www.kayak.com.co/flights/${o}-${d}/${q.date}${back ? `/${back}` : ''}/${people}adults`,
       prefill: 'full',
     },
     {
-      provider: P('aviasales', 'Aviasales', 'flight', 'Suele mostrar tarifas de agencias pequeñas más baratas.', ['Metabuscador']),
+      provider: P('aviasales', 'Aviasales', 'flight', 'compare.pitch.aviasales', ['compare.tag.metabuscador']),
       url: `https://www.aviasales.com/search/${o}${ddmm(q.date)}${d}${back ? ddmm(back) : ''}${people}`,
       prefill: 'full',
     },
@@ -268,22 +268,22 @@ export function experienceLinks(placeName: string, env?: AffiliateEnv): CompareL
   const place = cleanPlace(placeName)
   const raw: Omit<CompareLink, 'sponsored'>[] = [
     {
-      provider: P('getyourguide', 'GetYourGuide', 'experience', 'Tours y entradas con cancelación gratis en muchas actividades.', ['Tours', 'Entradas']),
+      provider: P('getyourguide', 'GetYourGuide', 'experience', 'compare.pitch.getyourguide', ['compare.tag.tours', 'compare.tag.entradas']),
       url: `https://www.getyourguide.com/s/?q=${enc(`${place} Colombia`)}`,
       prefill: 'place',
     },
     {
-      provider: P('viator', 'Viator', 'experience', 'Gran catálogo de excursiones, de Tripadvisor.', ['Tours']),
+      provider: P('viator', 'Viator', 'experience', 'compare.pitch.viator', ['compare.tag.tours']),
       url: `https://www.viator.com/searchResults/all?text=${enc(`${place} Colombia`)}`,
       prefill: 'place',
     },
     {
-      provider: P('civitatis', 'Civitatis', 'experience', 'Visitas guiadas en español, con precios claros.', ['Tours en español']),
+      provider: P('civitatis', 'Civitatis', 'experience', 'compare.pitch.civitatis', ['compare.tag.tours-en-espanol']),
       url: `https://www.civitatis.com/es/${CIVITATIS_CITIES[norm(place)] ?? 'colombia'}/`,
       prefill: CIVITATIS_CITIES[norm(place)] ? 'place' : 'none',
     },
     {
-      provider: P('tripadvisor-things', 'Tripadvisor', 'experience', 'Qué hacer, con miles de opiniones de viajeros.', ['Opiniones']),
+      provider: P('tripadvisor-things', 'Tripadvisor', 'experience', 'compare.pitch.tripadvisor-things', ['compare.tag.opiniones']),
       url: `https://www.tripadvisor.co/Search?q=${enc(`que hacer en ${place}`)}`,
       prefill: 'place',
     },
@@ -297,19 +297,19 @@ export function transportLinks(placeName: string, q: Pick<StayQuery, 'checkIn' |
   const full = Boolean(q.checkIn && q.checkOut && q.checkIn < q.checkOut)
   const raw: Omit<CompareLink, 'sponsored'>[] = [
     {
-      provider: P('busbud', 'Busbud', 'transport', 'Compara buses entre ciudades.', ['Bus']),
+      provider: P('busbud', 'Busbud', 'transport', 'compare.pitch.busbud', ['compare.tag.bus']),
       url: 'https://www.busbud.com/es',
       prefill: 'none',
     },
     {
-      provider: P('kayak-cars', 'KAYAK Autos', 'transport', 'Compara alquiler de carro entre varias empresas.', ['Carro']),
+      provider: P('kayak-cars', 'KAYAK Autos', 'transport', 'compare.pitch.kayak-cars', ['compare.tag.carro']),
       url: kayakCity(placeName)
         ? `https://www.kayak.com.co/cars/${enc(kayakCity(placeName) as string)}${full ? `/${q.checkIn}/${q.checkOut}` : ''}`
         : 'https://www.kayak.com.co/cars',
       prefill: kayakCity(placeName) ? (full ? 'full' : 'place') : 'none',
     },
     {
-      provider: P('discovercars', 'Discover Cars', 'transport', 'Alquiler de carro con seguro completo opcional.', ['Carro']),
+      provider: P('discovercars', 'Discover Cars', 'transport', 'compare.pitch.discovercars', ['compare.tag.carro']),
       url: 'https://www.discovercars.com/colombia',
       prefill: 'none',
     },
@@ -320,7 +320,7 @@ export function transportLinks(placeName: string, q: Pick<StayQuery, 'checkIn' |
 export function insuranceLinks(env?: AffiliateEnv): CompareLink[] {
   const raw: Omit<CompareLink, 'sponsored'>[] = [
     {
-      provider: P('assistcard', 'Assist Card', 'insurance', 'Asistencia médica y de viaje para turismo nacional e internacional.', ['Seguro de viaje']),
+      provider: P('assistcard', 'Assist Card', 'insurance', 'compare.pitch.assistcard', ['compare.tag.seguro-de-viaje']),
       url: 'https://www.assistcard.com/co',
       prefill: 'none',
     },
@@ -334,7 +334,7 @@ function sponsor(providerId: string, url: string, env?: AffiliateEnv): Pick<Comp
 
 /** Texto corto para el usuario: cuánto llega pre-llenado. */
 export const PREFILL_LABEL: Record<Prefill, string> = {
-  full: 'Con tu búsqueda lista',
-  place: 'Con tu destino listo',
-  none: 'Repite tu búsqueda allí',
+  full: 'compare.prefill.full',
+  place: 'compare.prefill.place',
+  none: 'compare.prefill.none',
 }

@@ -1,0 +1,18 @@
+import type { MessageKey } from '../es'
+import { agent } from './agent'
+import { app } from './app'
+import { auth } from './auth'
+import { bookings } from './bookings'
+import { common } from './common'
+import { compare } from './compare'
+import { compareProviders } from './compareProviders'
+import { home } from './home'
+import { host } from './host'
+import { nav } from './nav'
+import { planner } from './planner'
+import { plans } from './plans'
+import { trips } from './trips'
+import { weather } from './weather'
+
+/** Catálogo en: debe tener EXACTAMENTE las mismas claves que es (lo exige el compilador y translations.test.ts). */
+export const en: Record<MessageKey, string> = { ...agent, ...app, ...auth, ...bookings, ...common, ...compare, ...compareProviders, ...home, ...host, ...nav, ...planner, ...plans, ...trips, ...weather }

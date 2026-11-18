@@ -75,7 +75,7 @@ function PageTransition() {
 
 function RouteEffects() {
   const { pathname } = useLocation()
-  const { t } = useI18n()
+  const { t, locale } = useI18n()
   useEffect(() => {
     const key = TITLES[pathname]
     document.title = key ? t('title.suffix', { page: t(key) }) : t('title.default')
@@ -84,7 +84,7 @@ function RouteEffects() {
     title?.focus({ preventScroll: true })
     // El título depende del idioma: se actualiza también al cambiarlo (sin volver a mover el foco).
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pathname, t.locale])
+  }, [pathname, locale])
   return null
 }
 

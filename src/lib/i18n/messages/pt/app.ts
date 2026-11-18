@@ -1,0 +1,20 @@
+/** Títulos de página (aba do navegador) e mensagens globais do aplicativo. */
+export const app = {
+  'title.default': 'LOCUS · Planeje, compare e reserve sua viagem pela Colômbia',
+  'title.suffix': '{page} · LOCUS',
+  'title.plan': 'Planeje sua viagem',
+  'title.compare': 'Compare hospedagens, voos e experiências',
+  'title.explore': 'Explore hospedagens na Colômbia',
+  'title.experiences': 'Experiências na Colômbia',
+  'title.myTrips': 'Minhas viagens',
+  'title.favorites': 'Favoritos',
+  'title.bookings': 'Minhas reservas',
+  'title.profile': 'Perfil e preferências',
+  'title.plans': 'Planos e assinatura',
+  'title.howWeEarn': 'Como ganhamos dinheiro',
+  'title.privacy': 'Privacidade',
+  'title.terms': 'Termos de uso',
+  'title.host': 'Anuncie sua hospedagem',
+  'app.checkingSession': 'Verificando sua sessão…',
+  'app.poweredBy': 'Powered by Geoapify',
+} as const

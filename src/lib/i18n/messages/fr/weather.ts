@@ -1,0 +1,21 @@
+/** Descriptions météo (codes WMO d'Open-Meteo). */
+export const weather = {
+  'weather.clear': 'Dégagé',
+  'weather.mostlyClear': 'Plutôt dégagé',
+  'weather.partlyCloudy': 'Partiellement nuageux',
+  'weather.overcast': 'Couvert',
+  'weather.fog': 'Brouillard',
+  'weather.drizzle': 'Bruine',
+  'weather.rain': 'Pluie',
+  'weather.snow': 'Neige',
+  'weather.showers': 'Averses',
+  'weather.snowShowers': 'Averses de neige',
+  'weather.thunderstorm': 'Orage',
+  'weather.thunderHail': 'Orage avec grêle',
+  'weather.unknown': 'Aucune donnée',
+  'weather.forecastLabel': 'Prévisions : {description}, {min}–{max} °C',
+  'weather.rainRisk': 'Risque de pluie {risk} ({probability} %)',
+  'weather.risk.bajo': 'faible',
+  'weather.risk.medio': 'modéré',
+  'weather.risk.alto': 'élevé',
+} as const

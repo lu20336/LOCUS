@@ -40,14 +40,15 @@ import { useDestinationOptions } from '../lib/flow/destinationOptions'
 import { findFeaturedDestination } from '../lib/flow/resolveDestination'
 import { formatCOP, formatDate, todayISO } from '../lib/format'
 import { haversineKm } from '../lib/itinerary/geo'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { useAsync } from '../lib/useAsync'
 import type { Destination } from '../types/itinerary'
 
 const TABS = [
-  { id: 'alojamiento', label: 'Alojamiento', icon: Hotel },
-  { id: 'vuelos', label: 'Vuelos', icon: Plane },
-  { id: 'experiencias', label: 'Experiencias', icon: Ticket },
-  { id: 'transporte', label: 'Transporte y seguro', icon: ShieldCheck },
+  { id: 'alojamiento', icon: Hotel },
+  { id: 'vuelos', icon: Plane },
+  { id: 'experiencias', icon: Ticket },
+  { id: 'transporte', icon: ShieldCheck },
 ] as const
 type TabId = (typeof TABS)[number]['id']
 
@@ -65,6 +66,7 @@ interface Ctx {
 const NEAR_KM = 40
 
 export default function ComparePage() {
+  const { t: tr } = useI18n()
   const [params, setParams] = useSearchParams()
   const today = todayISO()
   const tab: TabId = TABS.some((t) => t.id === params.get('tipo')) ? (params.get('tipo') as TabId) : 'alojamiento'
@@ -91,21 +93,21 @@ export default function ComparePage() {
   const hasPlace = place.length >= 2
   const dateHint =
     checkIn && checkIn < today
-      ? 'La llegada no puede estar en el pasado.'
+      ? tr('compare.pastArrival')
       : checkIn && checkOut && checkOut <= checkIn
-        ? 'La salida debe ser posterior a la llegada.'
+        ? tr('compare.badDeparture')
         : null
 
   return (
     <Container className="max-w-5xl py-8 sm:py-10">
-      <PageHeader eyebrow="Comparador" title="Compara todo tu viaje en un solo lugar">
-        Pon tu destino y tus fechas una vez. Te llevamos a cada plataforma con la búsqueda lista y te ayudamos a decidir con números.
+      <PageHeader eyebrow={tr('compare.eyebrow')} title={tr('compare.title')}>
+        {tr('compare.intro')}
       </PageHeader>
 
       <Card>
         <form className="grid gap-4 sm:grid-cols-6" onSubmit={(e) => e.preventDefault()}>
           <div className="relative sm:col-span-6">
-            <label htmlFor="cmp-dest" className="text-sm font-semibold text-ink">¿A dónde vas?</label>
+            <label htmlFor="cmp-dest" className="text-sm font-semibold text-ink">{tr('compare.whereTo')}</label>
             <input
               id="cmp-dest"
               value={text}
@@ -114,11 +116,11 @@ export default function ComparePage() {
                 setChosen(null)
               }}
               autoComplete="off"
-              placeholder="Cartagena, Salento, San Andrés…"
+              placeholder={tr('compare.placeholder')}
               className={`${inputClassName} mt-1`}
             />
             {!chosen && options.length > 0 && text.trim().length >= 2 && !dest && (
-              <ul aria-label="Sugerencias de destino" className="mt-2 flex flex-wrap gap-2">
+              <ul aria-label={tr('compare.suggestions')} className="mt-2 flex flex-wrap gap-2">
                 {options.map((o) => (
                   <li key={o.id}>
                     <button
@@ -138,28 +140,28 @@ export default function ComparePage() {
             )}
           </div>
           <div className="sm:col-span-2">
-            <label htmlFor="cmp-in" className="text-sm font-semibold text-ink">Llegada / ida</label>
+            <label htmlFor="cmp-in" className="text-sm font-semibold text-ink">{tr('compare.checkIn')}</label>
             <input id="cmp-in" type="date" min={today} value={checkIn} onChange={(e) => setCheckIn(e.target.value)} className={`${inputClassName} mt-1`} />
           </div>
           <div className="sm:col-span-2">
-            <label htmlFor="cmp-out" className="text-sm font-semibold text-ink">Salida / regreso</label>
+            <label htmlFor="cmp-out" className="text-sm font-semibold text-ink">{tr('compare.checkOut')}</label>
             <input id="cmp-out" type="date" min={checkIn || today} value={checkOut} onChange={(e) => setCheckOut(e.target.value)} className={`${inputClassName} mt-1`} />
           </div>
           <div className="sm:col-span-2">
-            <Counter label="Viajeros" icon={Users} unit="un viajero" value={travelers} min={1} max={16} onChange={setTravelers} />
+            <Counter label={tr('compare.travelersLabel')} icon={Users} unit={tr('compare.oneTraveler')} value={travelers} min={1} max={16} onChange={setTravelers} />
           </div>
         </form>
         {dateHint && <p className="mt-3 text-sm text-danger" role="alert">{dateHint}</p>}
       </Card>
 
-      <nav aria-label="Qué quieres comparar" className="mt-6">
+      <nav aria-label={tr('compare.tabsLabel')} className="mt-6">
         <ul className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
-          {TABS.map((t) => {
-            const active = t.id === tab
+          {TABS.map((tabItem) => {
+            const active = tabItem.id === tab
             const next = new URLSearchParams(params)
-            next.set('tipo', t.id)
+            next.set('tipo', tabItem.id)
             return (
-              <li key={t.id} className="shrink-0">
+              <li key={tabItem.id} className="shrink-0">
                 <button
                   type="button"
                   aria-current={active ? 'page' : undefined}
@@ -168,8 +170,8 @@ export default function ComparePage() {
                     active ? 'border-navy bg-navy text-surface' : 'border-line bg-surface text-ink hover:bg-surface-2'
                   }`}
                 >
-                  <t.icon aria-hidden="true" className="size-4" />
-                  {t.label}
+                  <tabItem.icon aria-hidden="true" className="size-4" />
+                  {tr(`compare.tab.${tabItem.id}`)}
                 </button>
               </li>
             )
@@ -179,7 +181,7 @@ export default function ComparePage() {
 
       <div className="mt-6 flex flex-col gap-6">
         {!hasPlace ? (
-          <Alert tone="info">Escribe tu destino arriba para ver dónde comparar. Puedes empezar con las fechas si aún no lo decides.</Alert>
+          <Alert tone="info">{tr('compare.needDestination')}</Alert>
         ) : tab === 'alojamiento' ? (
           <StaysTab ctx={ctx} />
         ) : tab === 'vuelos' ? (
@@ -211,10 +213,11 @@ function Block({ title, subtitle, children, badge }: { title: string; subtitle?:
 }
 
 function AffiliateNote() {
+  const { t: tr } = useI18n()
   return (
     <p className="text-xs text-muted">
-      Algunos enlaces son de afiliado: si reservas, LOCUS puede recibir una comisión, sin costo extra para ti y sin cambiar el orden en que te mostramos las opciones.{' '}
-      <Link to="/como-ganamos-dinero" className="underline underline-offset-2 hover:text-ink">Cómo ganamos dinero</Link>.
+      {tr('compare.affiliate')}{' '}
+      <Link to="/como-ganamos-dinero" className="underline underline-offset-2 hover:text-ink">{tr('footer.howWeEarn')}</Link>.
     </p>
   )
 }
@@ -222,6 +225,7 @@ function AffiliateNote() {
 /* ───────────────────────────── Alojamiento ───────────────────────────── */
 
 function StaysTab({ ctx }: { ctx: Ctx }) {
+  const { t: tr } = useI18n()
   const { place, dest, checkIn, checkOut, datesOk, travelers } = ctx
   const listings = useAsync(() => fetchPublished<Listing>(db, 'listings'), [])
   const near = useMemo(() => {
@@ -252,14 +256,14 @@ function StaysTab({ ctx }: { ctx: Ctx }) {
   return (
     <>
       <Block
-        title={`Reserva directa en LOCUS · ${place}`}
-        subtitle="Alojamientos de anfitriones de LOCUS: precio real, sin cargos de servicio para ti."
-        badge={<Badge tone="teal">Sin comisión para el huésped</Badge>}
+        title={tr('compare.stays.directTitle', { place })}
+        subtitle={tr('compare.stays.directSubtitle')}
+        badge={<Badge tone="teal">{tr('compare.stays.noCommission')}</Badge>}
       >
         {!dest ? (
-          <Alert tone="info">Elige una de las sugerencias de destino para ver los alojamientos de LOCUS cerca.</Alert>
+          <Alert tone="info">{tr('compare.stays.pickSuggestion')}</Alert>
         ) : listings.loading ? (
-          <Spinner label="Buscando alojamientos…" />
+          <Spinner label={tr('compare.stays.loading')} />
         ) : near.length > 0 ? (
           <>
             <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
@@ -269,47 +273,47 @@ function StaysTab({ ctx }: { ctx: Ctx }) {
                   {datesOk && validateStay(l, { checkIn, checkOut, guests: travelers }, todayISO()) === null && (
                     <p className="mt-2 text-sm text-ink">
                       <strong>{formatCOP(quoteStay(l, { checkIn, checkOut, guests: travelers }).total)}</strong>{' '}
-                      <span className="text-muted">en total · {formatDate(checkIn)} – {formatDate(checkOut)}</span>
+                      <span className="text-muted">{tr('compare.stays.totalFor')} · {formatDate(checkIn)} – {formatDate(checkOut)}</span>
                     </p>
                   )}
                 </li>
               ))}
             </ul>
-            {near.length > 3 && <ButtonLink to="/explorar" variant="secondary" className="self-start">Ver los {near.length} alojamientos</ButtonLink>}
+            {near.length > 3 && <ButtonLink to="/explorar" variant="secondary" className="self-start">{tr('compare.stays.seeAll', { count: near.length })}</ButtonLink>}
           </>
         ) : (
           <Alert tone="info">
-            Aún no hay anfitriones de LOCUS cerca de {place}. Compara abajo en otras plataformas, o{' '}
-            <Link to="/anfitrion" className="font-semibold underline">publica tu alojamiento</Link> y sé el primero.
+            {tr('compare.stays.noHostsA', { place })}{' '}
+            <Link to="/anfitrion" className="font-semibold underline">{tr('compare.stays.noHostsLink')}</Link> {tr('compare.stays.noHostsB')}
           </Alert>
         )}
       </Block>
 
       <Block
-        title="Compara en otras plataformas"
-        subtitle={datesOk ? `Abrimos cada una con ${place}, tus fechas y ${travelers} ${travelers === 1 ? 'viajero' : 'viajeros'} ya puestos.` : 'Agrega fechas arriba para que lleguen puestas; si no, solo llega el destino.'}
+        title={tr('compare.stays.othersTitle')}
+        subtitle={datesOk ? tr('compare.stays.othersWithDates', { place, travelers: tr('common.travelers', { count: travelers }) }) : tr('compare.stays.othersNoDates')}
       >
-        <ProviderList links={links} cta="Buscar en" />
+        <ProviderList links={links} cta={tr('compare.searchIn')} />
       </Block>
 
-      <Block title="Anota y decide" subtitle="La forma más rápida de saber cuál conviene de verdad.">
+      <Block title={tr('compare.noteTitle')} subtitle={tr('compare.noteSubtitle')}>
         <Card>
           <PriceNotebook
             storageKey={notebookKey('stay', place, checkIn, checkOut, travelers)}
             rows={links.filter((l) => l.prefill !== 'none' || l.provider.id === 'despegar').slice(0, 6).map((l) => ({ providerId: l.provider.id, label: l.provider.name }))}
             fixedQuotes={locusQuote}
-            unit="total de la estadía"
+            unit={tr('compare.stayUnit')}
           />
         </Card>
       </Block>
 
-      <Block title="¿Ya viste un alojamiento que te gusta?" subtitle="Escribe su nombre y lo buscamos en las otras plataformas para comparar el precio del mismo lugar.">
+      <Block title={tr('compare.sameTitle')} subtitle={tr('compare.sameSubtitle')}>
         <Card>
-          <label htmlFor="cmp-prop" className="text-sm font-semibold text-ink">Nombre del alojamiento</label>
-          <input id="cmp-prop" value={propertyName} onChange={(e) => setPropertyName(e.target.value)} placeholder="Ej. Finca El Cafetal" className={`${inputClassName} mt-1`} />
+          <label htmlFor="cmp-prop" className="text-sm font-semibold text-ink">{tr('compare.propertyName')}</label>
+          <input id="cmp-prop" value={propertyName} onChange={(e) => setPropertyName(e.target.value)} placeholder={tr('compare.propertyPlaceholder')} className={`${inputClassName} mt-1`} />
           {sameProperty.length > 0 && (
             <div className="mt-4">
-              <ProviderList links={sameProperty} cta="Buscarlo en" />
+              <ProviderList links={sameProperty} cta={tr('compare.findIn')} />
             </div>
           )}
         </Card>
@@ -321,6 +325,7 @@ function StaysTab({ ctx }: { ctx: Ctx }) {
 /* ───────────────────────────── Vuelos ───────────────────────────── */
 
 function FlightsTab({ ctx }: { ctx: Ctx }) {
+  const { t: tr } = useI18n()
   const { place, dest, checkIn, checkOut, datesOk, travelers } = ctx
   const suggested = useMemo(
     () => (dest ? nearestAirports(dest, 1)[0]?.iata : findAirport(place)?.iata) ?? 'CTG',
@@ -350,48 +355,48 @@ function FlightsTab({ ctx }: { ctx: Ctx }) {
 
   return (
     <>
-      <Block title="Tu ruta" subtitle="Usamos tus fechas de arriba: llegada = ida, salida = regreso (opcional).">
+      <Block title={tr('compare.flights.route')} subtitle={tr('compare.flights.routeSub')}>
         <Card>
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
-              <label htmlFor="cmp-o" className="text-sm font-semibold text-ink">Origen</label>
+              <label htmlFor="cmp-o" className="text-sm font-semibold text-ink">{tr('compare.flights.origin')}</label>
               <select id="cmp-o" value={origin} onChange={(e) => setOrigin(e.target.value)} className={`${selectClassName} mt-1`}>{options}</select>
             </div>
             <div>
-              <label htmlFor="cmp-d" className="text-sm font-semibold text-ink">Destino</label>
+              <label htmlFor="cmp-d" className="text-sm font-semibold text-ink">{tr('compare.flights.destination')}</label>
               <select id="cmp-d" value={to} onChange={(e) => setDestOverride(e.target.value)} className={`${selectClassName} mt-1`}>{options}</select>
             </div>
           </div>
-          {same && <p className="mt-3 text-sm text-danger" role="alert">El origen y el destino son el mismo aeropuerto.</p>}
-          {!checkIn && <p className="mt-3 text-sm text-muted">Elige la fecha de ida arriba para pre-llenar la búsqueda.</p>}
+          {same && <p className="mt-3 text-sm text-danger" role="alert">{tr('compare.flights.sameAirport')}</p>}
+          {!checkIn && <p className="mt-3 text-sm text-muted">{tr('compare.flights.needDate')}</p>}
         </Card>
       </Block>
 
       {flights.length > 0 && (
         <>
           {liveOn && (
-            <Block title="Precio de referencia" subtitle="Lo más barato que viajeros encontraron hace poco. No es una tarifa reservable: confírmala en el buscador.">
-              {reference.loading ? <Spinner label="Consultando precios recientes…" /> : reference.data ? <ReferenceCard reference={reference.data} travelers={travelers} /> : <Alert tone="info">No hay precios recientes para esta ruta y fecha. Compara en los buscadores de abajo.</Alert>}
+            <Block title={tr('compare.flights.refTitle')} subtitle={tr('compare.flights.refSub')}>
+              {reference.loading ? <Spinner label={tr('compare.flights.refLoading')} /> : reference.data ? <ReferenceCard reference={reference.data} travelers={travelers} /> : <Alert tone="info">{tr('compare.flights.refNone')}</Alert>}
             </Block>
           )}
-          <Block title="Compara en buscadores de vuelos" subtitle="Cada uno revisa decenas de aerolíneas y agencias; abre dos o tres y compara.">
-            <ProviderList links={flights} cta="Ver vuelos en" />
+          <Block title={tr('compare.flights.searchersTitle')} subtitle={tr('compare.flights.searchersSub')}>
+            <ProviderList links={flights} cta={tr('compare.flights.viewFlights')} />
           </Block>
-          <Block title="Anota y decide" subtitle="Incluye el equipaje: en bajo costo se cobra aparte.">
+          <Block title={tr('compare.noteTitle')} subtitle={tr('compare.flights.noteSub')}>
             <Card>
               <PriceNotebook
                 storageKey={notebookKey('flight', `${origin}-${to}`, checkIn, checkOut, travelers)}
                 rows={[...flights, ...airlineLinks().slice(0, 3)].map((l) => ({ providerId: l.provider.id, label: l.provider.name }))}
                 fixedQuotes={reference.data ? [referenceToQuote(reference.data, travelers)] : []}
-                unit={`total para ${travelers} ${travelers === 1 ? 'pasajero' : 'pasajeros'}`}
+                unit={tr('compare.flights.unit', { count: travelers })}
               />
             </Card>
           </Block>
         </>
       )}
 
-      <Block title="Aerolíneas directas" subtitle="A veces la tarifa del sitio oficial es la más barata (cambios, equipaje, millas). No llegan pre-llenadas: repite tu búsqueda.">
-        <ProviderList links={airlineLinks()} cta="Ir a" />
+      <Block title={tr('compare.flights.airlinesTitle')} subtitle={tr('compare.flights.airlinesSub')}>
+        <ProviderList links={airlineLinks()} cta={tr('compare.flights.goTo')} />
       </Block>
     </>
   )
@@ -401,23 +406,24 @@ function FlightsTab({ ctx }: { ctx: Ctx }) {
 const AIRLINE_NAMES: Record<string, string> = { AV: 'Avianca', LA: 'LATAM', P5: 'Wingo', JA: 'JetSMART', '9R': 'SATENA', CM: 'Copa Airlines' }
 
 function ReferenceCard({ reference, travelers }: { reference: FlightReference; travelers: number }) {
+  const { t: tr } = useI18n()
   const hours = Math.max(0, Math.round((Date.now() - Date.parse(reference.fetchedAt)) / 3_600_000))
   return (
     <Card>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="text-sm text-muted">{reference.matched === 'date' ? 'Desde, por persona' : 'Lo más barato del mes, por persona'}</p>
+          <p className="text-sm text-muted">{reference.matched === 'date' ? tr('compare.flights.fromPerPerson') : tr('compare.flights.monthCheapest')}</p>
           <p className="text-3xl font-semibold text-navy">{formatCOP(reference.priceCOP)}</p>
           <p className="mt-1 text-sm text-muted">
-            {reference.airline ? `${AIRLINE_NAMES[reference.airline] ?? `Aerolínea ${reference.airline}`} · ` : ''}
-            {reference.transfers === 0 ? 'directo · ' : reference.transfers ? `${reference.transfers} escala(s) · ` : ''}
-            para {travelers} {travelers === 1 ? 'pasajero' : 'pasajeros'}: <strong className="text-ink">{formatCOP(reference.priceCOP * travelers)}</strong>
+            {reference.airline ? `${AIRLINE_NAMES[reference.airline] ?? tr('compare.flights.airline', { code: reference.airline })} · ` : ''}
+            {reference.transfers === 0 ? `${tr('compare.flights.direct')} · ` : reference.transfers ? `${tr('compare.flights.stops', { count: reference.transfers })} · ` : ''}
+            {tr('compare.flights.forPassengers', { count: travelers })}: <strong className="text-ink">{formatCOP(reference.priceCOP * travelers)}</strong>
           </p>
-          <p className="mt-1 text-xs text-muted">Dato en caché de Aviasales{hours > 0 ? ` (consultado hace ~${hours} h)` : ''}. Puede haber cambiado.</p>
+          <p className="mt-1 text-xs text-muted">{hours > 0 ? tr('compare.flights.cacheNoteHours', { hours }) : tr('compare.flights.cacheNote')}</p>
         </div>
         <a href={reference.link} target="_blank" rel="noopener noreferrer sponsored" className="inline-flex items-center rounded-xl bg-coral px-4 py-2.5 font-bold text-on-coral hover:brightness-105">
-          Ver este vuelo en Aviasales
-          <span className="sr-only"> (se abre en otra pestaña)</span>
+          {tr('compare.flights.viewOnAviasales')}
+          <span className="sr-only"> {tr('common.newTabHint')}</span>
         </a>
       </div>
     </Card>
@@ -427,31 +433,33 @@ function ReferenceCard({ reference, travelers }: { reference: FlightReference; t
 /* ───────────────────────────── Experiencias y transporte ───────────────────────────── */
 
 function ExperiencesTab({ ctx }: { ctx: Ctx }) {
+  const { t: tr } = useI18n()
   const links = useMemo(() => experienceLinks(ctx.place), [ctx.place])
   return (
     <>
-      <Block title={`Experiencias en LOCUS · ${ctx.place}`} subtitle="Actividades publicadas por anfitriones locales, con cupos y precio real." badge={<Badge tone="teal">Reserva directa</Badge>}>
-        <ButtonLink to="/experiencias" variant="secondary" className="self-start">Ver experiencias de LOCUS</ButtonLink>
+      <Block title={tr('compare.exp.directTitle', { place: ctx.place })} subtitle={tr('compare.exp.directSub')} badge={<Badge tone="teal">{tr('compare.exp.direct')}</Badge>}>
+        <ButtonLink to="/experiencias" variant="secondary" className="self-start">{tr('compare.exp.seeLocus')}</ButtonLink>
       </Block>
-      <Block title="Compara tours y actividades" subtitle="Mismos destinos en los marketplaces de experiencias más grandes.">
-        <ProviderList links={links} cta="Buscar en" />
+      <Block title={tr('compare.exp.compareTitle')} subtitle={tr('compare.exp.compareSub')}>
+        <ProviderList links={links} cta={tr('compare.searchIn')} />
       </Block>
     </>
   )
 }
 
 function TransportTab({ ctx }: { ctx: Ctx }) {
+  const { t: tr } = useI18n()
   const transport = useMemo(
     () => transportLinks(ctx.place, { checkIn: ctx.datesOk ? ctx.checkIn : undefined, checkOut: ctx.datesOk ? ctx.checkOut : undefined }),
     [ctx.place, ctx.datesOk, ctx.checkIn, ctx.checkOut],
   )
   return (
     <>
-      <Block title="Buses y alquiler de carro" subtitle="Para moverte entre ciudades o recorrer la región a tu ritmo.">
-        <ProviderList links={transport} cta="Ver en" />
+      <Block title={tr('compare.transport.title')} subtitle={tr('compare.transport.sub')}>
+        <ProviderList links={transport} cta={tr('compare.transport.view')} />
       </Block>
-      <Block title="Seguro de viaje" subtitle="Cubre salud, cancelaciones y equipaje. Revisa bien las coberturas antes de comprar.">
-        <ProviderList links={insuranceLinks()} cta="Cotizar en" />
+      <Block title={tr('compare.insurance.title')} subtitle={tr('compare.insurance.sub')}>
+        <ProviderList links={insuranceLinks()} cta={tr('compare.insurance.quote')} />
       </Block>
     </>
   )
