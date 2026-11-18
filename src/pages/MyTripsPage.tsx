@@ -138,10 +138,10 @@ export default function MyTripsPage() {
       type="button"
       aria-pressed={tab === id}
       onClick={() => setTab(id)}
-      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${tab === id ? 'border-navy bg-navy text-white' : 'border-line bg-surface text-ink hover:bg-surface-2'}`}
+      className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${tab === id ? 'border-navy bg-navy text-surface' : 'border-line bg-surface text-ink hover:bg-surface-2'}`}
     >
       {label}
-      <span className={`rounded-full px-1.5 text-xs ${tab === id ? 'bg-white/20' : 'bg-surface-2 text-muted'}`}>{count}</span>
+      <span className={`rounded-full px-1.5 text-xs ${tab === id ? 'bg-surface/25' : 'bg-surface-2 text-muted'}`}>{count}</span>
     </button>
   )
 

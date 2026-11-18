@@ -165,7 +165,7 @@ export default function ComparePage() {
                   aria-current={active ? 'page' : undefined}
                   onClick={() => setParams(next, { replace: true })}
                   className={`inline-flex items-center gap-2 rounded-full border px-4 py-2.5 font-semibold transition-colors ${
-                    active ? 'border-navy bg-navy text-white' : 'border-line bg-surface text-ink hover:bg-surface-2'
+                    active ? 'border-navy bg-navy text-surface' : 'border-line bg-surface text-ink hover:bg-surface-2'
                   }`}
                 >
                   <t.icon aria-hidden="true" className="size-4" />

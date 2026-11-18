@@ -124,8 +124,8 @@ function AccountMenu() {
             type="button"
             className={`${item} w-full text-left`}
             onClick={async () => {
-              await signOutUser()
               navigate('/')
+              await signOutUser()
             }}
           >
             <LogOut aria-hidden="true" className="size-4 text-muted" />

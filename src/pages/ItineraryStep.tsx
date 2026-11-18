@@ -323,7 +323,7 @@ function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
                 onClick={() => setSelected(i)}
                 onKeyDown={(e) => onTabKey(e, i)}
                 className={`shrink-0 rounded-full border px-4 py-2 text-left transition-colors ${
-                  active ? 'border-navy bg-navy text-white' : 'border-line text-ink hover:bg-surface-2'
+                  active ? 'border-navy bg-navy text-surface' : 'border-line text-ink hover:bg-surface-2'
                 }`}
               >
                 <span className="block text-sm font-semibold">Día {d.day}</span>

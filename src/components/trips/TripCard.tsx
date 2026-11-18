@@ -20,7 +20,7 @@ export interface TripActions {
 }
 
 const STATUS_STYLE = {
-  upcoming: 'bg-teal text-navy',
+  upcoming: 'bg-teal text-on-coral',
   ongoing: 'bg-coral text-on-coral',
   past: 'bg-surface text-ink',
 } as const

@@ -20,6 +20,10 @@ import { ActivityCards } from '../components/ActivityCards'
 import { AllInOne } from '../components/AllInOne'
 import { DestinationCards } from '../components/DestinationCards'
 import { HomeDiscovery } from '../components/HomeDiscovery'
+import { PromoBand } from '../components/home/PromoBand'
+import { YourSpace } from '../components/home/YourSpace'
+import { Reveal } from '../components/Reveal'
+import { useAuth } from '../lib/auth/authContext'
 import { SearchBar } from '../components/SearchBar'
 import { TripDetailsPanel } from '../components/TripDetailsPanel'
 import { FEATURED_DESTINATIONS, type FeaturedDestination } from '../lib/featuredDestinations'
@@ -34,6 +38,7 @@ const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: r
 
 export function HomePage() {
   const { trip, step } = useTripFlow()
+  const { user } = useAuth()
   const form = useTripDetailsForm()
   const { mode, setMode } = form
 
@@ -139,7 +144,11 @@ export function HomePage() {
           className="absolute inset-0 -z-10 bg-gradient-to-b from-[rgb(0_25_50/0.72)] via-[rgb(0_25_50/0.5)] to-[rgb(0_25_50/0.78)]"
         />
 
-        <div className="mx-auto flex min-h-[80svh] max-w-6xl flex-col px-4 pt-[10vh] pb-16 sm:min-h-[calc(100svh-4rem)] sm:pt-[16vh]">
+        <div
+          className={`mx-auto flex max-w-6xl flex-col px-4 pb-16 ${
+            user ? 'min-h-[60svh] pt-[6vh] sm:min-h-[62svh] sm:pt-[9vh]' : 'min-h-[80svh] pt-[10vh] sm:min-h-[calc(100svh-4rem)] sm:pt-[16vh]'
+          }`}
+        >
           <div ref={searchAreaRef} className="mx-auto max-w-3xl scroll-mt-20 text-center [text-shadow:0_2px_16px_rgb(0_0_0/0.35)]">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">Planea · Compara · Reserva</p>
             <h1 id="step-title" tabIndex={-1} className="mt-3 text-5xl leading-tight font-semibold text-white focus:outline-none sm:text-6xl lg:text-7xl">
@@ -192,11 +201,14 @@ export function HomePage() {
         </div>
       </section>
 
+      {user && <YourSpace />}
+
       <div className="mx-auto flex max-w-6xl flex-col gap-20 px-4 py-16 sm:gap-24 sm:py-24">
         <DestinationCards onChoose={handleChooseCard} />
         <ActivityCards onChoose={handleChooseActivity} />
-        <AllInOne />
+        <Reveal><AllInOne /></Reveal>
         <HomeDiscovery />
+        <Reveal><PromoBand /></Reveal>
         <p className="-mt-12 text-xs text-muted sm:-mt-16">
           Fotos: Unsplash y Wikimedia Commons (licencias libres) ·{' '}
           <a href="/images/CREDITOS.md" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">

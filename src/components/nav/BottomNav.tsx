@@ -126,9 +126,9 @@ export function BottomNav() {
                 <button
                   type="button"
                   onClick={async () => {
-                    await signOutUser()
                     setSheet(null)
                     navigate('/')
+                    await signOutUser()
                   }}
                   className="flex w-full items-center gap-3 rounded-2xl px-3 py-3 text-left transition-colors hover:bg-surface-2"
                 >

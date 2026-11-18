@@ -24,7 +24,7 @@ export function ListingCard({
     <article
       onMouseEnter={() => onHover?.(listing.id)}
       onMouseLeave={() => onHover?.(null)}
-      className={`group relative overflow-hidden rounded-3xl border bg-surface shadow-sm transition ${
+      className={`card-photo group relative overflow-hidden rounded-3xl border bg-surface shadow-sm transition ${
         selected ? 'border-teal ring-2 ring-teal/40' : 'border-line hover:shadow-lg'
       }`}
     >

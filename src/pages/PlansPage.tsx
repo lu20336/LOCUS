@@ -97,7 +97,7 @@ export default function PlansPage() {
     }
   }
 
-  const tabClass = (on: boolean) => `rounded-full px-5 py-2 text-sm font-semibold transition-colors ${on ? 'bg-navy text-white' : 'text-ink hover:bg-surface-2'}`
+  const tabClass = (on: boolean) => `rounded-full px-5 py-2 text-sm font-semibold transition-colors ${on ? 'bg-navy text-surface' : 'text-ink hover:bg-surface-2'}`
 
   return (
     <Container className="max-w-6xl py-8 sm:py-12">
@@ -117,7 +117,7 @@ export default function PlansPage() {
         <div role="group" aria-label="Periodo de cobro" className="inline-flex items-center rounded-full border border-line bg-surface p-1">
           <button type="button" aria-pressed={interval === 'monthly'} onClick={() => setInterval('monthly')} className={tabClass(interval === 'monthly')}>Mensual</button>
           <button type="button" aria-pressed={interval === 'annual'} onClick={() => setInterval('annual')} className={tabClass(interval === 'annual')}>
-            Anual <span className={`ml-1 text-xs font-bold ${interval === 'annual' ? 'text-teal-light' : 'text-teal-soft'}`}>−17 %</span>
+            Anual <span className={`ml-1 text-xs font-bold ${interval === 'annual' ? 'text-surface' : 'text-teal-soft'}`}>−17 %</span>
           </button>
         </div>
       </div>

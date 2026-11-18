@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { Link, useSearchParams } from 'react-router'
 import { doc, getDoc } from 'firebase/firestore'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { Wallet } from 'lucide-react'
 import { Alert, Badge, Button, ButtonLink, Card, Container, EmptyState, PageHeader, Spinner } from '../components/ui'
 import { useAuth } from '../lib/auth/authContext'
 import { BookingError, cancelBooking } from '../lib/booking/bookingService'
@@ -139,10 +140,10 @@ export default function TripsPage() {
 
   return (
     <Container className="max-w-3xl py-8 sm:py-10">
-      <PageHeader eyebrow="Tus viajes" title="Mis reservas">Alojamientos y experiencias que reservaste en LOCUS.</PageHeader>
+      <PageHeader eyebrow="Tu espacio" title="Mis reservas">Alojamientos y experiencias que reservaste en LOCUS.</PageHeader>
       {newId && <div className="mb-6"><Alert tone="success">¡Reserva registrada! Recuerda que el pago es simulado: no se cobró dinero.</Alert></div>}
       {bookings.loading ? <Spinner /> : bookings.error ? <Alert>{bookings.error}</Alert> : list.length === 0 ? (
-        <EmptyState title="Aún no tienes reservas" action={<div className="flex gap-3"><ButtonLink to="/explorar">Buscar hospedajes</ButtonLink><ButtonLink to="/experiencias" variant="secondary">Ver experiencias</ButtonLink></div>}>
+        <EmptyState icon={Wallet} title="Aún no tienes reservas" action={<div className="flex gap-3"><ButtonLink to="/explorar">Buscar hospedajes</ButtonLink><ButtonLink to="/experiencias" variant="secondary">Ver experiencias</ButtonLink></div>}>
           Cuando reserves un alojamiento o una experiencia, aparecerá aquí.
         </EmptyState>
       ) : (

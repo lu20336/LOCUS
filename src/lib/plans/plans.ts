@@ -26,6 +26,8 @@ export interface Plan {
   trialDays: number
   /** Comisión de LOCUS por reserva (solo anfitriones, % de prueba). */
   commissionPct?: number
+  /** Publicaciones activas incluidas (solo anfitriones; sin valor = ilimitadas). */
+  maxListings?: number
   /** Beneficios principales (tarjeta). */
   highlights: string[]
 }
@@ -81,6 +83,7 @@ export const HOST_PLANS: Plan[] = [
     annualCOP: 0,
     trialDays: 0,
     commissionPct: 10,
+    maxListings: 2,
     highlights: ['Hasta 2 publicaciones', 'Calendario y gestión de reservas', 'Estadísticas básicas', 'Comisión del 10 % por reserva'],
   },
   {
@@ -93,6 +96,7 @@ export const HOST_PLANS: Plan[] = [
     badge: 'recommended',
     trialDays: 30,
     commissionPct: 6,
+    maxListings: 10,
     highlights: ['Hasta 10 publicaciones', 'Estadísticas completas y reportes mensuales', '1 publicación destacada al mes', 'Comisión reducida del 6 %'],
   },
   {
