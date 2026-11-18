@@ -41,7 +41,7 @@ import { findFeaturedNear } from '../lib/featuredDestinations'
 import { alternativeFor, dayParts, DAY_PART_LABELS, removeStop, replaceStop, type DayPart } from '../lib/flow/editItinerary'
 import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm, osmPlaceUrl } from '../lib/flow/itineraryView'
 import { PACES } from '../lib/flow/pace'
-import { estimateTripBudget } from '../lib/flow/tripBudget'
+import { estimateTripBudget, fitItineraryToBudget } from '../lib/flow/tripBudget'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
 import { useItinerary } from '../lib/flow/useItinerary'
@@ -58,7 +58,9 @@ const DayMap = lazy(() => import('../components/DayMap'))
 export function ItineraryStep() {
   const { trip, categories, pace, excursions, goToStep, itinerary: savedItinerary, setItinerary } = useTripFlow()
   const { state, retry } = useItinerary(trip, categories, pace, excursions)
-  const ready = state.status === 'done' ? state.itinerary : null
+  const generated = state.status === 'done' ? state.itinerary : null
+  // El plan siempre llega ajustado al presupuesto (hospedaje, comida, paradas pagas…).
+  const ready = useMemo(() => (generated && trip ? fitItineraryToBudget(generated, trip) : null), [generated, trip])
   // El Paso 4 (guardar) lee el plan desde el contexto del flujo. Si el usuario
   // lo editó (quitar o cambiar paradas), se muestra y se guarda esa versión.
   const shown = ready && savedItinerary?.generatedAt === ready.generatedAt ? savedItinerary : ready
@@ -360,7 +362,13 @@ function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
         />
       </div>
 
-      <BudgetCard estimate={budget} travelers={trip.travelers} />
+      <BudgetCard
+        estimate={budget}
+        travelers={trip.travelers}
+        adjustments={itinerary.budgetPlan?.adjustments ?? []}
+        // Si ni con todos los ajustes alcanza, volver a ajustar no sirve: se muestran las ideas.
+        onFit={itinerary.budgetPlan?.fits === false ? undefined : () => onEdit(fitItineraryToBudget(itinerary, trip), 'Ajustamos el plan a tu presupuesto.')}
+      />
 
       <p className="text-xs text-muted">
         Lugares de OpenStreetMap. Las distancias son en línea recta; los horarios y precios de cada lugar pueden

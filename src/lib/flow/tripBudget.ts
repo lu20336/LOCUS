@@ -15,8 +15,11 @@
  * Funciones PURAS: no consultan nada.
  */
 import type { TripDetails } from '../../types/flow'
-import type { DayPlan, Itinerary, Place } from '../../types/itinerary'
+import type { BudgetPlan, DayPlan, Itinerary, Place, SpendStyle } from '../../types/itinerary'
 import { quoteStay } from '../domain/pricing'
+import { haversineKm } from '../itinerary/geo'
+import { optimizeRoute } from '../itinerary/generateItinerary'
+import { withDayPlaces } from './editItinerary'
 import type { Listing } from '../domain/types'
 import { formatCOP } from '../format'
 import { normalizePlaceName } from './resolveDestination'
@@ -39,12 +42,24 @@ const MEDIUM_COST = [
   'santa cruz de mompox', 'filandia', 'capurgana', 'nuqui', 'bahia solano',
 ]
 
-/** Precios promedio (COP) por nivel de costo. */
-export const PRICES: Record<CostLevel, { roomNight: number; foodPerPersonDay: number; transportPerPersonDay: number }> = {
+type PriceTable = Record<CostLevel, { roomNight: number; foodPerPersonDay: number; transportPerPersonDay: number }>
+
+/** Precios promedio (COP) por nivel de costo: hotel, restaurantes y taxi. */
+export const PRICES: PriceTable = {
   alto: { roomNight: 300_000, foodPerPersonDay: 130_000, transportPerPersonDay: 25_000 },
   medio: { roomNight: 200_000, foodPerPersonDay: 100_000, transportPerPersonDay: 20_000 },
   economico: { roomNight: 130_000, foodPerPersonDay: 70_000, transportPerPersonDay: 12_000 },
 }
+
+/** Viajando económico: hostal o casa de huéspedes, corrientazo y comida local, bus y a pie. */
+export const ECONOMY_PRICES: PriceTable = {
+  alto: { roomNight: 120_000, foodPerPersonDay: 60_000, transportPerPersonDay: 12_000 },
+  medio: { roomNight: 80_000, foodPerPersonDay: 45_000, transportPerPersonDay: 10_000 },
+  economico: { roomNight: 60_000, foodPerPersonDay: 35_000, transportPerPersonDay: 6_000 },
+}
+
+const priceFor = (style: SpendStyle | undefined, level: CostLevel) =>
+  (style === 'economico' ? ECONOMY_PRICES : PRICES)[level]
 
 /** Bus intermunicipal por persona y por kilómetro de carretera. */
 export const BUS_COP_PER_KM = 220
@@ -146,11 +161,16 @@ const money = (value: number) => formatCOP(Math.round(value))
 const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one : many}`
 
 export function estimateTripBudget(
-  itinerary: Pick<Itinerary, 'days' | 'destination'>,
+  itinerary: Pick<Itinerary, 'days' | 'destination' | 'budgetPlan'>,
   trip: Pick<TripDetails, 'travelers' | 'rooms' | 'budgetCOP'>,
 ): TripBudget {
   const level = costLevelFor(itinerary.destination.displayName)
-  const price = PRICES[level]
+  const style = itinerary.budgetPlan
+  const price = {
+    roomNight: priceFor(style?.lodging, level).roomNight,
+    foodPerPersonDay: priceFor(style?.food, level).foodPerPersonDay,
+    transportPerPersonDay: priceFor(style?.transport, level).transportPerPersonDay,
+  }
   const people = Math.max(1, trip.travelers)
   const rooms = Math.max(1, trip.rooms)
   const days = itinerary.days.length
@@ -173,22 +193,26 @@ export function estimateTripBudget(
       detail:
         nights === 0
           ? 'Viaje de un día: sin noches'
-          : `${plural(nights, 'noche', 'noches')} × ${plural(rooms, 'habitación', 'habitaciones')} × ${money(price.roomNight)}`,
+          : `${plural(nights, 'noche', 'noches')} × ${plural(rooms, 'habitación', 'habitaciones')} × ${money(price.roomNight)}` +
+            (style?.lodging === 'economico' ? ' · hostal o casa de huéspedes' : ''),
     },
     {
       id: 'comida',
       label: 'Comida',
       amount: food,
-      detail: `${plural(days, 'día', 'días')} × ${plural(people, 'persona', 'personas')} × ${money(price.foodPerPersonDay)}`,
+      detail:
+        `${plural(days, 'día', 'días')} × ${plural(people, 'persona', 'personas')} × ${money(price.foodPerPersonDay)}` +
+        (style?.food === 'economico' ? ' · corrientazo y comida local' : ''),
     },
     {
       id: 'transporte',
       label: 'Transporte',
       amount: transport,
       detail:
-        excursionDays.length > 0
-          ? `Taxis y buses en la ciudad, más el bus a ${excursionDays.map((d) => d.excursion!.name).join(' y ')}`
-          : `Taxis y buses: ${money(price.transportPerPersonDay)} por persona al día`,
+        (style?.transport === 'economico' ? 'Bus y a pie' : 'Taxis y buses') +
+        (excursionDays.length > 0
+          ? ` en la ciudad, más el bus a ${excursionDays.map((d) => d.excursion!.name).join(' y ')}`
+          : `: ${money(price.transportPerPersonDay)} por persona al día`),
     },
     {
       id: 'entradas',
@@ -259,4 +283,155 @@ export function stayFit(
 ): StayFit {
   const { total } = quoteStay(listing, stay)
   return { total, fits: total <= lodgingAllowance, over: Math.max(0, total - lodgingAllowance) }
+}
+
+// ---------------------------------------------------------------------------
+// Ajustar el plan para que SIEMPRE cumpla el presupuesto
+// ---------------------------------------------------------------------------
+
+/**
+ * Lo mínimo para el viaje: hospedaje económico, comida sencilla, bus y a pie,
+ * y solo planes gratis. Si el presupuesto no llega a esto, el Paso 1 no deja
+ * seguir (no hay forma de armar un plan que lo cumpla).
+ */
+export function minimumBudget(
+  displayName: string,
+  trip: Pick<TripDetails, 'travelers' | 'rooms'> & { days: number },
+): number {
+  const price = ECONOMY_PRICES[costLevelFor(displayName)]
+  const people = Math.max(1, trip.travelers)
+  const nights = Math.max(0, trip.days - 1)
+  return (
+    nights * Math.max(1, trip.rooms) * price.roomNight +
+    trip.days * people * (price.foodPerPersonDay + price.transportPerPersonDay)
+  )
+}
+
+const STEPS: { key: 'lodging' | 'food' | 'transport'; text: (level: CostLevel) => string }[] = [
+  {
+    key: 'lodging',
+    text: (level) =>
+      `Hospedaje económico (hostal o casa de huéspedes) de unos ${money(ECONOMY_PRICES[level].roomNight)} por noche`,
+  },
+  {
+    key: 'food',
+    text: (level) =>
+      `Comida sencilla y local (corrientazo, mercados) de unos ${money(ECONOMY_PRICES[level].foodPerPersonDay)} por persona al día`,
+  },
+  { key: 'transport', text: () => 'Moverse en bus y a pie en vez de taxi' },
+]
+
+/** "A, B, C y 2 más": listas cortas para los avisos. */
+function listNames(names: string[], max = 3): string {
+  if (names.length <= max) return names.length > 1 ? `${names.slice(0, -1).join(', ')} y ${names.at(-1)}` : names[0]
+  return `${names.slice(0, max).join(', ')} y ${names.length - max} más`
+}
+
+/** Una alternativa gratis de la misma actividad, que no esté ya en el plan, la más cercana. */
+function freeAlternative(itinerary: Itinerary, dayIndex: number, current: Place): Place | null {
+  const used = new Set(itinerary.days.flatMap((d) => d.places.map((p) => p.id)))
+  const pool = (itinerary.days[dayIndex].alternatives ?? []).filter(
+    (p) => !used.has(p.id) && p.category === current.category && entryPrice(p) === 0,
+  )
+  return pool.reduce<Place | null>(
+    (best, p) => (!best || haversineKm(current, p) < haversineKm(current, best) ? p : best),
+    null,
+  )
+}
+
+/**
+ * Ajusta el itinerario hasta que el costo estimado quepa en el presupuesto,
+ * cambiando primero lo que menos se nota en el viaje:
+ *   1. Hospedaje económico.  2. Comida sencilla.  3. Bus y a pie.
+ *   4. Paradas pagas (de la más cara a la más barata) por otras gratis de la
+ *      misma actividad; si no hay, se quita (sin dejar un día vacío).
+ *   5. Excursiones: el día pasa a la ciudad con planes gratis.
+ * Devuelve el plan con `budgetPlan` (qué se cambió y si alcanzó). Función pura.
+ */
+export function fitItineraryToBudget(
+  itinerary: Itinerary,
+  trip: Pick<TripDetails, 'travelers' | 'rooms' | 'budgetCOP'>,
+): Itinerary {
+  const level = costLevelFor(itinerary.destination.displayName)
+  let plan: BudgetPlan = { lodging: 'estandar', food: 'estandar', transport: 'estandar', adjustments: [], fits: true }
+  let current: Itinerary = { ...itinerary, budgetPlan: plan }
+  const fits = () => estimateTripBudget(current, trip).difference >= 0
+  const note = (patch: Partial<BudgetPlan>, text: string) => {
+    plan = { ...plan, ...patch, adjustments: [...plan.adjustments, text] }
+    current = { ...current, budgetPlan: plan }
+  }
+  if (fits()) return current
+
+  // 1 a 3: nivel de gasto.
+  for (const step of STEPS) {
+    note({ [step.key]: 'economico' }, step.text(level))
+    if (fits()) return current
+  }
+
+  // 4: paradas pagas, de la más cara a la más barata. Primero se cambian por
+  // otras gratis (se pierde poco); solo si no alcanza, se quitan.
+  // Los cambios se resumen en una línea por tipo (no una por parada).
+  const swaps: string[] = []
+  const removed: Place[] = []
+  const baseAdjustments = plan.adjustments
+  const summarize = () => {
+    const lines = [...baseAdjustments]
+    if (swaps.length > 0) lines.push(`Cambiamos ${plural(swaps.length, 'parada paga', 'paradas pagas')} por otras gratis: ${listNames(swaps)}`)
+    if (removed.length > 0) {
+      const nightOnly = removed.every((p) => NIGHT_OUT.has(p.kind))
+      lines.push(
+        `Quitamos ${plural(removed.length, nightOnly ? 'salida de noche paga' : 'parada paga', nightOnly ? 'salidas de noche pagas' : 'paradas pagas')}: ` +
+          listNames(removed.map((p) => p.name)),
+      )
+    }
+    plan = { ...plan, adjustments: lines }
+    current = { ...current, budgetPlan: plan }
+  }
+  const paidStops = () =>
+    current.days
+      .flatMap((day, dayIndex) => day.places.map((place) => ({ place, dayIndex })))
+      .filter(({ place }) => entryPrice(place) > 0)
+      .sort((a, b) => entryPrice(b.place) - entryPrice(a.place))
+
+  for (const { place, dayIndex } of paidStops()) {
+    const swap = freeAlternative(current, dayIndex, place)
+    if (!swap) continue
+    const places = current.days[dayIndex].places
+    current = withDayPlaces(current, dayIndex, places.map((p) => (p.id === place.id ? swap : p)), { edited: false })
+    swaps.push(`${place.name} por ${swap.name}`)
+    summarize()
+    if (fits()) return current
+  }
+  for (const { place, dayIndex } of paidStops()) {
+    const places = current.days[dayIndex].places
+    if (places.length <= 1) continue // sin dejar un día vacío
+    current = withDayPlaces(current, dayIndex, places.filter((p) => p.id !== place.id), { edited: false })
+    removed.push(place)
+    summarize()
+    if (fits()) return current
+  }
+
+  // 5: excursiones → un día en la ciudad con planes gratis que no entraron en el plan.
+  for (let dayIndex = 0; dayIndex < current.days.length; dayIndex++) {
+    const day = current.days[dayIndex]
+    if (!day.excursion) continue
+    const used = new Set(current.days.flatMap((d) => d.places.map((p) => p.id)))
+    const seen = new Set<string>()
+    const free = current.days
+      .flatMap((d) => (d.excursion ? [] : (d.alternatives ?? [])))
+      .filter((p) => !used.has(p.id) && entryPrice(p) === 0 && !seen.has(p.id) && seen.add(p.id))
+      .sort((a, b) => haversineKm(current.destination, a) - haversineKm(current.destination, b))
+      .slice(0, Math.max(2, day.places.length))
+    if (free.length === 0) continue
+    const name = day.excursion.name
+    current = withDayPlaces(current, dayIndex, optimizeRoute(current.destination, free), {
+      edited: false,
+      day: { excursion: undefined },
+    })
+    note({}, `Cambiamos la excursión a ${name} por un día en la ciudad con planes gratis`)
+    if (fits()) return current
+  }
+
+  plan = { ...plan, fits: false }
+  return { ...current, budgetPlan: plan }
 }

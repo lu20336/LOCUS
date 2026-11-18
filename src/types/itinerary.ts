@@ -99,4 +99,19 @@ export interface Itinerary {
   generatedAt: string
   /** true si el usuario quitó o cambió paradas: el "ahorro de ruta" ya no aplica. */
   edited?: boolean
+  /** Cómo se ajustó el plan al presupuesto (lib/flow/tripBudget.ts: fitItineraryToBudget). */
+  budgetPlan?: BudgetPlan
+}
+
+/** Nivel de gasto: estándar (hotel, restaurante, taxi) o económico (hostal, comida local, bus). */
+export type SpendStyle = 'estandar' | 'economico'
+
+export interface BudgetPlan {
+  lodging: SpendStyle
+  food: SpendStyle
+  transport: SpendStyle
+  /** Lo que se cambió para que el plan cumpla el presupuesto, para mostrárselo al usuario. */
+  adjustments: string[]
+  /** false si ni con todos los ajustes alcanza. */
+  fits: boolean
 }
