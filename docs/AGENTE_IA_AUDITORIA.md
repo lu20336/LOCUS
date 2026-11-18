@@ -16,7 +16,7 @@
 
 ## Latencia observada en producción
 
-En la verificación en producción (18-nov-2026) cada llamada a `gemini-3.8-flash` tardaba 15–45 s con el razonamiento por defecto, lo que agotaba el timeout de 30 s y obligaba a reintentar. Se subió el timeout por intento a 45 s y se fijó `thinkingConfig.thinkingLevel = LOW` (menos razonamiento = respuestas más rápidas); si el modelo rechazara ese parámetro, el error queda registrado en el log técnico y basta con retirarlo de `agent.ts`.
+En la verificación en producción (18-nov-2026) cada llamada a `gemini-3.8-flash` tardaba 15–45 s con el razonamiento por defecto, lo que agotaba el timeout de 30 s y obligaba a reintentar. Se subió el timeout por intento a 45 s. Se probó `thinkingConfig.thinkingLevel = LOW` pero en la prueba en producción las llamadas no mejoraron (no concluyeron en 115 s), así que se retiró; queda pendiente medir la latencia con un navegador visible (el panel del navegador integrado en segundo plano limita temporizadores y puede falsear las mediciones).
 
 ## Pruebas
 

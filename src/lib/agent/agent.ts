@@ -234,7 +234,7 @@ export class AgentSession {
         model: GEMINI_MODEL,
         systemInstruction: buildSystemInstruction(this.ctx.today, this.profileSummary, this.language),
         tools: [{ functionDeclarations: TOOL_DECLARATIONS }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: MAX_OUTPUT_TOKENS, thinkingConfig: { thinkingLevel: 'LOW' as never } },
+        generationConfig: { temperature: 0.4, maxOutputTokens: MAX_OUTPUT_TOKENS },
       },
       { timeout: MODEL_TIMEOUT_MS },
     )
