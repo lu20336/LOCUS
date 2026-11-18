@@ -1,5 +1,5 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router'
+import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router'
 import { Header } from './components/Header'
 import { Spinner } from './components/ui'
 import { AuthProvider } from './lib/auth/AuthProvider'
@@ -19,7 +19,8 @@ const ListingPage = lazy(() => import('./pages/ListingPage'))
 const ExperiencesPage = lazy(() => import('./pages/ExperiencesPage'))
 const ExperiencePage = lazy(() => import('./pages/ExperiencePage'))
 const DestinationPage = lazy(() => import('./pages/DestinationPage'))
-const FlightsPage = lazy(() => import('./pages/FlightsPage'))
+const ComparePage = lazy(() => import('./pages/ComparePage'))
+const LegalPage = lazy(() => import('./pages/LegalPage'))
 const ItinerariesPage = lazy(() => import('./pages/ItinerariesPage'))
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'))
 const TripsPage = lazy(() => import('./pages/TripsPage'))
@@ -33,14 +34,39 @@ const HostCalendar = lazy(() => import('./pages/host/HostCalendar'))
 const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 /** Al cambiar de pantalla: subir al inicio y llevar el foco al título (teclado y lectores de pantalla). */
+const TITLES: Record<string, string> = {
+  '/planear': 'Planea tu viaje',
+  '/comparar': 'Compara hospedaje, vuelos y experiencias',
+  '/explorar': 'Explora hospedajes en Colombia',
+  '/experiencias': 'Experiencias en Colombia',
+  '/itinerarios': 'Itinerarios',
+  '/como-ganamos-dinero': 'Cómo ganamos dinero',
+  '/privacidad': 'Privacidad',
+  '/terminos': 'Términos de uso',
+  '/anfitrion': 'Publica tu alojamiento',
+}
+
 function RouteEffects() {
   const { pathname } = useLocation()
   useEffect(() => {
+    const label = TITLES[pathname]
+    document.title = label ? `${label} · LOCUS` : 'LOCUS · Planea, compara y reserva tu viaje por Colombia'
     window.scrollTo({ top: 0 })
     const title = document.getElementById('page-title') ?? document.getElementById('step-title')
     title?.focus({ preventScroll: true })
   }, [pathname])
   return null
+}
+
+/** El comparador reemplaza a la antigua pantalla de vuelos: se conservan los enlaces viejos (?destino, ?fecha). */
+function FlightsRedirect() {
+  const [params] = useSearchParams()
+  const next = new URLSearchParams({ tipo: 'vuelos' })
+  const destino = params.get('destino')
+  const fecha = params.get('fecha')
+  if (destino) next.set('destino', destino)
+  if (fecha) next.set('llegada', fecha)
+  return <Navigate to={`/comparar?${next.toString()}`} replace />
 }
 
 /** Exige sesión: si no la hay, manda a /ingresar y vuelve después. */
@@ -89,7 +115,14 @@ function Footer() {
         </a>
         .
       </p>
-      <p className="mt-1">
+      <nav aria-label="Información" className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-semibold">
+        <Link to="/comparar" className="underline-offset-2 hover:text-ink hover:underline">Comparador</Link>
+        <Link to="/como-ganamos-dinero" className="underline-offset-2 hover:text-ink hover:underline">Cómo ganamos dinero</Link>
+        <Link to="/privacidad" className="underline-offset-2 hover:text-ink hover:underline">Privacidad</Link>
+        <Link to="/terminos" className="underline-offset-2 hover:text-ink hover:underline">Términos</Link>
+        <Link to="/anfitrion" className="underline-offset-2 hover:text-ink hover:underline">Publica tu alojamiento</Link>
+      </nav>
+      <p className="mt-3">
         LOCUS es un proyecto académico en desarrollo: por ahora los pagos son simulados y no se cobra ningún dinero.
       </p>
     </footer>
@@ -123,7 +156,11 @@ export default function App() {
                 <Route path="/experiencias" element={<ExperiencesPage />} />
                 <Route path="/experiencias/:id" element={<ExperiencePage />} />
                 <Route path="/destinos/:id" element={<DestinationPage />} />
-                <Route path="/vuelos" element={<FlightsPage />} />
+                <Route path="/comparar" element={<ComparePage />} />
+                <Route path="/vuelos" element={<FlightsRedirect />} />
+                <Route path="/como-ganamos-dinero" element={<LegalPage />} />
+                <Route path="/privacidad" element={<LegalPage />} />
+                <Route path="/terminos" element={<LegalPage />} />
                 <Route path="/itinerarios" element={<ItinerariesPage />} />
                 <Route path="/itinerarios/:id" element={<RequireAuth><ItinerariesPage /></RequireAuth>} />
                 <Route path="/favoritos" element={<RequireAuth><FavoritesPage /></RequireAuth>} />

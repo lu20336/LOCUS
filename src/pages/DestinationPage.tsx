@@ -125,7 +125,7 @@ export default function DestinationPage() {
         <section aria-labelledby="fly" className="rounded-3xl border border-line bg-surface p-5">
           <h2 id="fly" className="text-xl font-semibold text-navy">¿Cómo llegar?</h2>
           <p className="mt-1 text-muted">Busca vuelos hacia {d.name}. <Badge>Enlaces externos</Badge></p>
-          <div className="mt-3"><ButtonLink to={`/vuelos?destino=${encodeURIComponent(d.name)}`} variant="secondary">Buscar vuelos a {d.name}</ButtonLink></div>
+          <div className="mt-3"><ButtonLink to={`/comparar?tipo=vuelos&destino=${encodeURIComponent(d.name)}`} variant="secondary">Buscar vuelos a {d.name}</ButtonLink></div>
         </section>
       </Container>
     </div>

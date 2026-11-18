@@ -4,9 +4,9 @@ import { useAuth } from '../lib/auth/authContext'
 import { ThemeToggle } from './ThemeToggle'
 
 const NAV = [
+  { to: '/comparar', label: 'Comparar' },
   { to: '/explorar', label: 'Hospedajes' },
   { to: '/experiencias', label: 'Experiencias' },
-  { to: '/vuelos', label: 'Vuelos' },
   { to: '/itinerarios', label: 'Itinerarios' },
 ]
 

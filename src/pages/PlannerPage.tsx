@@ -6,12 +6,13 @@
  */
 import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router'
+import { CompleteTrip } from '../components/CompleteTrip'
 import { PlanSummary } from '../components/PlanSummary'
 import { StaysSection } from '../components/StaysSection'
 import { Stepper } from '../components/Stepper'
 import { ActivitiesStep } from './ActivitiesStep'
 import { ItineraryStep } from './ItineraryStep'
-import { Alert, Button, ButtonLink, Card } from '../components/ui'
+import { Alert, Button, Card } from '../components/ui'
 import { useAuth } from '../lib/auth/authContext'
 import { db } from '../lib/firebase/client'
 import { formatCOP, formatDate } from '../lib/format'
@@ -75,13 +76,13 @@ function ConfirmStep() {
 
       <StaysSection lat={itinerary.destination.lat} lon={itinerary.destination.lon} placeName={name} checkIn={trip.startDate} checkOut={trip.endDate} guests={trip.travelers} />
 
-      <Card>
-        <h2 className="text-xl font-semibold text-navy">¿Cómo llegar?</h2>
-        <p className="mt-1 text-muted">Consulta vuelos hacia {name} desde tu ciudad.</p>
-        <div className="mt-4">
-          <ButtonLink to={`/vuelos?destino=${encodeURIComponent(name)}&fecha=${trip.startDate}`} variant="secondary">Buscar vuelos</ButtonLink>
-        </div>
-      </Card>
+      <CompleteTrip
+        place={name}
+        startDate={trip.startDate}
+        endDate={trip.endDate}
+        travelers={trip.travelers}
+        days={itinerary.days.length}
+      />
     </div>
   )
 }

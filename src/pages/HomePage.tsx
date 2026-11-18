@@ -17,6 +17,7 @@ import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Navigate, useSearchParams } from 'react-router'
 import { flushSync } from 'react-dom'
 import { ActivityCards } from '../components/ActivityCards'
+import { AllInOne } from '../components/AllInOne'
 import { DestinationCards } from '../components/DestinationCards'
 import { HomeDiscovery } from '../components/HomeDiscovery'
 import { SearchBar } from '../components/SearchBar'
@@ -140,12 +141,12 @@ export function HomePage() {
 
         <div className="mx-auto flex min-h-[80svh] max-w-6xl flex-col px-4 pt-[10vh] pb-16 sm:min-h-[calc(100svh-4rem)] sm:pt-[16vh]">
           <div ref={searchAreaRef} className="mx-auto max-w-3xl scroll-mt-20 text-center [text-shadow:0_2px_16px_rgb(0_0_0/0.35)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">Hospedajes, experiencias e itinerarios</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">Planea · Compara · Reserva</p>
             <h1 id="step-title" tabIndex={-1} className="mt-3 text-5xl leading-tight font-semibold text-white focus:outline-none sm:text-6xl lg:text-7xl">
               Planea tu viaje por <em className="text-teal-light">Colombia</em>
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-lg text-white/90 sm:text-xl">
-              Encuentra dónde quedarte, qué hacer y cómo organizarlo, con la ayuda de tu compañero LOCUS.
+              Hospedajes, vuelos, experiencias e itinerarios de todas las plataformas en un solo lugar, con la ayuda de tu compañero LOCUS.
             </p>
           </div>
 
@@ -194,6 +195,7 @@ export function HomePage() {
       <div className="mx-auto flex max-w-6xl flex-col gap-20 px-4 py-16 sm:gap-24 sm:py-24">
         <DestinationCards onChoose={handleChooseCard} />
         <ActivityCards onChoose={handleChooseActivity} />
+        <AllInOne />
         <HomeDiscovery />
         <p className="-mt-12 text-xs text-muted sm:-mt-16">
           Fotos: Unsplash y Wikimedia Commons (licencias libres) ·{' '}
