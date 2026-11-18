@@ -3,9 +3,11 @@
  * por rubro, con ideas para ajustarlo si no alcanza. Se recalcula al quitar
  * o cambiar paradas. Los precios son promedios (ver lib/flow/tripBudget.ts).
  */
-import { CircleCheck, TriangleAlert, Wallet } from 'lucide-react'
+import { useState } from 'react'
+import { ChevronDown, CircleCheck, Plus, Sparkles, TriangleAlert, Wallet, X } from 'lucide-react'
 import { formatCOP } from '../lib/format'
-import { COST_LEVEL_LABELS, type TripBudget } from '../lib/flow/tripBudget'
+import { COST_LEVEL_LABELS, type SpareOption, type TripBudget } from '../lib/flow/tripBudget'
+import type { BudgetExtra } from '../types/itinerary'
 
 const STATUS = {
   holgado: { title: 'Te alcanza', tone: 'text-teal-soft', bar: 'bg-teal', Icon: CircleCheck },
@@ -18,6 +20,10 @@ export function BudgetCard({
   travelers,
   adjustments = [],
   onFit,
+  spare = [],
+  onAddSpare,
+  extras = [],
+  onRemoveExtra,
 }: {
   estimate: TripBudget
   travelers: number
@@ -25,8 +31,15 @@ export function BudgetCard({
   adjustments?: string[]
   /** Vuelve a ajustar el plan (cuando un cambio del usuario lo saca del presupuesto). */
   onFit?: () => void
+  /** Planes que caben en lo que sobra (spareSuggestions). */
+  spare?: SpareOption[]
+  onAddSpare?: (option: SpareOption) => void
+  /** Planes extra ya agregados, con su botón para quitarlos. */
+  extras?: BudgetExtra[]
+  onRemoveExtra?: (extra: BudgetExtra) => void
 }) {
   const { status, total, budget, difference, lines, tips, level } = estimate
+  const [showSpare, setShowSpare] = useState(false)
   const s = STATUS[status]
   // Barra: qué parte del presupuesto se usa (llena y en rojo si se pasa).
   const used = budget > 0 ? Math.min(100, Math.round((total / budget) * 100)) : 100
@@ -78,6 +91,27 @@ export function BudgetCard({
         ))}
       </ul>
 
+      {extras.length > 0 && onRemoveExtra && (
+        <ul aria-label="Planes extra que agregaste" className="mt-1 flex flex-wrap gap-2">
+          {extras.map((extra) => (
+            <li
+              key={extra.id}
+              className="inline-flex items-center gap-1.5 rounded-full border border-teal/40 bg-teal/10 py-1 pl-3 pr-1 text-sm text-ink"
+            >
+              {extra.title} · {formatCOP(extra.amount)}
+              <button
+                type="button"
+                onClick={() => onRemoveExtra(extra)}
+                aria-label={`Quitar ${extra.title}`}
+                className="grid size-6 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+              >
+                <X aria-hidden="true" className="size-3.5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+
       {adjustments.length > 0 && (
         <div className="mt-3 rounded-2xl border border-teal/40 bg-teal/10 p-4">
           <p className="text-sm font-semibold text-ink">Ajustamos tu plan para que cumpla tu presupuesto:</p>
@@ -101,6 +135,53 @@ export function BudgetCard({
           >
             Ajustar a mi presupuesto
           </button>
+        </div>
+      )}
+
+      {status !== 'falta' && spare.length > 0 && onAddSpare && (
+        <div className="mt-3">
+          <button
+            type="button"
+            aria-expanded={showSpare}
+            aria-controls="spare-plans"
+            onClick={() => setShowSpare((open) => !open)}
+            className="inline-flex items-center gap-2 rounded-xl border-2 border-teal px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-teal/10"
+          >
+            <Sparkles aria-hidden="true" className="size-4 text-teal-soft" />
+            Sugerir planes con lo que me sobra ({formatCOP(difference)})
+            <ChevronDown aria-hidden="true" className={`size-4 transition-transform ${showSpare ? 'rotate-180' : ''}`} />
+          </button>
+
+          {showSpare && (
+            <div id="spare-plans" className="mt-3">
+              <p className="text-sm text-muted">
+                Todos caben en lo que te sobra. Al agregar uno, la lista se actualiza con lo que queda.
+              </p>
+              <ul className="mt-2 flex flex-col gap-2">
+                {spare.map((option) => (
+                  <li
+                    key={option.id}
+                    className="flex items-center gap-3 rounded-2xl border border-line bg-surface-2 px-4 py-3"
+                  >
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-medium text-ink">{option.title}</span>
+                      <span className="block text-xs text-muted">{option.detail}</span>
+                    </span>
+                    <span className="shrink-0 text-sm font-semibold text-ink tabular-nums">+{formatCOP(option.cost)}</span>
+                    <button
+                      type="button"
+                      onClick={() => onAddSpare(option)}
+                      aria-label={`Agregar ${option.title} (${formatCOP(option.cost)})`}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-navy px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-navy/90"
+                    >
+                      <Plus aria-hidden="true" className="size-4" />
+                      Agregar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       )}
 

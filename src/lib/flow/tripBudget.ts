@@ -15,11 +15,12 @@
  * Funciones PURAS: no consultan nada.
  */
 import type { TripDetails } from '../../types/flow'
-import type { BudgetPlan, DayPlan, Itinerary, Place, SpendStyle } from '../../types/itinerary'
+import type { BudgetExtra, BudgetPlan, DayPlan, Itinerary, Place, SpendStyle } from '../../types/itinerary'
+import { isCoastal } from '../itinerary/coast'
 import { quoteStay } from '../domain/pricing'
 import { haversineKm } from '../itinerary/geo'
 import { optimizeRoute } from '../itinerary/generateItinerary'
-import { withDayPlaces } from './editItinerary'
+import { addStop, withDayPlaces } from './editItinerary'
 import type { Listing } from '../domain/types'
 import { formatCOP } from '../format'
 import { normalizePlaceName } from './resolveDestination'
@@ -121,7 +122,7 @@ export function excursionFare(day: Pick<DayPlan, 'excursion'>): number {
   return Math.max(MIN_EXCURSION_FARE, roundTo(day.excursion.distanceKm * ROAD_FACTOR * 2 * BUS_COP_PER_KM))
 }
 
-export type BudgetLineId = 'alojamiento' | 'comida' | 'transporte' | 'entradas'
+export type BudgetLineId = 'alojamiento' | 'comida' | 'transporte' | 'entradas' | 'extras'
 
 export interface BudgetLine {
   id: BudgetLineId
@@ -224,12 +225,17 @@ export function estimateTripBudget(
           : `${money(entriesPerPerson)} por persona en museos, parques y salidas`,
     },
   ]
+  const extras = style?.extras ?? []
+  const extrasAmount = extras.reduce((sum, e) => sum + e.amount, 0)
+  if (extras.length > 0) {
+    lines.push({ id: 'extras', label: 'Planes extra', amount: extrasAmount, detail: listNames(extras.map((e) => e.title)) })
+  }
 
   const total = lines.reduce((sum, l) => sum + l.amount, 0)
   const budget = Math.max(0, trip.budgetCOP)
   const difference = budget - total
   const status = difference < 0 ? 'falta' : difference >= total * 0.15 ? 'holgado' : 'justo'
-  const lodgingAllowance = Math.max(0, budget - (food + transport + entries))
+  const lodgingAllowance = Math.max(0, budget - (food + transport + entries + extrasAmount))
 
   const tips: BudgetTip[] = []
   if (status === 'falta') {
@@ -434,4 +440,171 @@ export function fitItineraryToBudget(
 
   plan = { ...plan, fits: false }
   return { ...current, budgetPlan: plan }
+}
+
+// ---------------------------------------------------------------------------
+// "Sugerir planes con lo que me sobra"
+// ---------------------------------------------------------------------------
+
+export interface SpareOption {
+  id: string
+  /**
+   * 'mejora': volver a hotel, restaurantes o taxi; 'plan': una parada paga
+   * que no entró en el itinerario; 'extra': un plan típico (tour, cena…).
+   */
+  type: 'mejora' | 'plan' | 'extra'
+  title: string
+  detail: string
+  /** Cuánto sube el costo del viaje (para todos los viajeros). */
+  cost: number
+  /** El itinerario con el plan agregado (sigue dentro del presupuesto). */
+  result: Itinerary
+}
+
+const UPGRADES: Record<'lodging' | 'food' | 'transport', { title: string; detail: (level: CostLevel) => string }> = {
+  lodging: {
+    title: 'Hotel en vez de hostal',
+    detail: (level) => `Habitación de hotel de unos ${money(PRICES[level].roomNight)} por noche`,
+  },
+  food: {
+    title: 'Comer en restaurantes',
+    detail: (level) => `Unos ${money(PRICES[level].foodPerPersonDay)} por persona al día en comida`,
+  },
+  transport: { title: 'Moverse en taxi', detail: () => 'Taxis en vez de bus para ir de un lugar a otro' },
+}
+
+/**
+ * Planes que caben en lo que sobra del presupuesto: volver a hotel,
+ * restaurantes o taxi (si el ajuste los había bajado) y paradas pagas de las
+ * actividades elegidas que no entraron en el plan (museos, castillos, bares…).
+ * El costo de cada uno es lo que sube el total del viaje, así que la vida
+ * nocturna de una noche que ya tiene salida no cuesta de más. Función pura.
+ */
+export function spareSuggestions(
+  itinerary: Itinerary,
+  trip: Pick<TripDetails, 'travelers' | 'rooms' | 'budgetCOP'>,
+  limit = 12,
+): SpareOption[] {
+  const before = estimateTripBudget(itinerary, trip)
+  if (before.difference <= 0) return []
+  const level = before.level
+  const options: SpareOption[] = []
+  const consider = (option: Omit<SpareOption, 'cost'>) => {
+    const cost = estimateTripBudget(option.result, trip).total - before.total
+    if (cost > 0 && cost <= before.difference) options.push({ ...option, cost })
+  }
+
+  const plan = itinerary.budgetPlan
+  for (const key of ['lodging', 'food', 'transport'] as const) {
+    if (plan?.[key] !== 'economico') continue
+    const prefix = STEPS.find((s) => s.key === key)!.text(level).split(' ')[0]
+    consider({
+      id: `mejora:${key}`,
+      type: 'mejora',
+      title: UPGRADES[key].title,
+      detail: UPGRADES[key].detail(level),
+      result: {
+        ...itinerary,
+        budgetPlan: { ...plan, [key]: 'estandar', adjustments: plan.adjustments.filter((a) => !a.startsWith(prefix)) },
+      },
+    })
+  }
+
+  // Paradas pagas que no entraron: cada lugar una vez, en el día con menos paradas.
+  const used = new Set(itinerary.days.flatMap((d) => d.places.map((p) => p.id)))
+  const best = new Map<string, { place: Place; dayIndex: number }>()
+  itinerary.days.forEach((day, dayIndex) => {
+    for (const place of day.alternatives ?? []) {
+      if (used.has(place.id) || entryPrice(place) === 0) continue
+      const current = best.get(place.id)
+      if (!current || day.places.length < itinerary.days[current.dayIndex].places.length) {
+        best.set(place.id, { place, dayIndex })
+      }
+    }
+  })
+  for (const { place, dayIndex } of best.values()) {
+    const day = itinerary.days[dayIndex]
+    consider({
+      id: `plan:${place.id}`,
+      type: 'plan',
+      title: place.name,
+      detail: `${place.kind} · Día ${day.day}${day.excursion ? ` (${day.excursion.name})` : ''}`,
+      result: addStop(itinerary, dayIndex, place),
+    })
+  }
+
+  // Planes típicos del destino (precio promedio según qué tan costoso es).
+  const added = new Set((plan?.extras ?? []).map((e) => e.id))
+  const people = Math.max(1, trip.travelers)
+  const name = normalizePlaceName(itinerary.destination.displayName.split(',')[0] ?? '')
+  for (const extra of EXTRA_PLANS) {
+    if (added.has(extra.id) || !extra.when(itinerary, name)) continue
+    const perPerson = roundTo(extra.perPerson * LEVEL_FACTOR[level], 5000)
+    const entry: BudgetExtra = { id: extra.id, title: extra.title, amount: perPerson * people }
+    consider({
+      id: `extra:${extra.id}`,
+      type: 'extra',
+      title: extra.title,
+      detail: `${extra.detail} · unos ${money(perPerson)} por persona`,
+      result: {
+        ...itinerary,
+        budgetPlan: {
+          ...(plan ?? { lodging: 'estandar', food: 'estandar', transport: 'estandar', adjustments: [], fits: true }),
+          extras: [...(plan?.extras ?? []), entry],
+        },
+      },
+    })
+  }
+
+  // Primero las mejoras, luego los lugares reales (los más valorados primero) y al final los planes típicos.
+  const rank = (o: SpareOption) =>
+    o.type === 'mejora' ? 3 : o.type === 'plan' ? 2 + Math.min(0.99, (best.get(o.id.slice(5))?.place.score ?? 0) / 1000) : 1
+  return options.sort((a, b) => rank(b) - rank(a)).slice(0, limit)
+}
+
+const LEVEL_FACTOR: Record<CostLevel, number> = { alto: 1.25, medio: 1, economico: 0.75 }
+
+const COFFEE_REGION = ['salento', 'filandia', 'manizales', 'pereira', 'armenia', 'jardin', 'chinchina', 'montenegro']
+
+/** Planes típicos de viaje en Colombia, con precio promedio por persona en una ciudad media. */
+const EXTRA_PLANS: {
+  id: string
+  title: string
+  detail: string
+  perPerson: number
+  when: (itinerary: Itinerary, name: string) => boolean
+}[] = [
+  { id: 'tour-guiado', title: 'Tour guiado a pie', detail: 'Unas 3 horas con un guía local', perPerson: 60_000, when: () => true },
+  {
+    id: 'lancha-islas',
+    title: 'Paseo en lancha a las islas o playas cercanas',
+    detail: 'Día completo con almuerzo',
+    perPerson: 220_000,
+    when: (it) => isCoastal(it.destination),
+  },
+  {
+    id: 'club-playa',
+    title: 'Día en un club de playa',
+    detail: 'Asoleadoras, piscina y almuerzo',
+    perPerson: 120_000,
+    when: (it) => isCoastal(it.destination),
+  },
+  {
+    id: 'finca-cafetera',
+    title: 'Tour en una finca cafetera',
+    detail: 'Recorrido, cata y almuerzo',
+    perPerson: 90_000,
+    when: (_, name) => COFFEE_REGION.some((town) => name.startsWith(town)),
+  },
+  { id: 'clase-baile', title: 'Clase de baile (salsa o champeta)', detail: 'Una hora y media, en grupo', perPerson: 50_000, when: () => true },
+  { id: 'cena-especial', title: 'Una cena especial', detail: 'En un restaurante reconocido del destino', perPerson: 150_000, when: () => true },
+  { id: 'clase-cocina', title: 'Clase de cocina colombiana', detail: 'Mercado, cocina y almuerzo', perPerson: 140_000, when: () => true },
+  { id: 'spa', title: 'Una tarde de spa o masajes', detail: 'Masaje de una hora', perPerson: 150_000, when: () => true },
+]
+
+/** Quita un plan extra (botón "Quitar" del cuadro de presupuesto). */
+export function removeExtra(itinerary: Itinerary, id: string): Itinerary {
+  const plan = itinerary.budgetPlan
+  if (!plan?.extras) return itinerary
+  return { ...itinerary, budgetPlan: { ...plan, extras: plan.extras.filter((e) => e.id !== id) } }
 }
