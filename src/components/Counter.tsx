@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { useId } from 'react'
+import { useI18n } from '../lib/i18n/I18nProvider'
 
 interface CounterProps {
   label: string
