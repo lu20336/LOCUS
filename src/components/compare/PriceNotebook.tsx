@@ -85,7 +85,7 @@ export function PriceNotebook({
           return (
             <li key={q.providerId} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-teal/50 bg-teal/10 p-3">
               <span className="font-semibold text-ink">
-                {q.label} <Badge tone="teal">Precio verificado</Badge>
+                {q.label} {q.source === 'locus' ? <Badge tone="teal">Precio verificado</Badge> : <Badge tone="warn">Referencia · puede variar</Badge>}
               </span>
               <span className="flex items-center gap-2 text-ink">
                 <strong>{formatCOP(q.totalCOP)}</strong>

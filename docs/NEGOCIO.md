@@ -41,7 +41,7 @@ es por fases, sin atajos ilegales:
 | Fase | Qué ve el usuario | Cómo funciona | Estado |
 |---|---|---|---|
 | **1 · Comparador de búsquedas** | Un lugar, muchas plataformas, búsqueda ya puesta + libreta de precios + "el mismo alojamiento en otras plataformas". | Enlaces con parámetros públicos (`src/lib/compare`). Precio verificado solo del catálogo LOCUS. | ✅ **Hecho** |
-| **2 · Precios en vivo (por API de socios)** | Tabla de precios reales por plataforma; botón "Reservar" que lleva a cada una. | APIs/feeds de afiliados (ver §3.1). Requiere una capa de servidor para guardar las claves (§3.2). | 🔒 Siguiente |
+| **2 · Precios de referencia / en vivo** | **Vuelos:** "desde $X" (caché de Aviasales) con botón a Aviasales. Hoteles y tours: cuando haya aprobación de socio. | Worker gratis de Cloudflare + API de datos de Travelpayouts (`workers/prices`, `docs/PRECIOS_EN_VIVO.md`). | 🟡 Código listo; falta activar cuentas |
 | **3 · Reserva dentro de LOCUS** | Reservar y pagar sin salir. | Modelo agencia/OTA: pasarela real, RNT, facturación, seguros, soporte. | ⚖️🔒 Largo plazo |
 
 La interfaz ya está lista para la Fase 2: el tipo `PriceQuote` (`providers.ts`) y la `PriceNotebook` aceptan cotizaciones
@@ -60,7 +60,7 @@ La interfaz ya está lista para la Fase 2: el tipo `PriceQuote` (`providers.ts`)
 
 Las claves de esas APIs **no pueden ir en el frontend**. Opciones:
 
-1. **Cloudflare Workers (gratis hasta ~100 000 solicitudes/día):** sin tarjeta, ideal para empezar. *(Recomendada.)*
+1. **Cloudflare Workers (gratis hasta ~100 000 solicitudes/día):** sin tarjeta, ideal para empezar. *(Elegida: ya está implementado en `workers/prices`.)*
 2. **Firebase Cloud Functions:** exige pasar el proyecto a **Blaze** (pago por uso, con cuota gratuita y tarjeta).
 
 Mientras tanto la Fase 1 funciona 100 % en el frontend.

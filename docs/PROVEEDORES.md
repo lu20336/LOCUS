@@ -197,3 +197,8 @@ precios de terceros**: arma el enlace de búsqueda de cada plataforma con destin
 
 Los formatos son los públicos de cada buscador; **revísalos periódicamente** (si uno cambia, el peor caso es que abra el
 buscador sin datos). Prohibido: extraer precios con scraping. Los afiliados se configuran con `VITE_AFF_*` (ver `.env.example`).
+
+## Precios de referencia de vuelos (Travelpayouts · Aviasales Data API)
+
+Vía el Worker `workers/prices` (token como secreto, caché 6 h). Datos en caché de búsquedas recientes de viajeros: **referencia, no tarifa reservable**.
+Plan gratis para socios (límite por minuto) y Workers gratis (100 000 solicitudes/día). Guía: `docs/PRECIOS_EN_VIVO.md`.

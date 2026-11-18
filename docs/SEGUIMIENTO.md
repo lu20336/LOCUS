@@ -91,3 +91,10 @@
 - **SEO:** meta/OG, títulos por ruta, `robots.txt`, `sitemap.xml`.
 - **Estrategia:** `docs/NEGOCIO.md` (posicionamiento, ingresos, marketing, fases, legal, riesgos).
 - Pendiente (🔒): precios en vivo vía APIs de socios (requiere capa de servidor), analítica, dominio propio.
+
+## Fase 2 · precios de referencia de vuelos (gratis)
+
+- **Worker de Cloudflare** (`workers/prices`): consulta la API de datos de Aviasales con el token como secreto, valida, cachea 6 h y solo responde a los orígenes de LOCUS.
+- **Frontend:** bloque "Precio de referencia" en la pestaña Vuelos + fila "Referencia · puede variar" en la libreta. Apagado si no existe `VITE_PRICES_API_URL`.
+- **Estado:** probado con simulaciones (29 pruebas nuevas); **falta activar** (cuentas Travelpayouts y Cloudflare → `docs/PRECIOS_EN_VIVO.md`) y verificar el contrato con un token real.
+- Hoteles/Booking/Airbnb: sin fuente gratuita legal de precios en vivo (requiere aprobación de socio).

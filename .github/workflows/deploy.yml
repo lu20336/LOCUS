@@ -54,6 +54,13 @@ jobs:
       VITE_GEOAPIFY_KEY: ${{ vars.VITE_GEOAPIFY_KEY }}
       VITE_MAPILLARY_TOKEN: ${{ vars.VITE_MAPILLARY_TOKEN }}
       VITE_GEMINI_MODEL: ${{ vars.VITE_GEMINI_MODEL }}
+      # Opcional: URL del Worker de precios (docs/PRECIOS_EN_VIVO.md). Vacía = sin precios de referencia.
+      VITE_PRICES_API_URL: ${{ vars.VITE_PRICES_API_URL }}
+      # Afiliados (opcionales; ver .env.example). Vacío = enlaces sin afiliado.
+      VITE_AFF_BOOKING: ${{ vars.VITE_AFF_BOOKING }}
+      VITE_AFF_AVIASALES: ${{ vars.VITE_AFF_AVIASALES }}
+      VITE_AFF_GETYOURGUIDE: ${{ vars.VITE_AFF_GETYOURGUIDE }}
+      VITE_AFF_VIATOR: ${{ vars.VITE_AFF_VIATOR }}
     steps:
       - uses: actions/checkout@v5
 
