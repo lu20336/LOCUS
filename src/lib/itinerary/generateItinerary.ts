@@ -462,6 +462,11 @@ export interface GenerateOptions {
   activitiesPerDay?: number
   /** Pueblos cercanos para excursiones de un día (uno por día). */
   excursions?: readonly Excursion[]
+  /**
+   * Pueblos cercanos que se pueden agregar SOLOS si no hay lugares para llenar
+   * todos los días del viaje (ej. 10 días en Ipiales): ningún día queda vacío.
+   */
+  autoExcursions?: readonly Excursion[]
   /** Inyectable para tests (fecha de generación fija). */
   now?: () => Date
 }
@@ -501,12 +506,37 @@ export async function planItinerary(
   }
 
   // Días de excursión: repartidos en el viaje, dejando al menos un día en el destino.
-  const excursions = (options.excursions ?? []).slice(0, Math.max(0, dates.length - 1))
+  const chosenExcursions = (options.excursions ?? []).slice(0, Math.max(0, dates.length - 1))
+  const mainCount = dates.length - chosenExcursions.length
+
+  const search = await searchPlaces(destination, input.categories, client) // Paso 2
+  const { missingCategories } = search
+  // Viajes largos o destinos pequeños: si con lo elegido no alcanza para todos
+  // los días, se completa (otras actividades, más radio y, al final, excursiones).
+  const filled = await completePlaces(destination, input.categories, client, search.byCategory, mainCount * MIN_PLACES_PER_DAY)
+  const byCategory = filled.byCategory
+  const pick = (total: number) => {
+    const fromChosen = selectPlaces(byCategory, input.categories, total) // Paso 3
+    if (fromChosen.length >= total || filled.extraCategories.length === 0) return fromChosen
+    const taken = new Set(fromChosen.map((p) => p.id))
+    const rest: Partial<Record<CategoryId, Place[]>> = {}
+    for (const c of filled.extraCategories) rest[c] = (byCategory[c] ?? []).filter((p) => !taken.has(p.id))
+    return [...fromChosen, ...selectPlaces(rest, filled.extraCategories, total - fromChosen.length)]
+  }
+
+  // Si aun así faltan lugares para algunos días, esos días son excursiones a pueblos cercanos.
+  const available = pick(mainCount * activitiesPerDay).length
+  const fillableDays = Math.max(1, Math.floor(available / MIN_PLACES_PER_DAY))
+  const chosenIds = new Set(chosenExcursions.map((e) => e.id))
+  const autoExcursions =
+    fillableDays < mainCount
+      ? (options.autoExcursions ?? []).filter((e) => !chosenIds.has(e.id)).slice(0, mainCount - fillableDays)
+      : []
+  const excursions = [...chosenExcursions, ...autoExcursions].slice(0, Math.max(0, dates.length - 1))
   const excursionAt = new Map(excursionDayIndexes(dates.length, excursions.length).map((d, i) => [d, excursions[i]]))
   const mainDates = dates.filter((_, i) => !excursionAt.has(i))
 
-  const { byCategory, missingCategories } = await searchPlaces(destination, input.categories, client) // Paso 2
-  const selected = selectPlaces(byCategory, input.categories, mainDates.length * activitiesPerDay) // Paso 3
+  const selected = pick(mainDates.length * activitiesPerDay)
   const alternatives = leftovers(byCategory, selected)
   const mainDays = buildDailyPlan(destination, selected, mainDates).map((d) => ({ ...d, alternatives })) // Pasos 4 y 5
 
@@ -527,7 +557,88 @@ export async function planItinerary(
     // Ahorro de la ruta: solo los días en el destino (las excursiones salen de otro punto).
     stats: computeStats(destination, selected, mainDays),
     generatedAt: now().toISOString(),
+    ...(filled.extraCategories.length > 0 || filled.widenedKm || autoExcursions.length > 0
+      ? {
+          completed: {
+            extraCategories: filled.extraCategories.filter((c) => selected.some((p) => p.category === c)),
+            ...(filled.widenedKm ? { widenedKm: filled.widenedKm } : {}),
+            autoExcursions: autoExcursions.filter((e) => excursions.includes(e)).map((e) => e.name),
+          },
+        }
+      : {}),
   }
+}
+
+// ---------------------------------------------------------------------------
+// Días completos: nunca "recórrelo a tu ritmo" por falta de lugares
+// ---------------------------------------------------------------------------
+
+/** Mínimo de lugares por día en el destino. */
+export const MIN_PLACES_PER_DAY = 2
+/**
+ * Actividades de día para completar un viaje cuando las elegidas no alcanzan
+ * (nunca vida nocturna: no se le propone rumba a quien no la pidió).
+ */
+export const FILL_CATEGORIES: readonly CategoryId[] = ['cultura', 'aventura', 'gastronomia', 'compras']
+/** Hasta dónde se amplía la búsqueda alrededor del destino. */
+export const MAX_FILL_RADIUS_METERS = 20000
+
+/**
+ * Si los lugares de las actividades elegidas no llegan a `needed`, busca más:
+ *   1. Otras actividades de día en el mismo radio (ya vienen de la búsqueda
+ *      anticipada, así que no cuesta tiempo). Playa solo si hay costa.
+ *   2. Si aún faltan, amplía el radio (hasta MAX_FILL_RADIUS_METERS) para
+ *      todas las actividades.
+ * Si una búsqueda extra falla, sigue con lo que tiene (no tumba el itinerario).
+ */
+export async function completePlaces(
+  destination: Destination,
+  categories: readonly CategoryId[],
+  client: Pick<OsmClient, 'findPlaces'>,
+  byCategory: Partial<Record<CategoryId, Place[]>>,
+  needed: number,
+): Promise<{ byCategory: Partial<Record<CategoryId, Place[]>>; extraCategories: CategoryId[]; widenedKm?: number }> {
+  const count = (by: Partial<Record<CategoryId, Place[]>>, cats: readonly CategoryId[]) =>
+    cats.reduce((sum, c) => sum + (by[c]?.length ?? 0), 0)
+  if (count(byCategory, categories) >= needed) return { byCategory, extraCategories: [] }
+
+  const extraCategories = [...FILL_CATEGORIES, ...(isCoastal(destination) ? (['playa'] as const) : [])].filter(
+    (c) => !categories.includes(c),
+  )
+  const all = [...categories, ...extraCategories]
+  let places = Object.values(byCategory).flat() as Place[]
+  const merge = (more: Place[]) => {
+    places = cleanPlaces([...places, ...more], destination)
+  }
+  const regroup = () => {
+    const grouped: Partial<Record<CategoryId, Place[]>> = {}
+    for (const c of all) {
+      const list = places
+        .filter((p) => p.category === c)
+        .sort((a, b) => b.score - a.score || haversineKm(destination, a) - haversineKm(destination, b))
+      if (list.length > 0) grouped[c] = list
+    }
+    return grouped
+  }
+
+  if (extraCategories.length > 0) {
+    try {
+      merge(await client.findPlaces(destination, destination.radiusMeters, extraCategories))
+    } catch {
+      // Sin las actividades extra: se intenta con más radio.
+    }
+  }
+  let widenedKm: number | undefined
+  const wider = Math.min(MAX_FILL_RADIUS_METERS, Math.round(destination.radiusMeters * 2.5))
+  if (count(regroup(), all) < needed && wider > destination.radiusMeters) {
+    try {
+      merge(await client.findPlaces(destination, wider, all))
+      widenedKm = Math.round(wider / 1000)
+    } catch {
+      // Se queda con lo que hay; los días que falten serán excursiones.
+    }
+  }
+  return { byCategory: regroup(), extraCategories, ...(widenedKm ? { widenedKm } : {}) }
 }
 
 // ---------------------------------------------------------------------------

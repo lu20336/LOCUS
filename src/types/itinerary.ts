@@ -99,6 +99,11 @@ export interface Itinerary {
   generatedAt: string
   /** true si el usuario quitó o cambió paradas: el "ahorro de ruta" ya no aplica. */
   edited?: boolean
+  /**
+   * Cómo se completó el viaje cuando lo elegido no alcanzaba para todos los
+   * días: otras actividades, más radio de búsqueda o excursiones automáticas.
+   */
+  completed?: { extraCategories: CategoryId[]; widenedKm?: number; autoExcursions: string[] }
   /** Cómo se ajustó el plan al presupuesto (lib/flow/tripBudget.ts: fitItineraryToBudget). */
   budgetPlan?: BudgetPlan
 }

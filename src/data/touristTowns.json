@@ -723,6 +723,28 @@
         "lat": 1.07714,
         "lon": -77.15336
       }
+    },
+    {
+      "id": "pasto",
+      "name": "Pasto",
+      "region": "Nariño",
+      "tagline": "Capital de Nariño y del Carnaval de Negros y Blancos",
+      "lat": 1.21403,
+      "lon": -77.27851
+    },
+    {
+      "id": "tuquerres",
+      "name": "Túquerres",
+      "region": "Nariño",
+      "tagline": "Laguna Verde en el volcán Azufral",
+      "lat": 1.0877,
+      "lon": -77.61882,
+      "highlight": {
+        "name": "Laguna Verde (volcán Azufral)",
+        "category": "aventura",
+        "lat": 1.08554,
+        "lon": -77.71859
+      }
     }
   ]
 }

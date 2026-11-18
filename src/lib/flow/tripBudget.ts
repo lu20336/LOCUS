@@ -470,6 +470,8 @@ export interface SpareOption {
   cost: number
   /** El itinerario con el plan agregado (sigue dentro del presupuesto). */
   result: Itinerary
+  /** Día donde queda lo agregado (para llevar al usuario a ese día); las mejoras no tienen. */
+  dayIndex?: number
 }
 
 const UPGRADES: Record<'lodging' | 'food' | 'transport', { title: string; detail: (level: CostLevel) => string }> = {
@@ -558,6 +560,7 @@ export function spareSuggestions(
       type: 'plan',
       title: place.name,
       detail: `${place.kind} · Día ${day.day}${day.excursion ? ` (${day.excursion.name})` : ''}`,
+      dayIndex,
       result: addStop(itinerary, dayIndex, place),
     })
   }
@@ -590,6 +593,7 @@ export function spareSuggestions(
       detail:
         `${extra.detail}${venue ? ` · ${venueText(venue)}` : ''} · unos ${money(perPerson)} por persona · ` +
         `Día ${dayIndex + 1}, ${extra.part === 'todo el día' ? 'todo el día' : `en la ${extra.part}`}`,
+      dayIndex,
       result: placeExtra(itinerary, entry, dayIndex),
     })
   }

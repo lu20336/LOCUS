@@ -107,6 +107,8 @@ const TOWNS: Entry[] = [
   // Sur
   { name: 'Ipiales', region: 'Nariño', tagline: 'Santuario de Las Lajas' },
   { name: 'El Encano', region: 'Nariño', tagline: 'Laguna de La Cocha' },
+  { name: 'Pasto', region: 'Nariño', tagline: 'Capital de Nariño y del Carnaval de Negros y Blancos' },
+  { name: 'Túquerres', region: 'Nariño', tagline: 'Laguna Verde en el volcán Azufral' },
 ]
 
 /**
@@ -142,6 +144,7 @@ const HIGHLIGHTS: Record<string, { name: string; category: 'cultura' | 'aventura
   'Cabo de la Vela': { name: 'Pilón de Azúcar', category: 'aventura', query: 'Pilón de Azúcar' },
   Ipiales: { name: 'Santuario de Las Lajas', category: 'cultura' },
   'El Encano': { name: 'Laguna de La Cocha', category: 'aventura' },
+  Túquerres: { name: 'Laguna Verde (volcán Azufral)', category: 'aventura', query: 'Azufral' },
 }
 
 const osm = createOsmClient({

@@ -599,3 +599,85 @@ describe('excursión: lo imperdible del pueblo y alternativas', () => {
     expect(day.places.map((p) => p.name)).toEqual(['Jardín Botánico Guillermo Piñeres'])
   })
 })
+
+describe('viajes largos: ningún día queda vacío', () => {
+  const ipiales = { query: 'Ipiales', displayName: 'Ipiales, Nariño, Colombia', lat: 0.8236, lon: -77.6349, radiusMeters: 6000 }
+  const input: TripInput = { destination: 'Ipiales', startDate: '2026-12-18', endDate: '2026-12-27', budgetCOP: 6_000_000, categories: ['cultura'] }
+  /** Un lugar a ~1 km por índice, para que no se repitan nombres ni posiciones. */
+  const at = (id: string, category: CategoryId, i: number, kind = 'Museo'): Place => ({
+    id,
+    name: `${kind} ${id}`,
+    category,
+    kind,
+    score: 10 - (i % 5),
+    lat: ipiales.lat + 0.005 * Math.cos(i),
+    lon: ipiales.lon + 0.005 * Math.sin(i),
+  })
+  const town = (id: string, name: string, km: number) => ({
+    id,
+    name,
+    region: 'Nariño',
+    tagline: '',
+    lat: ipiales.lat + km / 111,
+    lon: ipiales.lon,
+    distanceKm: km,
+  })
+
+  it('con pocos lugares de lo elegido, suma otras actividades de día y llena los 10 días', async () => {
+    const cultura = Array.from({ length: 4 }, (_, i) => at(`c${i}`, 'cultura', i))
+    const otras = [
+      ...Array.from({ length: 10 }, (_, i) => at(`a${i}`, 'aventura', i + 10, 'Mirador')),
+      ...Array.from({ length: 10 }, (_, i) => at(`g${i}`, 'gastronomia', i + 30, 'Restaurante')),
+      ...Array.from({ length: 6 }, (_, i) => at(`n${i}`, 'vidaNocturna', i + 50, 'Bar')),
+    ]
+    const asked: CategoryId[][] = []
+    const client = {
+      findPlaces: async (_c: GeoPoint, _r: number, categories: CategoryId[]) => {
+        asked.push(categories)
+        return [...cultura, ...otras].filter((p) => categories.includes(p.category))
+      },
+    }
+    const it0 = await planItinerary(ipiales, input, client, { activitiesPerDay: 3 })
+    expect(it0.days).toHaveLength(10)
+    expect(it0.days.every((d) => d.places.length >= 2)).toBe(true)
+    // Nunca se propone rumba a quien no la pidió.
+    expect(it0.days.flatMap((d) => d.places).some((p) => p.category === 'vidaNocturna')).toBe(false)
+    expect(asked[1]).not.toContain('vidaNocturna')
+    expect(it0.completed?.extraCategories).toEqual(expect.arrayContaining(['aventura', 'gastronomia']))
+  })
+
+  it('si ni así alcanza, amplía el radio y convierte los días que faltan en excursiones', async () => {
+    // 10 lugares para 10 días: no alcanza para 2 por día.
+    const pocos = [
+      ...Array.from({ length: 4 }, (_, i) => at(`c${i}`, 'cultura', i)),
+      ...Array.from({ length: 3 }, (_, i) => at(`a${i}`, 'aventura', i + 10, 'Mirador')),
+      ...Array.from({ length: 3 }, (_, i) => at(`g${i}`, 'gastronomia', i + 20, 'Restaurante')),
+    ]
+    const radios: number[] = []
+    const client = {
+      findPlaces: async (center: GeoPoint, radius: number, categories: CategoryId[]) => {
+        radios.push(radius)
+        // Los pueblos de excursión tienen sus propios lugares.
+        if (Math.abs(center.lat - ipiales.lat) > 0.05) return [at(`t${center.lat}`, 'cultura', 7), at(`u${center.lat}`, 'aventura', 8, 'Mirador')]
+        return pocos.filter((p) => categories.includes(p.category))
+      },
+    }
+    const towns = [town('pasto', 'Pasto', 60), town('tuquerres', 'Túquerres', 30), town('encano', 'El Encano', 70)]
+    const it0 = await planItinerary(ipiales, input, client, { activitiesPerDay: 3, autoExcursions: towns })
+    expect(radios).toContain(15000) // 6 km × 2,5
+    expect(it0.completed?.widenedKm).toBe(15)
+    expect(it0.completed?.autoExcursions).toEqual(['Pasto', 'Túquerres', 'El Encano'])
+    expect(it0.days.filter((d) => d.excursion)).toHaveLength(3)
+    // Los días en Ipiales tienen sus paradas; ninguno queda vacío por falta de lugares en la ciudad.
+    expect(it0.days.filter((d) => !d.excursion).every((d) => d.places.length >= 1)).toBe(true)
+  })
+
+  it('si lo elegido alcanza, no cambia nada', async () => {
+    const muchos = Array.from({ length: 40 }, (_, i) => at(`c${i}`, 'cultura', i))
+    const client = { findPlaces: vi.fn(async (_c: GeoPoint, _r: number, cats: CategoryId[]) => muchos.filter((p) => cats.includes(p.category))) }
+    const it0 = await planItinerary(ipiales, input, client, { activitiesPerDay: 3, autoExcursions: [town('pasto', 'Pasto', 60)] })
+    expect(it0.completed).toBeUndefined()
+    expect(client.findPlaces).toHaveBeenCalledTimes(1)
+    expect(it0.days.some((d) => d.excursion)).toBe(false)
+  })
+})
