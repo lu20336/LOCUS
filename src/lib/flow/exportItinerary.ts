@@ -21,6 +21,15 @@ export function dayTitle(day: DayPlan): string {
 }
 
 /** Paradas del día agrupadas por momento: [["Mañana", ["Museo del Oro", …]], …] */
+/** "Plan extra (noche): Una cena especial" — los planes extra de un día, en orden. */
+export function extraLines(it: Pick<Itinerary, 'budgetPlan'>, dayIndex: number): string[] {
+  const order = ['todo el día', 'mañana', 'tarde', 'noche']
+  return (it.budgetPlan?.extras ?? [])
+    .filter((e) => e.dayIndex === dayIndex)
+    .sort((a, b) => order.indexOf(a.part ?? 'tarde') - order.indexOf(b.part ?? 'tarde'))
+    .map((e) => `Plan extra (${e.part ?? 'tarde'}): ${e.title}`)
+}
+
 export function stopsByPart(day: DayPlan): [string, string[]][] {
   const parts = dayParts(day.places)
   const groups: [string, string[]][] = []
@@ -35,17 +44,20 @@ export function stopsByPart(day: DayPlan): [string, string[]][] {
 export function itineraryToText(it: Itinerary): string {
   const days = it.days.length
   const lines = [`Mi viaje a ${placeName(it)} · ${formatDateRange(it.input.startDate, it.input.endDate)} (${days} ${days === 1 ? 'día' : 'días'})`]
-  for (const day of it.days) {
+  it.days.forEach((day, dayIndex) => {
     lines.push('', dayTitle(day))
-    if (day.places.length === 0) lines.push('  Día libre para recorrer a tu ritmo.')
+    const extras = extraLines(it, dayIndex)
+    if (day.places.length === 0 && extras.length === 0) lines.push('  Día libre para recorrer a tu ritmo.')
     for (const [part, names] of stopsByPart(day)) lines.push(`  ${part}: ${names.join(' → ')}`)
+    for (const extra of extras) lines.push(`  ${extra}`)
     const route = googleMapsRouteUrl(day.excursion ?? it.destination, day.places)
     if (route) lines.push(`  Ruta: ${route}`)
-  }
-  const extras = it.budgetPlan?.extras ?? []
-  if (extras.length > 0) {
+  })
+  // Planes extra sin día (de una versión anterior del plan).
+  const loose = (it.budgetPlan?.extras ?? []).filter((e) => e.dayIndex === undefined)
+  if (loose.length > 0) {
     lines.push('', 'Planes extra')
-    for (const extra of extras) lines.push(`  ${extra.title}`)
+    for (const extra of loose) lines.push(`  ${extra.title}`)
   }
   lines.push('', `Planeado con LOCUS · ${APP_URL}`)
   return lines.join('\n')
@@ -82,9 +94,10 @@ function nextDay(iso: string): string {
 export function itineraryToIcs(it: Itinerary, now: Date = new Date()): string {
   const stamp = now.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
   const city = placeName(it)
-  const events = it.days.flatMap((day) => {
+  const events = it.days.flatMap((day, dayIndex) => {
     const description = [
       ...stopsByPart(day).map(([part, names]) => `${part}: ${names.join(' → ')}`),
+      ...extraLines(it, dayIndex),
       googleMapsRouteUrl(day.excursion ?? it.destination, day.places) ?? '',
       `Planeado con LOCUS · ${APP_URL}`,
     ]
@@ -145,12 +158,16 @@ export interface TripEvent {
 
 export function tripEvent(it: Itinerary): TripEvent {
   const details = [
-    ...it.days.flatMap((day) => [
-      dayTitle(day),
-      ...(day.places.length === 0
-        ? ['  Día libre']
-        : stopsByPart(day).map(([part, names]) => `  ${part}: ${names.join(' → ')}`)),
-    ]),
+    ...it.days.flatMap((day, dayIndex) => {
+      const extras = extraLines(it, dayIndex).map((line) => `  ${line}`)
+      return [
+        dayTitle(day),
+        ...(day.places.length === 0 && extras.length === 0
+          ? ['  Día libre']
+          : stopsByPart(day).map(([part, names]) => `  ${part}: ${names.join(' → ')}`)),
+        ...extras,
+      ]
+    }),
     '',
     `Planeado con LOCUS · ${APP_URL}`,
   ].join('\n')

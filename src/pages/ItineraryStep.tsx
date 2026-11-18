@@ -25,9 +25,11 @@ import {
   RefreshCw,
   Route,
   Shuffle,
+  Sparkles,
   Sun,
   Sunset,
   Trash,
+  Trash2,
   TriangleAlert,
   Undo2,
   Users,
@@ -41,7 +43,15 @@ import { findFeaturedNear } from '../lib/featuredDestinations'
 import { alternativeFor, dayParts, DAY_PART_LABELS, removeStop, replaceStop, type DayPart } from '../lib/flow/editItinerary'
 import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm, osmPlaceUrl } from '../lib/flow/itineraryView'
 import { PACES } from '../lib/flow/pace'
-import { estimateTripBudget, fitItineraryToBudget, removeExtra, spareSuggestions } from '../lib/flow/tripBudget'
+import {
+  daysForExtra,
+  estimateTripBudget,
+  extrasForDay,
+  fitItineraryToBudget,
+  moveExtra,
+  removeExtra,
+  spareSuggestions,
+} from '../lib/flow/tripBudget'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
 import { useItinerary } from '../lib/flow/useItinerary'
@@ -51,7 +61,7 @@ import { placesSource } from '../lib/itinerary/fallbackClient'
 import { useAsync } from '../lib/useAsync'
 import { fetchForecast, type DailyForecast } from '../lib/weather/openMeteo'
 import type { TripDetails } from '../types/flow'
-import type { DayPlan, Itinerary } from '../types/itinerary'
+import type { BudgetExtra, DayPlan, Itinerary } from '../types/itinerary'
 
 const DayMap = lazy(() => import('../components/DayMap'))
 
@@ -417,6 +427,8 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
   const legs = legDistancesKm(start, day.places)
   const routeUrl = googleMapsRouteUrl(start, day.places)
   const parts = dayParts(day.places)
+  const extras = extrasForDay(itinerary, dayIndex)
+  const fullDay = extras.some((e) => e.part === 'todo el día')
 
   return (
     <div
@@ -458,7 +470,7 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
           </a>
         </div>
       )}
-      {day.places.length === 0 ? (
+      {fullDay ? null : day.places.length === 0 ? (
         <p className="flex items-start gap-3 rounded-2xl border border-dashed border-line p-5 text-ink">
           <Coffee aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-teal-soft" />
           {day.excursion
@@ -550,7 +562,71 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
           </ol>
         </>
       )}
+      {extras.length > 0 && <DayExtras extras={extras} itinerary={itinerary} onEdit={onEdit} />}
     </div>
+  )
+}
+
+/** Planes extra del día (tour, cena, lancha…): sin punto en el mapa, con su momento del día. */
+function DayExtras({
+  extras,
+  itinerary,
+  onEdit,
+}: {
+  extras: BudgetExtra[]
+  itinerary: Itinerary
+  onEdit: (next: Itinerary, message: string) => void
+}) {
+  return (
+    <section aria-label="Planes extra de este día" className="mt-2 flex flex-col gap-3">
+      {extras.map((extra) => {
+        const part = extra.part ?? 'tarde'
+        const Icon = part === 'todo el día' ? Sparkles : DAY_PART_ICONS[part]
+        const days = daysForExtra(itinerary, part, extra.id)
+        return (
+          <div key={extra.id} className="rounded-2xl border border-teal/50 bg-teal/10 p-4">
+            <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-teal-soft">
+              <Icon aria-hidden="true" className="size-4" />
+              Plan extra · {part}
+            </p>
+            <p className="mt-1 font-semibold text-ink">{extra.title}</p>
+            <p className="text-sm text-muted">
+              {formatCOP(extra.amount)} en total
+              {extra.replaced?.length
+                ? ` · ocupa el día: apartamos ${extra.replaced.length} ${extra.replaced.length === 1 ? 'parada' : 'paradas'} (vuelven si lo cambias de día o lo quitas)`
+                : ''}
+            </p>
+            <div className="mt-3 flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 text-sm text-ink">
+                Día
+                <select
+                  value={extra.dayIndex}
+                  onChange={(e) => {
+                    const to = Number(e.target.value)
+                    onEdit(moveExtra(itinerary, extra.id, to), `Pasamos «${extra.title}» al día ${to + 1}.`)
+                  }}
+                  className="rounded-lg border border-line bg-surface px-2 py-1 text-sm text-ink"
+                >
+                  {days.map((i) => (
+                    <option key={i} value={i}>
+                      Día {i + 1} · {formatDayTab(itinerary.days[i].date)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <button
+                type="button"
+                onClick={() => onEdit(removeExtra(itinerary, extra.id), `Quitamos «${extra.title}».`)}
+                className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-ink"
+              >
+                <Trash2 aria-hidden="true" className="size-4" />
+                Quitar
+              </button>
+            </div>
+          </div>
+        )
+      })}
+    </section>
   )
 }
 

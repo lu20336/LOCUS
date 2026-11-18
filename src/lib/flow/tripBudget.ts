@@ -15,7 +15,7 @@
  * Funciones PURAS: no consultan nada.
  */
 import type { TripDetails } from '../../types/flow'
-import type { BudgetExtra, BudgetPlan, DayPlan, Itinerary, Place, SpendStyle } from '../../types/itinerary'
+import type { BudgetExtra, BudgetPlan, DayPlan, ExtraPart, Itinerary, Place, SpendStyle } from '../../types/itinerary'
 import { isCoastal } from '../itinerary/coast'
 import { quoteStay } from '../domain/pricing'
 import { haversineKm } from '../itinerary/geo'
@@ -360,7 +360,9 @@ export function fitItineraryToBudget(
 ): Itinerary {
   const level = costLevelFor(itinerary.destination.displayName)
   let plan: BudgetPlan = { lodging: 'estandar', food: 'estandar', transport: 'estandar', adjustments: [], fits: true }
-  let current: Itinerary = { ...itinerary, budgetPlan: plan }
+  // Ajustar empieza sin planes extra (y devuelve las paradas que un plan de todo el día había apartado).
+  const withoutExtras = (itinerary.budgetPlan?.extras ?? []).reduce((it, e) => removeExtra(it, e.id), itinerary)
+  let current: Itinerary = { ...withoutExtras, budgetPlan: plan }
   const fits = () => estimateTripBudget(current, trip).difference >= 0
   const note = (patch: Partial<BudgetPlan>, text: string) => {
     plan = { ...plan, ...patch, adjustments: [...plan.adjustments, text] }
@@ -511,18 +513,34 @@ export function spareSuggestions(
   }
 
   // Paradas pagas que no entraron: cada lugar una vez, en el día con menos paradas.
-  const used = new Set(itinerary.days.flatMap((d) => d.places.map((p) => p.id)))
+  // Las paradas apartadas por un plan de todo el día también cuentan como usadas.
+  const used = new Set([
+    ...itinerary.days.flatMap((d) => d.places.map((p) => p.id)),
+    ...(plan?.extras ?? []).flatMap((e) => (e.replaced ?? []).map((p) => p.id)),
+  ])
   const best = new Map<string, { place: Place; dayIndex: number }>()
   itinerary.days.forEach((day, dayIndex) => {
+    // Un día ocupado por un plan de todo el día solo admite salidas de noche.
+    const busy = hasFullDay(itinerary, dayIndex)
     for (const place of day.alternatives ?? []) {
       if (used.has(place.id) || entryPrice(place) === 0) continue
+      if (busy && place.category !== 'vidaNocturna') continue
       const current = best.get(place.id)
       if (!current || day.places.length < itinerary.days[current.dayIndex].places.length) {
         best.set(place.id, { place, dayIndex })
       }
     }
   })
-  for (const { place, dayIndex } of best.values()) {
+  // A lo sumo 3 por actividad (los mejor valorados), para que la lista no se llene de bares iguales.
+  const perCategory = new Map<string, number>()
+  const candidates = [...best.values()]
+    .sort((a, b) => b.place.score - a.place.score)
+    .filter(({ place }) => {
+      const n = perCategory.get(place.category) ?? 0
+      perCategory.set(place.category, n + 1)
+      return n < 3
+    })
+  for (const { place, dayIndex } of candidates) {
     const day = itinerary.days[dayIndex]
     consider({
       id: `plan:${place.id}`,
@@ -540,19 +558,16 @@ export function spareSuggestions(
   for (const extra of EXTRA_PLANS) {
     if (added.has(extra.id) || !extra.when(itinerary, name)) continue
     const perPerson = roundTo(extra.perPerson * LEVEL_FACTOR[level], 5000)
-    const entry: BudgetExtra = { id: extra.id, title: extra.title, amount: perPerson * people }
+    const entry: BudgetExtra = { id: extra.id, title: extra.title, amount: perPerson * people, part: extra.part }
+    const dayIndex = bestDayForExtra(itinerary, extra.part)
     consider({
       id: `extra:${extra.id}`,
       type: 'extra',
       title: extra.title,
-      detail: `${extra.detail} · unos ${money(perPerson)} por persona`,
-      result: {
-        ...itinerary,
-        budgetPlan: {
-          ...(plan ?? { lodging: 'estandar', food: 'estandar', transport: 'estandar', adjustments: [], fits: true }),
-          extras: [...(plan?.extras ?? []), entry],
-        },
-      },
+      detail:
+        `${extra.detail} · unos ${money(perPerson)} por persona · ` +
+        `Día ${dayIndex + 1}, ${extra.part === 'todo el día' ? 'todo el día' : `en la ${extra.part}`}`,
+      result: placeExtra(itinerary, entry, dayIndex),
     })
   }
 
@@ -572,14 +587,17 @@ const EXTRA_PLANS: {
   title: string
   detail: string
   perPerson: number
+  /** Cuándo se hace: en la mañana, la tarde, la noche o todo el día. */
+  part: ExtraPart
   when: (itinerary: Itinerary, name: string) => boolean
 }[] = [
-  { id: 'tour-guiado', title: 'Tour guiado a pie', detail: 'Unas 3 horas con un guía local', perPerson: 60_000, when: () => true },
+  { id: 'tour-guiado', title: 'Tour guiado a pie', detail: 'Unas 3 horas con un guía local', perPerson: 60_000, part: 'mañana', when: () => true },
   {
     id: 'lancha-islas',
     title: 'Paseo en lancha a las islas o playas cercanas',
     detail: 'Día completo con almuerzo',
     perPerson: 220_000,
+    part: 'todo el día',
     when: (it) => isCoastal(it.destination),
   },
   {
@@ -587,6 +605,7 @@ const EXTRA_PLANS: {
     title: 'Día en un club de playa',
     detail: 'Asoleadoras, piscina y almuerzo',
     perPerson: 120_000,
+    part: 'todo el día',
     when: (it) => isCoastal(it.destination),
   },
   {
@@ -594,17 +613,86 @@ const EXTRA_PLANS: {
     title: 'Tour en una finca cafetera',
     detail: 'Recorrido, cata y almuerzo',
     perPerson: 90_000,
+    part: 'mañana',
     when: (_, name) => COFFEE_REGION.some((town) => name.startsWith(town)),
   },
-  { id: 'clase-baile', title: 'Clase de baile (salsa o champeta)', detail: 'Una hora y media, en grupo', perPerson: 50_000, when: () => true },
-  { id: 'cena-especial', title: 'Una cena especial', detail: 'En un restaurante reconocido del destino', perPerson: 150_000, when: () => true },
-  { id: 'clase-cocina', title: 'Clase de cocina colombiana', detail: 'Mercado, cocina y almuerzo', perPerson: 140_000, when: () => true },
-  { id: 'spa', title: 'Una tarde de spa o masajes', detail: 'Masaje de una hora', perPerson: 150_000, when: () => true },
+  { id: 'clase-baile', title: 'Clase de baile (salsa o champeta)', detail: 'Una hora y media, en grupo', perPerson: 50_000, part: 'noche', when: () => true },
+  { id: 'cena-especial', title: 'Una cena especial', detail: 'En un restaurante reconocido del destino', perPerson: 150_000, part: 'noche', when: () => true },
+  { id: 'clase-cocina', title: 'Clase de cocina colombiana', detail: 'Mercado, cocina y almuerzo', perPerson: 140_000, part: 'mañana', when: () => true },
+  { id: 'spa', title: 'Una tarde de spa o masajes', detail: 'Masaje de una hora', perPerson: 150_000, part: 'tarde', when: () => true },
 ]
 
-/** Quita un plan extra (botón "Quitar" del cuadro de presupuesto). */
+// ---------------------------------------------------------------------------
+// Planes extra dentro del itinerario: en qué día y momento van
+// ---------------------------------------------------------------------------
+
+export const EXTRA_PART_ORDER: ExtraPart[] = ['todo el día', 'mañana', 'tarde', 'noche']
+
+/** Planes extra de un día, en orden: todo el día, mañana, tarde, noche. */
+export function extrasForDay(itinerary: Pick<Itinerary, 'budgetPlan'>, dayIndex: number): BudgetExtra[] {
+  return (itinerary.budgetPlan?.extras ?? [])
+    .filter((e) => e.dayIndex === dayIndex)
+    .sort((a, b) => EXTRA_PART_ORDER.indexOf(a.part ?? 'tarde') - EXTRA_PART_ORDER.indexOf(b.part ?? 'tarde'))
+}
+
+const hasFullDay = (itinerary: Itinerary, dayIndex: number, exceptId?: string) =>
+  extrasForDay(itinerary, dayIndex).some((e) => e.part === 'todo el día' && e.id !== exceptId)
+
+/**
+ * Días donde puede ir un plan: los de todo el día, en un día en la ciudad sin
+ * otro plan de todo el día; los de mañana o tarde, en un día que no sea de
+ * excursión ni esté ocupado todo el día; los de noche, en cualquier día.
+ */
+export function daysForExtra(itinerary: Itinerary, part: ExtraPart, exceptId?: string): number[] {
+  const all = itinerary.days.map((_, i) => i)
+  const ok = all.filter((i) => {
+    const day = itinerary.days[i]
+    if (part === 'noche') return true
+    return !day.excursion && !hasFullDay(itinerary, i, exceptId)
+  })
+  return ok.length > 0 ? ok : all
+}
+
+/** El mejor día para un plan: el que tiene menos paradas y menos planes extra. */
+export function bestDayForExtra(itinerary: Itinerary, part: ExtraPart): number {
+  // Un plan de todo el día cuenta como un día lleno, así los demás se reparten en otros días.
+  const load = (i: number) =>
+    itinerary.days[i].places.length +
+    extrasForDay(itinerary, i).reduce((sum, e) => sum + (e.part === 'todo el día' ? 10 : 2), 0)
+  return daysForExtra(itinerary, part).reduce((best, i) => (load(i) < load(best) ? i : best))
+}
+
+/**
+ * Pone el plan en un día. Si es de todo el día, las paradas de ese día se
+ * apartan (quedan guardadas en el plan y vuelven si se mueve o se quita).
+ */
+export function placeExtra(itinerary: Itinerary, extra: BudgetExtra, dayIndex: number): Itinerary {
+  const plan = itinerary.budgetPlan ?? { lodging: 'estandar', food: 'estandar', transport: 'estandar', adjustments: [], fits: true }
+  let next = itinerary
+  let placed: BudgetExtra = { ...extra, dayIndex, replaced: undefined }
+  if (extra.part === 'todo el día' && itinerary.days[dayIndex].places.length > 0) {
+    placed = { ...placed, replaced: itinerary.days[dayIndex].places }
+    next = withDayPlaces(itinerary, dayIndex, [], { edited: false })
+  }
+  return { ...next, budgetPlan: { ...plan, extras: [...(plan.extras ?? []).filter((e) => e.id !== extra.id), placed] } }
+}
+
+/** Quita un plan extra; si había apartado paradas, vuelven a su día. */
 export function removeExtra(itinerary: Itinerary, id: string): Itinerary {
   const plan = itinerary.budgetPlan
-  if (!plan?.extras) return itinerary
-  return { ...itinerary, budgetPlan: { ...plan, extras: plan.extras.filter((e) => e.id !== id) } }
+  const extra = plan?.extras?.find((e) => e.id === id)
+  if (!plan || !extra) return itinerary
+  let next = itinerary
+  if (extra.replaced?.length && extra.dayIndex !== undefined) {
+    const day = itinerary.days[extra.dayIndex]
+    next = withDayPlaces(itinerary, extra.dayIndex, [...extra.replaced, ...day.places], { edited: false })
+  }
+  return { ...next, budgetPlan: { ...plan, extras: (plan.extras ?? []).filter((e) => e.id !== id) } }
+}
+
+/** Cambia un plan extra de día (devuelve las paradas que había apartado). */
+export function moveExtra(itinerary: Itinerary, id: string, dayIndex: number): Itinerary {
+  const extra = itinerary.budgetPlan?.extras?.find((e) => e.id === id)
+  if (!extra || extra.dayIndex === dayIndex) return itinerary
+  return placeExtra(removeExtra(itinerary, id), extra, dayIndex)
 }

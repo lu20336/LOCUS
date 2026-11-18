@@ -11,12 +11,12 @@
  */
 import type { jsPDF } from 'jspdf'
 import type { TripDetails } from '../../types/flow'
-import type { DayPlan, Itinerary } from '../../types/itinerary'
+import type { BudgetExtra, DayPlan, Itinerary } from '../../types/itinerary'
 import { formatCOP, formatDateRange, formatDuration } from '../format'
 import { CATEGORIES } from '../itinerary/categories'
 import { dayParts, DAY_PART_LABELS } from './editItinerary'
 import { APP_URL, icsFileName } from './exportItinerary'
-import { estimateTripBudget } from './tripBudget'
+import { estimateTripBudget, extrasForDay } from './tripBudget'
 import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm } from './itineraryView'
 
 type RGB = [number, number, number]
@@ -128,6 +128,13 @@ export async function buildItineraryPdf(it: Itinerary, trip: TripDetails, now: D
     // Que la cabecera del día y al menos su primera parada queden juntas.
     ensure(16 + (day.excursion ? 6 : 0) + Math.min(day.places.length, 2) * STOP_H)
     drawDayHeader(day)
+    const dayIndex = it.days.indexOf(day)
+    const dayExtras = extrasForDay(it, dayIndex)
+    if (day.places.length === 0 && dayExtras.length > 0) {
+      drawExtras(dayExtras)
+      y += 5
+      continue
+    }
     if (day.places.length === 0) {
       font(10, 'italic')
       color(MUTED)
@@ -169,7 +176,27 @@ export async function buildItineraryPdf(it: Itinerary, trip: TripDetails, now: D
       doc.textWithLink(pdfSafe('Ver la ruta del día en Google Maps'), MARGIN + 13, y + 1, { url: route })
       y += 6
     }
+    if (dayExtras.length > 0) drawExtras(dayExtras)
     y += 5
+  }
+
+  /** Planes extra del día: etiqueta con el momento y el nombre, sin número de parada. */
+  function drawExtras(extras: BudgetExtra[]) {
+    for (const extra of extras) {
+      ensure(12)
+      doc.setFillColor(...LIGHT)
+      doc.roundedRect(MARGIN + 4, y - 1, CONTENT_W - 8, 10, 2, 2, 'F')
+      font(7.5, 'bold')
+      color(TEAL)
+      text(`PLAN EXTRA · ${(extra.part ?? 'tarde').toUpperCase()}`, MARGIN + 8, y + 2.6)
+      font(10.5, 'bold')
+      color(INK)
+      text(extra.title, MARGIN + 8, y + 7, { maxWidth: CONTENT_W - 50 })
+      font(9)
+      color(MUTED)
+      text(formatCOP(extra.amount), PAGE_W - MARGIN - 8, y + 7, { align: 'right' })
+      y += 12
+    }
   }
 
   // --- Presupuesto estimado (con los planes extra, uno por línea) --------------

@@ -9,6 +9,9 @@ import {
   excursionFare,
   fitItineraryToBudget,
   minimumBudget,
+  daysForExtra,
+  extrasForDay,
+  moveExtra,
   removeExtra,
   spareSuggestions,
   PRICES,
@@ -301,5 +304,68 @@ describe('planes típicos con lo que sobra', () => {
     expect(spareSuggestions(tour.result, trip).some((o) => o.title === 'Tour guiado a pie')).toBe(false)
     const back = removeExtra(tour.result, 'tour-guiado')
     expect(estimateTripBudget(back, trip).lines.some((l) => l.id === 'extras')).toBe(false)
+  })
+})
+
+describe('los planes extra van dentro del itinerario', () => {
+  const cartagena = (): Itinerary => ({
+    destination: { query: 'c', displayName: 'Cartagena de Indias, Bolívar, Colombia', lat: 10.42, lon: -75.55, radiusMeters: 8000 },
+    days: [
+      day(1, [place('Plaza'), place('Museo', 1), place('Plaza', 2)]),
+      day(2, [place('Plaza', 3)], turbaco),
+      day(3, [place('Plaza', 4)]),
+    ],
+    input: { destination: 'c', startDate: '2026-12-10', endDate: '2026-12-12', budgetCOP: 0, categories: ['cultura'] },
+    missingCategories: [],
+    stats: { optimizedKm: 1, unoptimizedKm: 1, savingPercent: 0 },
+    generatedAt: '2026-11-17T00:00:00.000Z',
+  })
+  const trip = { travelers: 2, rooms: 1, budgetCOP: 9_000_000 }
+  const add = (it: Itinerary, title: string) => spareSuggestions(it, trip, 50).find((o) => o.title === title)!
+
+  it('cada plan va en un día y momento lógicos, y el detalle lo dice', () => {
+    const it0 = cartagena()
+    const tour = add(it0, 'Tour guiado a pie')
+    // Mañana: no en el día de excursión, y en el día con menos paradas (Día 3).
+    expect(tour.result.budgetPlan?.extras?.[0]).toMatchObject({ dayIndex: 2, part: 'mañana' })
+    expect(tour.detail).toContain('Día 3, en la mañana')
+    // La noche sí puede ir en el día de excursión (el de menos paradas).
+    const cena = add(it0, 'Una cena especial')
+    expect(cena.result.budgetPlan?.extras?.[0]).toMatchObject({ part: 'noche' })
+    expect(daysForExtra(it0, 'noche')).toEqual([0, 1, 2])
+    expect(daysForExtra(it0, 'mañana')).toEqual([0, 2])
+  })
+
+  it('un plan de todo el día aparta las paradas de ese día y las devuelve al quitarlo o moverlo', () => {
+    const it0 = cartagena()
+    const lancha = add(it0, 'Paseo en lancha a las islas o playas cercanas').result
+    const extra = lancha.budgetPlan!.extras![0]
+    expect(extra).toMatchObject({ dayIndex: 2, part: 'todo el día' })
+    expect(lancha.days[2].places).toEqual([])
+    expect(extra.replaced?.map((p) => p.name)).toEqual(['Plaza 4'])
+    expect(extrasForDay(lancha, 2).map((e) => e.title)).toEqual(['Paseo en lancha a las islas o playas cercanas'])
+    // Otro plan de mañana ya no puede ir en ese día, ni un museo.
+    expect(daysForExtra(lancha, 'mañana')).toEqual([0])
+    const withMuseum: Itinerary = {
+      ...lancha,
+      days: lancha.days.map((d, i) => (i === 2 ? { ...d, alternatives: [{ ...place('Museo', 7), name: 'Museo Naval' }] } : d)),
+    }
+    expect(spareSuggestions(withMuseum, trip, 50).some((o) => o.title === 'Museo Naval')).toBe(false)
+
+    const moved = moveExtra(lancha, extra.id, 0)
+    expect(moved.days[2].places.map((p) => p.name)).toEqual(['Plaza 4'])
+    expect(moved.days[0].places).toEqual([])
+    expect(moved.budgetPlan!.extras![0].replaced?.map((p) => p.name)).toEqual(['Plaza 0', 'Museo 1', 'Plaza 2'])
+
+    const back = removeExtra(moved, extra.id)
+    expect(back.days.map((d) => d.places.length)).toEqual([3, 1, 1])
+    expect(back.budgetPlan?.extras).toEqual([])
+  })
+
+  it('"Ajustar a mi presupuesto" quita los planes extra y devuelve las paradas', () => {
+    const lancha = add(cartagena(), 'Paseo en lancha a las islas o playas cercanas').result
+    const fitted = fitItineraryToBudget(lancha, trip)
+    expect(fitted.budgetPlan?.extras ?? []).toEqual([])
+    expect(fitted.days[2].places.map((p) => p.name)).toEqual(['Plaza 4'])
   })
 })
