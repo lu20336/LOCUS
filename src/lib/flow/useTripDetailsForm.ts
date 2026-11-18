@@ -20,7 +20,8 @@ import type { DestinationMode, SuggestionSearch } from '../../types/flow'
 import type { Destination } from '../../types/itinerary'
 import { countTripDays, formatCOP, formatThousands, parseBudget, todayISO } from '../format'
 import { osmClient, suggestionDeps } from '../itinerary/browserClient'
-import { ItineraryError } from '../itinerary/errors'
+import { ItineraryError, describeItineraryError } from '../itinerary/errors'
+import { getT } from '../i18n/store'
 import { geocodeDestination } from '../itinerary/generateItinerary'
 import { resolveDestination } from './resolveDestination'
 import { minimumBudget } from './tripBudget'
@@ -119,8 +120,8 @@ export function useTripDetailsForm() {
   )
   if (mode === 'suggested' && validation.destination) {
     validation.destination = search.result
-      ? 'Elige uno de los destinos sugeridos.'
-      : 'Elige clima y actividades, y pulsa "Buscar destinos".'
+      ? getT()('vt.pickSuggested')
+      : getT()('vt.pickFilters')
   }
   // El plan se ajusta siempre al presupuesto (Paso 3), pero hay un mínimo:
   // hospedaje económico, comida sencilla y planes gratis. Si no llega, no se puede seguir.
@@ -137,9 +138,7 @@ export function useTripDetailsForm() {
   const enteredBudget = parseBudget(draft.budget)
   if (!validation.budget && minimum && enteredBudget !== null && enteredBudget < minimum) {
     validation.budget =
-      `Para ${tripDays} ${tripDays === 1 ? 'día' : 'días'} con ${travelers} ${travelers === 1 ? 'persona' : 'personas'} ` +
-      `necesitas al menos unos ${formatCOP(minimum)} (hospedaje económico, comida sencilla y planes gratis). ` +
-      'Sube el presupuesto o acorta el viaje.'
+      getT()('vt.budgetTooLow', { days: tripDays ?? 0, travelers, amount: formatCOP(minimum) })
   }
 
   const errors: TripDetailsErrors = submitted
@@ -169,11 +168,12 @@ export function useTripDetailsForm() {
   const days = !validation.startDate && !validation.endDate ? countTripDays(draft.startDate, draft.endDate) : null
   const perDay = budget && days && !validation.budget ? Math.round(budget / days) : null
   // Con destino y fechas ya se sabe el mínimo: lo mostramos antes de que escriba el presupuesto.
-  const minimumHint = minimum ? `Mínimo para este viaje: unos ${formatCOP(minimum)}` : null
+  const minimumHint = minimum ? getT()('vt.minimumHint', { amount: formatCOP(minimum) }) : null
   const budgetHint = perDay
-    ? `≈ ${formatCOP(perDay)} por día${travelers > 1 ? ` (${formatCOP(Math.round(perDay / travelers))} por persona)` : ''} · ${days} ${days === 1 ? 'día' : 'días'} de viaje` +
+    ? getT()('vt.perDay', { amount: formatCOP(perDay), days: days ?? 0 }) +
+      (travelers > 1 ? ` (${getT()('vt.perPerson', { amount: formatCOP(Math.round(perDay / travelers)) })})` : '') +
       (minimumHint ? ` · ${minimumHint.toLowerCase()}` : '')
-    : (minimumHint ?? 'Incluye alojamiento, comida y actividades.')
+    : (minimumHint ?? getT()('vt.includes'))
 
   async function submit() {
     if (isGeocoding) return
@@ -218,8 +218,7 @@ export function useTripDetailsForm() {
           loadTowns: suggestionDeps.loadTowns,
         })
       } catch (error) {
-        const message =
-          error instanceof ItineraryError ? error.message : 'Ocurrió un error inesperado. Inténtalo de nuevo.'
+        const message = describeItineraryError(error)
         if (error instanceof ItineraryError && error.code === 'DESTINATION_NOT_FOUND') {
           setDestinationNotFound(message)
           focusField('destinationBar')

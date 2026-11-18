@@ -1,3 +1,5 @@
+import { getT } from '../i18n/store'
+
 /**
  * Errores del motor de itinerarios. Cada uno trae un código (para que la UI
  * decida qué hacer) y un mensaje en español listo para mostrar al usuario.
@@ -17,6 +19,20 @@ export class ItineraryError extends Error {
     this.name = 'ItineraryError'
     this.code = code
   }
+}
+
+/** Mensaje para el usuario en el idioma activo (el `message` del error sigue en español para registros y pruebas). */
+export function describeItineraryError(error: unknown, fallbackKey = 'ie.unexpected'): string {
+  const t = getT()
+  if (!(error instanceof ItineraryError)) return t(fallbackKey)
+  const keys: Record<ItineraryErrorCode, string> = {
+    INVALID_INPUT: 'ie.invalid',
+    DESTINATION_NOT_FOUND: 'ie.notFound',
+    NO_PLACES: 'ie.noPlaces',
+    RATE_LIMITED: 'ie.rate',
+    SERVICE_UNAVAILABLE: 'ie.service',
+  }
+  return t(keys[error.code])
 }
 
 /** Error HTTP de un servicio externo (Nominatim u Overpass). */

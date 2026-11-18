@@ -15,6 +15,7 @@ import { survey } from './survey'
 import { hostforms } from './hostforms'
 import { misc } from './misc'
 import { destplans } from './destplans'
+import { errors } from './errors'
 import { home } from './home'
 import { host } from './host'
 import { nav } from './nav'
@@ -24,4 +25,4 @@ import { trips } from './trips'
 import { weather } from './weather'
 
 /** Catálogo fr: debe tener EXACTAMENTE las mismas claves que es (lo exige el compilador y translations.test.ts). */
-export const fr: Record<MessageKey, string> = { ...agent, ...app, ...auth, ...bookings, ...common, ...compare, ...compareProviders, ...flow, ...itinerary, ...catalog, ...places, ...profile, ...survey, ...hostforms, ...misc, ...destplans, ...home, ...host, ...nav, ...planner, ...plans, ...trips, ...weather }
+export const fr: Record<MessageKey, string> = { ...agent, ...app, ...auth, ...bookings, ...common, ...compare, ...compareProviders, ...flow, ...itinerary, ...catalog, ...places, ...profile, ...survey, ...hostforms, ...misc, ...destplans, ...errors, ...home, ...host, ...nav, ...planner, ...plans, ...trips, ...weather }

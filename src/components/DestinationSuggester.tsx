@@ -11,7 +11,7 @@ import { forwardRef, useEffect, useRef, useState } from 'react'
 import { getT } from '../lib/i18n/store'
 import { Shuffle } from 'lucide-react'
 import { CATEGORIES } from '../lib/itinerary/categories'
-import { ItineraryError } from '../lib/itinerary/errors'
+import { describeItineraryError } from '../lib/itinerary/errors'
 import { suggestionDeps } from '../lib/itinerary/browserClient'
 import {
   CLIMATES,
@@ -97,7 +97,7 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
       onChange({ ...search, result, selectedId: null })
     } catch (err) {
       if (controller.signal.aborted) return // cancelada: no es un error
-      setSearchError(err instanceof ItineraryError ? err.message : t('sug.unexpected'))
+      setSearchError(describeItineraryError(err, 'sug.unexpected'))
     } finally {
       if (abortRef.current === controller) {
         abortRef.current = null

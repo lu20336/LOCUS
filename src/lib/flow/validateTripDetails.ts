@@ -5,6 +5,7 @@
  */
 import { MAX_TRIP_DAYS } from '../itinerary/generateItinerary'
 import { countTripDays, parseBudget } from '../format'
+import { getT } from '../i18n/store'
 
 /** Valores tal como están en el formulario (texto). */
 export interface TripDetailsDraft {
@@ -23,31 +24,31 @@ export function validateTripDetails(draft: TripDetailsDraft, today: string): Tri
   const errors: TripDetailsErrors = {}
 
   if (draft.destination.trim().length < 2) {
-    errors.destination = 'Escribe a dónde quieres viajar.'
+    errors.destination = getT()('vt.needDestination')
   }
 
   // Las fechas ISO "AAAA-MM-DD" se pueden comparar como texto.
   if (!draft.startDate) {
-    errors.startDate = 'Elige la fecha de salida.'
+    errors.startDate = getT()('vt.needStart')
   } else if (draft.startDate < today) {
-    errors.startDate = 'La fecha de salida no puede estar en el pasado.'
+    errors.startDate = getT()('vt.startPast')
   }
 
   if (!draft.endDate) {
-    errors.endDate = 'Elige la fecha de regreso.'
+    errors.endDate = getT()('vt.needEnd')
   } else if (draft.startDate && draft.endDate < draft.startDate) {
-    errors.endDate = 'La fecha de regreso debe ser igual o posterior a la de salida.'
+    errors.endDate = getT()('vt.endBeforeStart')
   } else if (draft.startDate && countTripDays(draft.startDate, draft.endDate) > MAX_TRIP_DAYS) {
-    errors.endDate = `Por ahora planificamos viajes de hasta ${MAX_TRIP_DAYS} días.`
+    errors.endDate = getT()('vt.maxDays', { max: MAX_TRIP_DAYS })
   }
 
   const budget = parseBudget(draft.budget)
   if (budget === null) {
-    errors.budget = 'Indica tu presupuesto en pesos.'
+    errors.budget = getT()('vt.needBudget')
   } else if (budget <= 0) {
-    errors.budget = 'El presupuesto debe ser mayor que cero.'
+    errors.budget = getT()('vt.budgetPositive')
   } else if (budget > MAX_BUDGET_COP) {
-    errors.budget = 'Revisa el presupuesto: parece demasiado alto.'
+    errors.budget = getT()('vt.budgetHigh')
   }
 
   return errors
