@@ -15,7 +15,7 @@
  * Funciones PURAS: no consultan nada.
  */
 import type { TripDetails } from '../../types/flow'
-import type { BudgetExtra, BudgetPlan, DayPlan, ExtraPart, Itinerary, Place, SpendStyle } from '../../types/itinerary'
+import type { BudgetExtra, BudgetPlan, DayPlan, ExtraPart, ExtraVenue, Itinerary, Place, SpendStyle } from '../../types/itinerary'
 import { isCoastal } from '../itinerary/coast'
 import { quoteStay } from '../domain/pricing'
 import { haversineKm } from '../itinerary/geo'
@@ -486,6 +486,8 @@ export function spareSuggestions(
   itinerary: Itinerary,
   trip: Pick<TripDetails, 'travelers' | 'rooms' | 'budgetCOP'>,
   limit = 12,
+  /** Lugares de todas las actividades cerca del destino, para darle un lugar real a cada plan extra. */
+  pool: readonly Place[] = [],
 ): SpareOption[] {
   const before = estimateTripBudget(itinerary, trip)
   if (before.difference <= 0) return []
@@ -558,14 +560,21 @@ export function spareSuggestions(
   for (const extra of EXTRA_PLANS) {
     if (added.has(extra.id) || !extra.when(itinerary, name)) continue
     const perPerson = roundTo(extra.perPerson * LEVEL_FACTOR[level], 5000)
-    const entry: BudgetExtra = { id: extra.id, title: extra.title, amount: perPerson * people, part: extra.part }
+    const venue = pickVenue(extra.id, itinerary, pool)
+    const entry: BudgetExtra = {
+      id: extra.id,
+      title: extra.title,
+      amount: perPerson * people,
+      part: extra.part,
+      ...(venue ? { venue } : {}),
+    }
     const dayIndex = bestDayForExtra(itinerary, extra.part)
     consider({
       id: `extra:${extra.id}`,
       type: 'extra',
       title: extra.title,
       detail:
-        `${extra.detail} · unos ${money(perPerson)} por persona · ` +
+        `${extra.detail}${venue ? ` · ${venueText(venue)}` : ''} · unos ${money(perPerson)} por persona · ` +
         `Día ${dayIndex + 1}, ${extra.part === 'todo el día' ? 'todo el día' : `en la ${extra.part}`}`,
       result: placeExtra(itinerary, entry, dayIndex),
     })
@@ -695,4 +704,76 @@ export function moveExtra(itinerary: Itinerary, id: string, dayIndex: number): I
   const extra = itinerary.budgetPlan?.extras?.find((e) => e.id === id)
   if (!extra || extra.dayIndex === dayIndex) return itinerary
   return placeExtra(removeExtra(itinerary, id), extra, dayIndex)
+}
+
+// ---------------------------------------------------------------------------
+// Lugar real de cada plan extra
+// ---------------------------------------------------------------------------
+
+interface VenueRule {
+  role: string
+  /** Qué lugares sirven. */
+  accepts: (place: Place) => boolean
+  /** Cuáles se prefieren entre los que sirven (ej. una salsoteca para la clase de baile). */
+  prefers?: (place: Place) => boolean
+}
+
+const VENUE_RULES: Record<string, VenueRule> = {
+  'cena-especial': { role: 'Lugar', accepts: (p) => p.category === 'gastronomia' && p.kind === 'Restaurante' },
+  'clase-baile': {
+    role: 'Lugar',
+    accepts: (p) => p.category === 'vidaNocturna',
+    prefers: (p) => /salsa|salsoteca|champeta|baile|son\b|rumba/i.test(p.name) || p.kind === 'Discoteca',
+  },
+  'tour-guiado': {
+    role: 'Punto de encuentro',
+    accepts: (p) => p.category === 'cultura' && /plaza|parque|catedral|centro hist|torre del reloj/i.test(p.name),
+    prefers: (p) => /plaza/i.test(p.name),
+  },
+  'club-playa': {
+    role: 'Lugar',
+    accepts: (p) => p.category === 'playa',
+    prefers: (p) => p.kind === 'Club de playa',
+  },
+  'lancha-islas': {
+    role: 'Sale de',
+    // Solo muelles, marinas o terminales: un "desembarcadero" suele estar en la isla (ahí se llega, no se sale).
+    accepts: (p) => /\bmuelle|\bmarina\b|terminal mar/i.test(p.name),
+  },
+  'clase-cocina': { role: 'Lugar', accepts: (p) => p.kind === 'Mercado' || /mercado/i.test(p.name) },
+  spa: { role: 'Lugar', accepts: (p) => /\bspa\b|masaj/i.test(p.name) },
+  'finca-cafetera': { role: 'Lugar', accepts: (p) => /\bfinca\b|hacienda/i.test(p.name) },
+}
+
+/** "Lugar: Restaurante X" / "Punto de encuentro: Plaza de Bolívar". */
+export function venueText(venue: Pick<ExtraVenue, 'role' | 'name'>): string {
+  return `${venue.role}: ${venue.name}`
+}
+
+/**
+ * El lugar real para un plan extra: de los lugares cerca del destino (y los
+ * del propio itinerario), uno que sirva para ese plan y no sea ya una parada.
+ * Se prefieren los que encajan mejor, luego los mejor valorados y luego los más
+ * cercanos al centro. null si no hay ninguno (no se inventa).
+ */
+export function pickVenue(extraId: string, itinerary: Itinerary, pool: readonly Place[] = []): ExtraVenue | null {
+  const rule = VENUE_RULES[extraId]
+  if (!rule) return null
+  const inPlan = new Set(itinerary.days.flatMap((d) => d.places.map((p) => p.id)))
+  const takenByExtras = new Set((itinerary.budgetPlan?.extras ?? []).map((e) => e.venue?.id).filter(Boolean))
+  const seen = new Set<string>()
+  const candidates = [...pool, ...itinerary.days.flatMap((d) => d.alternatives ?? [])].filter((p) => {
+    if (seen.has(p.id) || inPlan.has(p.id) || takenByExtras.has(p.id)) return false
+    seen.add(p.id)
+    return rule.accepts(p)
+  })
+  const prefers = rule.prefers ?? (() => false)
+  const center = itinerary.destination
+  const best = candidates.sort(
+    (a, b) =>
+      Number(prefers(b)) - Number(prefers(a)) ||
+      b.score - a.score ||
+      haversineKm(center, a) - haversineKm(center, b),
+  )[0]
+  return best ? { id: best.id, name: best.name, kind: best.kind, lat: best.lat, lon: best.lon, role: rule.role } : null
 }

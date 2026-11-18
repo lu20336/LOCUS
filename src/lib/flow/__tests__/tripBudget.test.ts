@@ -12,6 +12,7 @@ import {
   daysForExtra,
   extrasForDay,
   moveExtra,
+  pickVenue,
   removeExtra,
   spareSuggestions,
   PRICES,
@@ -367,5 +368,56 @@ describe('los planes extra van dentro del itinerario', () => {
     const fitted = fitItineraryToBudget(lancha, trip)
     expect(fitted.budgetPlan?.extras ?? []).toEqual([])
     expect(fitted.days[2].places.map((p) => p.name)).toEqual(['Plaza 4'])
+  })
+})
+
+describe('cada plan extra con su lugar real', () => {
+  const at = (name: string, kind: string, category: Place['category'], score = 1, i = 0): Place => ({
+    id: `node/${name.length}${i}${score}`,
+    name,
+    kind,
+    category,
+    score,
+    lat: 10.42 + i * 0.01,
+    lon: -75.55,
+  })
+  const it0 = (): Itinerary => ({
+    destination: { query: 'c', displayName: 'Cartagena de Indias, Bolívar, Colombia', lat: 10.42, lon: -75.55, radiusMeters: 8000 },
+    days: [day(1, [at('Plaza de la Aduana', 'Monumento', 'cultura', 5)]), day(2, [at('Museo del Oro', 'Museo', 'cultura')])],
+    input: { destination: 'c', startDate: '2026-12-10', endDate: '2026-12-11', budgetCOP: 0, categories: ['cultura'] },
+    missingCategories: [],
+    stats: { optimizedKm: 1, unoptimizedKm: 1, savingPercent: 0 },
+    generatedAt: '2026-11-17T00:00:00.000Z',
+  })
+  const pool: Place[] = [
+    at('Café del Mar', 'Bar', 'vidaNocturna', 3),
+    at('Café Havana Salsa', 'Bar', 'vidaNocturna', 1),
+    at('La Cevichería', 'Restaurante', 'gastronomia', 4),
+    at('Carmen', 'Restaurante', 'gastronomia', 6),
+    at('Juan Valdez', 'Café', 'gastronomia', 9),
+    at('Plaza de Bolívar', 'Monumento', 'cultura', 2),
+    at('Muelle de los Pegasos', 'Atracción turística', 'cultura', 2),
+    at('Plaza de la Aduana', 'Monumento', 'cultura', 5), // ya es parada del plan
+  ]
+
+  it('elige un lugar que sirva para cada plan, el mejor valorado o el que mejor encaja', () => {
+    expect(pickVenue('cena-especial', it0(), pool)).toMatchObject({ name: 'Carmen', role: 'Lugar' }) // restaurante, no café
+    expect(pickVenue('clase-baile', it0(), pool)?.name).toBe('Café Havana Salsa') // prefiere salsa aunque valga menos
+    expect(pickVenue('tour-guiado', it0(), pool)).toMatchObject({ name: 'Plaza de Bolívar', role: 'Punto de encuentro' })
+    expect(pickVenue('lancha-islas', it0(), pool)).toMatchObject({ name: 'Muelle de los Pegasos', role: 'Sale de' })
+  })
+
+  it('no inventa: sin un lugar que sirva, el plan queda sin lugar', () => {
+    expect(pickVenue('spa', it0(), pool)).toBeNull()
+    expect(pickVenue('finca-cafetera', it0(), pool)).toBeNull()
+    // El desembarcadero de la isla no sirve como salida de la lancha.
+    expect(pickVenue('lancha-islas', it0(), [at('Desembarcadero Tierra Bomba', 'Playa', 'playa')])).toBeNull()
+  })
+
+  it('la sugerencia y el plan agregado traen el lugar', () => {
+    const trip = { travelers: 2, rooms: 1, budgetCOP: 9_000_000 }
+    const cena = spareSuggestions(it0(), trip, 50, pool).find((o) => o.title === 'Una cena especial')!
+    expect(cena.detail).toContain('Lugar: Carmen')
+    expect(cena.result.budgetPlan?.extras?.[0].venue?.name).toBe('Carmen')
   })
 })

@@ -57,7 +57,7 @@ import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
 import { useItinerary } from '../lib/flow/useItinerary'
 import { countTripDays, formatCOP, formatDateRange, formatDuration } from '../lib/format'
 import { CATEGORIES } from '../lib/itinerary/categories'
-import { placesSource } from '../lib/itinerary/fallbackClient'
+import { allPlacesNear, placesSource } from '../lib/itinerary/fallbackClient'
 import { useAsync } from '../lib/useAsync'
 import { fetchForecast, type DailyForecast } from '../lib/weather/openMeteo'
 import type { TripDetails } from '../types/flow'
@@ -242,7 +242,17 @@ interface PlanViewProps {
 function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
   // Se recalcula al quitar o cambiar paradas.
   const budget = useMemo(() => estimateTripBudget(itinerary, trip), [itinerary, trip])
-  const spare = useMemo(() => spareSuggestions(itinerary, trip), [itinerary, trip])
+  // Lugares de todas las actividades cerca del destino (ya buscados desde el Paso 1):
+  // le dan un lugar real a cada plan extra (el restaurante de la cena, el muelle de la lancha…).
+  const { lat: destLat, lon: destLon, radiusMeters } = trip.destination
+  const nearby = useAsync(
+    () => allPlacesNear({ lat: destLat, lon: destLon }, radiusMeters),
+    [destLat, destLon, radiusMeters],
+  )
+  const spare = useMemo(
+    () => spareSuggestions(itinerary, trip, 12, nearby.data ?? []),
+    [itinerary, trip, nearby.data],
+  )
   const [selected, setSelected] = useState(0)
   const tabs = useRef<(HTMLButtonElement | null)[]>([])
   const totalPlaces = itinerary.days.reduce((sum, d) => sum + d.places.length, 0)
@@ -590,6 +600,23 @@ function DayExtras({
               Plan extra · {part}
             </p>
             <p className="mt-1 font-semibold text-ink">{extra.title}</p>
+            {extra.venue && (
+              <p className="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-sm text-ink">
+                <MapPin aria-hidden="true" className="size-4 shrink-0 text-teal-soft" />
+                <span>
+                  {extra.venue.role}: <strong className="font-semibold">{extra.venue.name}</strong>
+                  <span className="text-muted"> · {extra.venue.kind}</span>
+                </span>
+                <a
+                  href={osmPlaceUrl(extra.venue)}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="font-semibold text-teal-soft underline-offset-2 hover:underline"
+                >
+                  Ver en el mapa<span className="sr-only"> (se abre en otra pestaña)</span>
+                </a>
+              </p>
+            )}
             <p className="text-sm text-muted">
               {formatCOP(extra.amount)} en total
               {extra.replaced?.length

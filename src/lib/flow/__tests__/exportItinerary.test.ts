@@ -88,3 +88,24 @@ describe('planes extra en el texto y el calendario', () => {
     expect(day2).not.toContain('Día libre')
   })
 })
+
+describe('lugar del plan extra en el texto', () => {
+  it('dice dónde es', async () => {
+    const { extraLines } = await import('../exportItinerary')
+    const it = {
+      budgetPlan: {
+        extras: [
+          {
+            id: 'cena',
+            title: 'Una cena especial',
+            amount: 1,
+            dayIndex: 0,
+            part: 'noche',
+            venue: { id: 'node/1', name: 'Carmen', kind: 'Restaurante', role: 'Lugar', lat: 0, lon: 0 },
+          },
+        ],
+      },
+    }
+    expect(extraLines(it as never, 0)).toEqual(['Plan extra (noche): Una cena especial · Lugar: Carmen'])
+  })
+})

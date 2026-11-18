@@ -17,7 +17,7 @@ import { CATEGORIES } from '../itinerary/categories'
 import { dayParts, DAY_PART_LABELS } from './editItinerary'
 import { APP_URL, icsFileName } from './exportItinerary'
 import { estimateTripBudget, extrasForDay } from './tripBudget'
-import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm } from './itineraryView'
+import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm, osmPlaceUrl } from './itineraryView'
 
 type RGB = [number, number, number]
 const NAVY: RGB = [0, 51, 102]
@@ -183,9 +183,11 @@ export async function buildItineraryPdf(it: Itinerary, trip: TripDetails, now: D
   /** Planes extra del día: etiqueta con el momento y el nombre, sin número de parada. */
   function drawExtras(extras: BudgetExtra[]) {
     for (const extra of extras) {
-      ensure(12)
+      // Con lugar, la tarjeta tiene una línea más ("Lugar: Restaurante X", con enlace al mapa).
+      const height = extra.venue ? 14.5 : 10
+      ensure(height + 2)
       doc.setFillColor(...LIGHT)
-      doc.roundedRect(MARGIN + 4, y - 1, CONTENT_W - 8, 10, 2, 2, 'F')
+      doc.roundedRect(MARGIN + 4, y - 1, CONTENT_W - 8, height, 2, 2, 'F')
       font(7.5, 'bold')
       color(TEAL)
       text(`PLAN EXTRA · ${(extra.part ?? 'tarde').toUpperCase()}`, MARGIN + 8, y + 2.6)
@@ -195,7 +197,18 @@ export async function buildItineraryPdf(it: Itinerary, trip: TripDetails, now: D
       font(9)
       color(MUTED)
       text(formatCOP(extra.amount), PAGE_W - MARGIN - 8, y + 7, { align: 'right' })
-      y += 12
+      if (extra.venue) {
+        font(8.5)
+        color(MUTED)
+        const label = pdfSafe(`${extra.venue.role}: `)
+        text(label, MARGIN + 8, y + 11.4)
+        font(8.5, 'bold')
+        color(TEAL)
+        doc.textWithLink(pdfSafe(extra.venue.name), MARGIN + 8 + doc.getTextWidth(label), y + 11.4, {
+          url: osmPlaceUrl(extra.venue),
+        })
+      }
+      y += height + 2
     }
   }
 
