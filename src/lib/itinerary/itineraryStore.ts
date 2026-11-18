@@ -3,8 +3,9 @@
  * Son privados (reglas: solo el dueño). Se pueden editar: quitar o mover lugares
  * entre días y anotar notas.
  */
-import { collection, deleteDoc, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, type Firestore, type Timestamp } from 'firebase/firestore'
+import { collection, deleteDoc, doc, getDoc, getDocs, limit, query, serverTimestamp, setDoc, updateDoc, type Firestore, type Timestamp } from 'firebase/firestore'
 import type { DayPlan, Destination, Itinerary, Place } from '../../types/itinerary'
+import { copyTitle } from '../trips/tripStatus'
 
 export interface SavedItinerary {
   id: string
@@ -66,6 +67,17 @@ export async function getItinerary(db: Firestore, uid: string, id: string): Prom
   const snap = await getDoc(doc(db, 'users', uid, 'itineraries', id))
   if (!snap.exists()) return null
   return { ...(snap.data() as Payload), id: snap.id, createdAt: millis(snap.data().createdAt), updatedAt: millis(snap.data().updatedAt) }
+}
+
+/** Duplica un itinerario (nuevo documento, título "… (copia)"); devuelve el id de la copia. */
+export async function duplicateItinerary(db: Firestore, uid: string, saved: SavedItinerary): Promise<string> {
+  const { id: _id, createdAt: _createdAt, updatedAt: _updatedAt, ...payload } = saved
+  return saveNewItinerary(db, uid, { ...payload, title: copyTitle(saved.title) })
+}
+
+/** Cambia solo el nombre (las reglas exigen entre 1 y 120 caracteres). */
+export async function renameItinerary(db: Firestore, uid: string, id: string, title: string): Promise<void> {
+  await updateDoc(doc(db, 'users', uid, 'itineraries', id), { title: title.trim().slice(0, 120), updatedAt: serverTimestamp() })
 }
 
 export const removeItinerary = (db: Firestore, uid: string, id: string) => deleteDoc(doc(db, 'users', uid, 'itineraries', id))

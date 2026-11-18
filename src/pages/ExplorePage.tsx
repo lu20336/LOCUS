@@ -11,7 +11,7 @@ import { Counter } from '../components/Counter'
 import { ListingCard } from '../components/ListingCard'
 import { StaysSection } from '../components/StaysSection'
 import type { Destination } from '../types/itinerary'
-import { Alert, Button, ButtonLink, Container, EmptyState, PageHeader, Spinner, selectClassName } from '../components/ui'
+import { Alert, Button, ButtonLink, CardGridSkeleton, Container, EmptyState, PageHeader, Spinner, selectClassName } from '../components/ui'
 import { inputClassName } from '../components/FormField'
 import { fetchCalendar, fetchPublished } from '../lib/catalog/repo'
 import { availableListings, filterListings, type ListingFilters } from '../lib/catalog/search'
@@ -217,7 +217,7 @@ export default function ExplorePage() {
       </div>
 
       {all.loading ? (
-        <Spinner label="Cargando alojamientos…" />
+        <CardGridSkeleton count={4} label="Cargando alojamientos…" />
       ) : all.error ? (
         <Alert>No pudimos cargar los alojamientos. Revisa tu conexión e <button className="underline" onClick={all.reload}>inténtalo de nuevo</button>.</Alert>
       ) : (
@@ -236,7 +236,7 @@ export default function ExplorePage() {
                   : 'Prueba con otras fechas, menos filtros o un precio más alto.'}
               </EmptyState>
             ) : (
-              <ul className="grid gap-5 sm:grid-cols-2">
+              <ul className="anim-stagger grid gap-5 sm:grid-cols-2">
                 {results.map((l) => (
                   <li key={l.id} ref={(el) => { cardRefs.current[l.id] = el }}>
                     <ListingCard listing={l} selected={l.id === selectedId || l.id === hoveredId} onHover={(id) => { setHoveredId(id); }} search={search} distanceKm={origin ? haversineKm(origin, l) : undefined} />

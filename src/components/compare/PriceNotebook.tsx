@@ -146,7 +146,7 @@ export function PriceNotebook({
 
 function BestTag() {
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-teal px-2 py-0.5 text-xs font-bold text-navy">
+    <span className="inline-flex items-center gap-1 rounded-full bg-teal px-2 py-0.5 text-xs font-bold text-on-coral">
       <Trophy aria-hidden="true" className="size-3.5" /> Más barata
     </span>
   )

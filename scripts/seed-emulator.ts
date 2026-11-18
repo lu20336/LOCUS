@@ -103,6 +103,28 @@ await env.withSecurityRulesDisabled(async (ctx) => {
   await setDoc(doc(db, 'users', adminId), { displayName: 'Admin LOCUS', phone: '', onboardingCompleted: true, onboardingSkipped: false, aiPersonalization: false, isHost: false, createdAt: now, updatedAt: now })
   await setDoc(doc(db, 'hosts', hostId), { displayName: 'Ana Anfitriona (prueba)', bio: 'Anfitriona de prueba creada por el script de desarrollo.', municipality: 'Salento', languages: ['Español', 'Inglés'], rnt: '', verified: true, createdAt: now, updatedAt: now })
 
+  // Viajes y favoritos de ejemplo para la huésped (para probar "Mis viajes" sin armar uno a mano).
+  const day = (offset: number) => new Date(Date.now() + offset * 86_400_000).toISOString().slice(0, 10)
+  const spot = (id: string, name: string, kind: string, category: string, lat: number, lon: number) => ({ id, name, kind, category, lat, lon, score: 50 })
+  const trips = [
+    { id: 'seed-salento', title: 'Escapada al Eje Cafetero', place: 'Salento', display: 'Salento, Quindío, Colombia', lat: 4.6375, lon: -75.5703, from: 21, to: 23, people: 2, budget: 1800000,
+      stops: [spot('node/1', 'Mirador de Salento', 'Mirador', 'aventura', 4.6379, -75.5698), spot('node/2', 'Café de la plaza', 'Café', 'gastronomia', 4.6368, -75.5711)] },
+    { id: 'seed-cartagena', title: 'Viaje a Cartagena', place: 'Cartagena de Indias', display: 'Cartagena de Indias, Bolívar, Colombia', lat: 10.4236, lon: -75.5253, from: -40, to: -37, people: 3, budget: 3200000,
+      stops: [spot('node/3', 'Castillo San Felipe', 'Fuerte', 'cultura', 10.4226, -75.5392), spot('node/4', 'Playa Bocagrande', 'Playa', 'playa', 10.3997, -75.5565)] },
+  ]
+  for (const t of trips) {
+    const start = day(t.from)
+    const end = day(t.to)
+    await setDoc(doc(db, 'users', guestId, 'itineraries', t.id), {
+      title: t.title,
+      destination: { query: t.place, displayName: t.display, lat: t.lat, lon: t.lon, radiusMeters: 8000 },
+      startDate: start, endDate: end, budgetCOP: t.budget, travelers: t.people,
+      days: [{ day: 1, date: start, places: t.stops, distanceKm: 1.2 }, { day: 2, date: day(t.from + 1), places: [], distanceKm: 0 }],
+      notes: '', source: 'planner', createdAt: now, updatedAt: now,
+    })
+  }
+  await setDoc(doc(db, 'users', guestId, 'favorites', 'destination_medellin'), { kind: 'destination', refId: 'medellin', title: 'Medellín', subtitle: 'Ciudad de la eterna primavera', addedAt: now })
+
   for (const l of listings) {
     const photos = await Promise.all(l.photos.map((p) => photo(p, 1280, 72)))
     await setDoc(doc(db, 'listings', l.id), {

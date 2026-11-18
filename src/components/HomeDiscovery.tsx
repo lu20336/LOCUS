@@ -85,7 +85,7 @@ export function HomeDiscovery() {
       <section className="grid gap-5 md:grid-cols-3">
         {[
           { title: 'Comparador', text: 'Hoteles, vuelos y tours de varias plataformas, con tu búsqueda ya lista.', to: '/comparar', cta: 'Comparar ahora' },
-          { title: 'Itinerarios', text: 'Un plan día a día con lugares reales y la ruta más corta.', to: '/itinerarios', cta: 'Ver itinerarios' },
+          { title: 'Mis viajes', text: 'Tus itinerarios, viajes próximos e ideas guardadas en un solo lugar.', to: '/mis-viajes', cta: 'Abrir Mis viajes' },
           { title: 'Hospeda con LOCUS', text: 'Publica tu casa, finca o experiencia y recibe viajeros de toda Colombia.', to: '/anfitrion', cta: 'Quiero ser anfitrión' },
         ].map((c) => (
           <div key={c.title} className="rounded-3xl border border-line bg-surface p-6 shadow-sm">

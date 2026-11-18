@@ -203,3 +203,64 @@
     padding: 0;
   }
 }
+
+/*
+ * Movimiento de la interfaz (sin librerías: solo CSS, ligero en móviles).
+ * "Reducir movimiento" lo apaga todo (regla global de arriba); como los
+ * keyframes usan `both`, sin animación el elemento queda en su estado final.
+ */
+@keyframes locus-rise {
+  from { opacity: 0; transform: translateY(0.75rem); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes locus-fade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes locus-pop {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.35); }
+  100% { transform: scale(1); }
+}
+@keyframes locus-sheet {
+  from { transform: translateY(100%); }
+  to { transform: none; }
+}
+@keyframes locus-menu {
+  from { opacity: 0; transform: translateY(-0.4rem) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes locus-shimmer {
+  to { background-position: -200% 0; }
+}
+@keyframes locus-check {
+  from { stroke-dashoffset: 24; }
+  to { stroke-dashoffset: 0; }
+}
+
+.anim-page { animation: locus-fade 0.28s ease-out both; }
+.anim-rise { animation: locus-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+/* Aparición escalonada de tarjetas: style={{ '--i': index }} */
+.anim-stagger > * { animation: locus-rise 0.45s cubic-bezier(0.2, 0.7, 0.2, 1) both; animation-delay: calc(var(--i, 0) * 60ms); }
+.anim-pop { animation: locus-pop 0.35s ease-out; }
+.anim-menu { animation: locus-menu 0.16s ease-out both; transform-origin: top; }
+.anim-sheet { animation: locus-sheet 0.28s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.anim-check path { stroke-dasharray: 24; animation: locus-check 0.4s 0.1s ease-out both; }
+
+/* Aparece al entrar en pantalla (ver Reveal). */
+.reveal { opacity: 0; transform: translateY(1rem); transition: opacity 0.5s ease-out, transform 0.5s ease-out; }
+.reveal.is-visible { opacity: 1; transform: none; }
+
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, color-mix(in srgb, var(--surface-2) 55%, var(--surface)) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: locus-shimmer 1.4s linear infinite;
+  border-radius: 0.75rem;
+}
+
+/* Tarjetas con foto: el zoom suave de la imagen al pasar el cursor. */
+.card-photo img { transition: transform 0.5s ease; }
+.card-photo:hover img { transform: scale(1.05); }
+
+/* Espacio para la barra inferior del celular (y la muesca de iPhone). */
+.safe-bottom { padding-bottom: env(safe-area-inset-bottom); }

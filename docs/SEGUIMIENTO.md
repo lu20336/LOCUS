@@ -98,3 +98,8 @@
 - **Frontend:** bloque "Precio de referencia" en la pestaña Vuelos + fila "Referencia · puede variar" en la libreta. Apagado si no existe `VITE_PRICES_API_URL`.
 - **Estado:** probado con simulaciones (29 pruebas nuevas); **falta activar** (cuentas Travelpayouts y Cloudflare → `docs/PRECIOS_EN_VIVO.md`) y verificar el contrato con un token real.
 - Hoteles/Booking/Airbnb: sin fuente gratuita legal de precios en vivo (requiere aprobación de socio).
+
+## Rediseño de experiencia (UX/UI)
+
+- Navegación nueva (barra superior + inferior en celular + barra lateral personal), **Mis viajes**, inicio personalizado, Favoritos con fotos, **planes y suscripciones demostrativos** (`/planes`), avisos, esqueletos y animaciones. Detalle: `docs/UX_REDISENO.md`.
+- Los planes se guardan en `localStorage` (demo, sin tocar Firestore); la pasarela real se conecta en `src/lib/plans/payments.ts`.

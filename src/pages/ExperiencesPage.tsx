@@ -3,10 +3,10 @@
  * anfitriones de LOCUS; 2) para un destino, lugares y actividades de
  * referencia tomados de OpenStreetMap (no reservables).
  */
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useSearchParams } from 'react-router'
 import { ExperienceCard } from '../components/ListingCard'
-import { Alert, Badge, ButtonLink, Container, EmptyState, PageHeader, Spinner, selectClassName } from '../components/ui'
+import { Alert, Badge, ButtonLink, CardGridSkeleton, Container, EmptyState, PageHeader, selectClassName } from '../components/ui'
 import { inputClassName } from '../components/FormField'
 import { fetchPublished } from '../lib/catalog/repo'
 import { filterExperiences } from '../lib/catalog/search'
@@ -62,14 +62,14 @@ export default function ExperiencesPage() {
         ))}
       </div>
 
-      {all.loading ? <Spinner label="Cargando experiencias…" /> : all.error ? <Alert>{all.error}</Alert> : results.length === 0 ? (
+      {all.loading ? <CardGridSkeleton count={4} label="Cargando experiencias…" /> : all.error ? <Alert>{all.error}</Alert> : results.length === 0 ? (
         <EmptyState title={(all.data?.length ?? 0) === 0 ? 'Aún no hay experiencias publicadas' : 'No hay experiencias con esos filtros'} action={<ButtonLink to="/anfitrion" variant="secondary">Publica una experiencia</ButtonLink>}>
           {(all.data?.length ?? 0) === 0 ? 'Los anfitriones de LOCUS se están sumando. Mientras tanto, arma un itinerario con lugares reales de OpenStreetMap.' : 'Prueba con otras categorías o sin límite de precio.'}
           <p className="mt-3"><ButtonLink to="/" variant="ghost" className="border border-line">Armar un itinerario</ButtonLink></p>
         </EmptyState>
       ) : (
         <div className="grid gap-6 lg:grid-cols-[1fr_28rem]">
-          <ul className="grid gap-5 sm:grid-cols-2">{results.map((e) => <li key={e.id}><ExperienceCard experience={e} /></li>)}</ul>
+          <ul className="anim-stagger grid gap-5 sm:grid-cols-2">{results.map((e, i) => <li key={e.id} style={{ '--i': Math.min(i, 8) } as CSSProperties}><ExperienceCard experience={e} /></li>)}</ul>
           <div className="lg:sticky lg:top-24 lg:self-start"><LocusMap markers={markers} className="h-96 lg:h-[34rem]" ariaLabel="Mapa de experiencias" /></div>
         </div>
       )}

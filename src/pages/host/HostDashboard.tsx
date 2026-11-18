@@ -2,12 +2,14 @@
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { FormField, inputClassName } from '../../components/FormField'
-import { Alert, Badge, Button, ButtonLink, Card, Container, EmptyState, PageHeader, Spinner } from '../../components/ui'
+import { CalendarCheck, Sparkles } from 'lucide-react'
+import { Alert, Badge, Button, ButtonLink, Card, CardGridSkeleton, Container, EmptyState, PageHeader, Spinner } from '../../components/ui'
 import { useAuth } from '../../lib/auth/authContext'
 import { deleteItem, fetchBookings, fetchByHost, setItemStatus, type CatalogKind } from '../../lib/catalog/repo'
 import type { Booking, Experience, Listing, ListingStatus, StayPricing } from '../../lib/domain/types'
 import { db } from '../../lib/firebase/client'
 import { formatCOP, todayISO } from '../../lib/format'
+import { usePlans } from '../../lib/plans/planContext'
 import { useAsync } from '../../lib/useAsync'
 import { STATUS_LABELS, bookingLink, bookingWhen } from '../TripsPage'
 
@@ -136,6 +138,47 @@ function Stats({ bookings }: { bookings: Booking[] }) {
   )
 }
 
+/** Plan del anfitrión (demostrativo) y publicaciones usadas, más lo que espera su respuesta. */
+function HostStrip({ used, pending }: { used: number; pending: number }) {
+  const { planFor } = usePlans()
+  const plan = planFor('host')
+  const limit = plan.maxListings
+  return (
+    <div className="mb-8 grid gap-3 md:grid-cols-2">
+      <div className="anim-rise flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-4">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wider text-teal-soft">Tu plan de anfitrión</p>
+          <p className="font-serif text-lg font-semibold text-navy">{plan.name}</p>
+          <p className="text-sm text-muted">
+            {used} {limit === undefined ? 'publicaciones' : `de ${limit} publicaciones`} · comisión {plan.commissionPct}% (demostración)
+          </p>
+        </div>
+        <Link to="/planes" className="inline-flex items-center gap-1.5 rounded-xl border-2 border-teal px-3.5 py-2 text-sm font-bold text-ink transition hover:bg-teal/10">
+          <Sparkles aria-hidden="true" className="size-4" />
+          Ver planes
+        </Link>
+      </div>
+      {pending > 0 ? (
+        <Link to="/anfitrion/reservas" className="anim-rise flex items-center gap-3 rounded-2xl border border-coral/40 bg-coral/10 p-4 transition hover:bg-coral/15">
+          <CalendarCheck aria-hidden="true" className="size-7 shrink-0 text-coral" />
+          <span>
+            <span className="block font-semibold text-ink">{pending} {pending === 1 ? 'solicitud espera' : 'solicitudes esperan'} tu respuesta</span>
+            <span className="block text-sm text-muted">Responde pronto: los huéspedes valoran la rapidez.</span>
+          </span>
+        </Link>
+      ) : (
+        <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4">
+          <CalendarCheck aria-hidden="true" className="size-7 shrink-0 text-teal-soft" />
+          <span>
+            <span className="block font-semibold text-ink">Estás al día</span>
+            <span className="block text-sm text-muted">No tienes solicitudes pendientes.</span>
+          </span>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function HostDashboard() {
   const { user, profile, loading } = useAuth()
   const listings = useAsync(() => fetchByHost<Listing>(db, 'listings', user!.uid), [user?.uid, profile?.isHost])
@@ -150,24 +193,30 @@ export default function HostDashboard() {
     <Container className="py-8 sm:py-10">
       <PageHeader eyebrow="Modo anfitrión" title="Tu panel de anfitrión">Administra tus publicaciones y reservas. Los pagos están en modo de prueba.</PageHeader>
 
+      <p className="-mt-4 mb-6 text-sm text-muted">
+        Estás en modo anfitrión. <Link to="/mis-viajes" className="font-semibold text-teal-soft underline">Cambiar a mi espacio de viajero</Link>
+      </p>
+
       <div className="mb-8 flex flex-wrap gap-3">
         <ButtonLink to="/anfitrion/alojamientos/nuevo">+ Nuevo alojamiento</ButtonLink>
         <ButtonLink to="/anfitrion/experiencias/nueva" variant="secondary">+ Nueva experiencia</ButtonLink>
         <ButtonLink to="/anfitrion/reservas" variant="ghost" className="border border-line">Reservas y solicitudes</ButtonLink>
       </div>
 
+      <HostStrip used={(listings.data?.length ?? 0) + (experiences.data?.length ?? 0)} pending={(bookings.data ?? []).filter((b) => b.status === 'pending').length} />
+
       {bookings.data && <div className="mb-10"><Stats bookings={bookings.data} /></div>}
 
       <div className="grid gap-10 lg:grid-cols-2">
         <section aria-labelledby="my-listings">
           <h2 id="my-listings" className="mb-3 text-2xl font-semibold text-navy">Alojamientos</h2>
-          {listings.loading ? <Spinner /> : (listings.data ?? []).length === 0 ? <EmptyState title="Aún no publicas alojamientos">Crea el primero: casa, cabaña, finca, hostal…</EmptyState> : (
+          {listings.loading ? <CardGridSkeleton count={1} label="Cargando tus alojamientos" /> : (listings.data ?? []).length === 0 ? <EmptyState title="Aún no publicas alojamientos">Crea el primero: casa, cabaña, finca, hostal…</EmptyState> : (
             <ul className="flex flex-col gap-3">{listings.data!.map((l) => <ItemRow key={l.id} kind="listings" item={l} onChanged={listings.reload} />)}</ul>
           )}
         </section>
         <section aria-labelledby="my-exps">
           <h2 id="my-exps" className="mb-3 text-2xl font-semibold text-navy">Experiencias</h2>
-          {experiences.loading ? <Spinner /> : (experiences.data ?? []).length === 0 ? <EmptyState title="Aún no publicas experiencias">Tours, caminatas, clases de cocina, avistamiento de aves…</EmptyState> : (
+          {experiences.loading ? <CardGridSkeleton count={1} label="Cargando tus experiencias" /> : (experiences.data ?? []).length === 0 ? <EmptyState title="Aún no publicas experiencias">Tours, caminatas, clases de cocina, avistamiento de aves…</EmptyState> : (
             <ul className="flex flex-col gap-3">{experiences.data!.map((x) => <ItemRow key={x.id} kind="experiences" item={x} onChanged={experiences.reload} />)}</ul>
           )}
         </section>

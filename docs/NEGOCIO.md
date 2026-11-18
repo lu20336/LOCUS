@@ -85,6 +85,48 @@ Cada factor se mide en LOCUS y se mejora con producto (más clics útiles, mejor
 decenas de millones de dólares exige **audiencia a gran escala + oferta propia + reserva integrada**; el plan de abajo
 ordena esos pasos.
 
+### 4.1 Planes y suscripciones (demostrativos, implementados en `/planes`)
+
+> Los precios son **valores de prueba**; no hay cobro ni pasarela. Código: `src/lib/plans`. Referencia de mercado (Colombia, 2026):
+> Spotify Premium Individual ≈ COP 18.500/mes ([Spotify Colombia](https://www.spotify.com/co-en/premium/)) y Netflix entre
+> COP 18.900 y 50.900/mes según plan ([ayuda de Netflix](https://help.netflix.com/es/node/24926/co), [enter.co](https://www.enter.co/?p=588340)); los
+> servicios de uso frecuente rondan COP 15.000-30.000/mes, por eso Plus queda por debajo del streaming y Premium cerca del plan intermedio.
+
+**Viajero**
+
+| Plan | Mensual | Anual (≈10 meses) | Qué incluye (límites de referencia) | Para quién |
+|---|---|---|---|---|
+| **Free** | $0 | $0 | Explorar, comparar, favoritos ilimitados, 3 itinerarios guardados, IA básica (20 msj/día) | Descubrir y probar |
+| **Plus** · *Más popular* | $14.900 | $149.000 | 20 itinerarios, recomendaciones avanzadas, IA ampliada (60 msj/día), planificación avanzada, colecciones* | Viaja varias veces al año |
+| **Premium** · *Mejor valor* | $29.900 | $299.000 | Itinerarios ilimitados y colaborativos*, IA 150 msj/día, alertas* y beneficios exclusivos*, soporte prioritario | Viajero frecuente / familias |
+
+* "Próximamente": todavía no existe la función; la tabla lo marca. Prueba gratuita de 14 días (demo). Los límites **no se aplican** hoy y
+nunca limitarán reservas, seguridad ni privacidad.
+
+**Anfitrión — suscripción + comisión decreciente (modelo híbrido)**
+
+| Plan | Mensual | Anual | Publicaciones | Comisión por reserva | Extras |
+|---|---|---|---|---|---|
+| **Host Free** | $0 | $0 | 2 | 10 % | Calendario, reservas, estadísticas básicas |
+| **Host Pro** · *Recomendado* | $59.900 | $599.000 | 10 | 6 % | Estadísticas completas, reportes*, 1 destacado/mes* |
+| **Host Business** | $149.900 | $1.499.000 | Ilimitadas | 4 % | Automatizaciones*, equipo*, destacados frecuentes* |
+
+*¿Solo comisión, solo suscripción o ambas?* Solo comisión (Airbnb) alinea incentivos pero deja sin ingreso recurrente y castiga al
+anfitrión grande; solo suscripción ahuyenta al pequeño que aún no vende. **Recomendación:** híbrido: gratis para empezar con comisión
+alta, y quien más vende paga una cuota fija a cambio de comisión menor y herramientas. Así se capta oferta (cold start) y se construye ingreso recurrente.
+
+**Promociones (demo, códigos reales en la pantalla de planes):** `LANZAMIENTO30` (30 % los 3 primeros meses), `AMIGO20` (referidos: 20 % el
+primer mes + código personal `LOCUS-XXXXXX`), `FUNDADOR` (Host Pro gratis 3 meses). Pendiente: cupones de un solo uso, límite de canjes y
+destacados patrocinados (solo cuando exista un modelo comercial real, siempre etiquetados).
+
+**Qué falta para habilitar pagos reales**
+
+1. Sociedad (SAS), RUT, cuenta bancaria y facturación electrónica (⚖️).
+2. Proveedor de pagos colombiano (Wompi, PayU o Mercado Pago) con servidor propio (Cloudflare Worker o Cloud Function): cobros recurrentes, webhooks y conciliación.
+3. Implementar `SubscriptionGateway` (`src/lib/plans/payments.ts`) con ese proveedor y mover el estado de la suscripción de `localStorage` a Firestore (reglas: solo el servidor escribe el plan).
+4. Términos de suscripción, retracto/cancelación (Ley 1480) y política de reembolsos revisados por abogado.
+5. Aplicar los límites de cada plan en el servidor (hoy son solo informativos).
+
 ## 5. Marketing y crecimiento
 
 **Marca:** cálida, clara, colombiana; teal = confianza, coral = acción. Tono: "tu compañero de viaje", sin jerga.
