@@ -25,6 +25,7 @@ export function BudgetCard({
   onAddSpare,
   extras = [],
   onRemoveExtra,
+  onShowDay,
 }: {
   estimate: TripBudget
   travelers: number
@@ -38,10 +39,13 @@ export function BudgetCard({
   /** Planes extra ya agregados, con su botón para quitarlos. */
   extras?: BudgetExtra[]
   onRemoveExtra?: (extra: BudgetExtra) => void
+  /** Lleva al día donde quedó lo agregado. */
+  onShowDay?: (dayIndex: number) => void
 }) {
   const { t } = useI18n()
   const { status, total, budget, difference, lines, tips, level } = estimate
   const [showSpare, setShowSpare] = useState(false)
+  const [justAdded, setJustAdded] = useState<{ title: string; dayIndex?: number } | null>(null)
   const s = STATUS[status]
   // Barra: qué parte del presupuesto se usa (llena y en rojo si se pasa).
   const used = budget > 0 ? Math.min(100, Math.round((total / budget) * 100)) : 100
@@ -173,7 +177,10 @@ export function BudgetCard({
                     <span className="shrink-0 text-sm font-semibold text-ink tabular-nums">+{formatCOP(option.cost)}</span>
                     <button
                       type="button"
-                      onClick={() => onAddSpare(option)}
+                      onClick={() => {
+                        onAddSpare(option)
+                        setJustAdded({ title: option.title, dayIndex: option.dayIndex })
+                      }}
                       aria-label={t('bc.addAria', { title: option.title, cost: formatCOP(option.cost) })}
                       className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-navy px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-navy/90"
                     >
@@ -184,6 +191,30 @@ export function BudgetCard({
                 ))}
               </ul>
             </div>
+          )}
+        </div>
+      )}
+
+      {/*
+        Confirmación junto a la lista: lo agregado puede quedar en otro día del
+        que se está viendo, y sin este aviso parecía que el botón lo borraba.
+      */}
+      {justAdded && (
+        <div role="status" className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl border border-teal/40 bg-teal/10 px-4 py-3 text-sm text-ink">
+          <CircleCheck aria-hidden="true" className="size-4 shrink-0 text-teal-soft" />
+          <span className="min-w-0 flex-1">
+            {justAdded.dayIndex === undefined
+              ? t('it.done', { title: justAdded.title.toLowerCase() })
+              : t('bc.addedTo', { title: justAdded.title, day: justAdded.dayIndex + 1 })}
+          </span>
+          {justAdded.dayIndex !== undefined && onShowDay && (
+            <button
+              type="button"
+              onClick={() => onShowDay(justAdded.dayIndex!)}
+              className="font-semibold text-teal-soft underline-offset-2 hover:underline"
+            >
+              {t('bc.seeDay', { day: justAdded.dayIndex + 1 })}
+            </button>
           )}
         </div>
       )}

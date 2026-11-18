@@ -324,6 +324,29 @@ function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
         </p>
       )}
 
+      {/* Viaje largo o destino pequeño: qué se sumó para que ningún día quedara vacío. */}
+      {itinerary.completed && (
+        <div className="flex items-start gap-2 rounded-2xl bg-teal/10 p-4 text-sm text-ink">
+          <Sparkles aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-teal-soft" />
+          <div>
+            <p className="font-semibold">{t('it.completedTitle')}</p>
+            <ul className="mt-1 list-disc pl-5">
+              {itinerary.completed.extraCategories.length > 0 && (
+                <li>
+                  {t('it.completedExtra', {
+                    list: itinerary.completed.extraCategories.map((c) => CATEGORIES[c].label.toLowerCase()).join(', '),
+                  })}
+                </li>
+              )}
+              {itinerary.completed.widenedKm && <li>{t('it.completedWider', { km: itinerary.completed.widenedKm })}</li>}
+              {itinerary.completed.autoExcursions.length > 0 && (
+                <li>{t('it.completedTrips', { list: itinerary.completed.autoExcursions.join(', ') })}</li>
+              )}
+            </ul>
+          </div>
+        </div>
+      )}
+
       {/* Pestañas de días */}
       <div>
         <div role="tablist" aria-label={t('it.tripDays')} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
@@ -391,12 +414,20 @@ function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
         spare={spare}
         extras={itinerary.budgetPlan?.extras ?? []}
         onRemoveExtra={(extra) => onEdit(removeExtra(itinerary, extra.id), t('it.removedExtra', { title: extra.title }))}
-        onAddSpare={(option) =>
+        onAddSpare={(option) => {
           onEdit(
             option.result,
             option.type === 'mejora' ? t('it.done', { title: option.title.toLowerCase() }) : t('it.added', { title: option.title }),
           )
-        }
+          // Se muestra el día donde quedó (si no, parecía que el botón no hacía nada).
+          if (option.dayIndex !== undefined) setSelected(option.dayIndex)
+        }}
+        onShowDay={(dayIndex) => {
+          setSelected(dayIndex)
+          const tab = tabs.current[dayIndex]
+          tab?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+          tab?.focus({ preventScroll: true })
+        }}
         // Si ni con todos los ajustes alcanza, volver a ajustar no sirve: se muestran las ideas.
         onFit={itinerary.budgetPlan?.fits === false ? undefined : () => onEdit(fitItineraryToBudget(itinerary, trip), t('it.fitted'))}
       />

@@ -12,14 +12,19 @@ import type { CategoryId, Excursion, Itinerary } from '../../types/itinerary'
 import { placesClient } from '../itinerary/fallbackClient'
 import { ItineraryError, describeItineraryError } from '../itinerary/errors'
 import { planItinerary } from '../itinerary/generateItinerary'
+import { townsWithinKm } from './nearbyTowns'
 import { PACES } from './pace'
+
+/** Pueblos para excursiones automáticas: en línea recta, unos 80 km son cerca de 2 h por carretera. */
+const AUTO_EXCURSION_MAX_KM = 80
 
 export type ItineraryState =
   | { status: 'loading' }
   | { status: 'done'; itinerary: Itinerary }
   | { status: 'error'; message: string; code?: ItineraryError['code'] }
 
-const CACHE_PREFIX = 'locus:itinerary:v2:'
+// v3: los planes ya no dejan días vacíos (ver completePlaces); los guardados antes se regeneran.
+const CACHE_PREFIX = 'locus:itinerary:v3:'
 
 /** Identifica un plan: mismo destino, fechas, actividades, ritmo y excursiones → mismo itinerario. */
 export function itineraryKey(
@@ -101,7 +106,12 @@ export function useItinerary(
           categories: [...categories],
         },
         placesClient,
-        { activitiesPerDay: PACES[pace].placesPerDay, excursions },
+        {
+          activitiesPerDay: PACES[pace].placesPerDay,
+          excursions,
+          // Si los lugares no alcanzan para todos los días, el motor suma excursiones a estos pueblos.
+          autoExcursions: townsWithinKm(trip.destination, AUTO_EXCURSION_MAX_KM),
+        },
       ),
     ).then(
       (itinerary) => {

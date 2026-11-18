@@ -19,13 +19,15 @@ export function ActivityCards({ onChoose }: { onChoose: (category: CategoryId) =
   const renderCard = (category: CategoryId, copy = '') => {
     const Icon = CATEGORY_ICONS[category]
     return (
-      <li key={`${category}${copy}`} className="shrink-0">
+      // El ancho va en el <li>: la tarjeta usa w-full, y si el ancho fuera de la
+      // tarjeta, en el celular ganaba w-full sobre w-44 y la tarjeta medía 0 px.
+      <li key={`${category}${copy}`} className="w-44 shrink-0 sm:w-52 lg:w-56">
         <PhotoCard
           image={ACTIVITY_IMAGES[category]}
           title={CATEGORIES[category].label}
           srPrefix={t('pc.searchFor')}
           titleClassName="text-xl"
-          className="h-60 w-44 sm:h-64 sm:w-52 lg:h-72 lg:w-56"
+          className="h-60 sm:h-64 lg:h-72"
           badge={
             <span aria-hidden="true" className="grid size-10 place-items-center rounded-full bg-surface/90 shadow-sm backdrop-blur">
               <Icon className="size-5 text-teal-soft" strokeWidth={2} />
