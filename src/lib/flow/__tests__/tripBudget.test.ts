@@ -9,6 +9,8 @@ import {
   excursionFare,
   fitItineraryToBudget,
   minimumBudget,
+  removeExtra,
+  spareSuggestions,
   PRICES,
   stayFit,
 } from '../tripBudget'
@@ -205,5 +207,99 @@ describe('el plan siempre cumple el presupuesto', () => {
     const minimum = minimumBudget('Cartagena de Indias, Bolívar, Colombia', { days: 1, travelers: 1, rooms: 1 })
     const oneDay = full([{ ...day(1, [place('Museo')]), alternatives: [free('Plaza')] }])
     expect(fitItineraryToBudget(oneDay, { travelers: 1, rooms: 1, budgetCOP: minimum }).budgetPlan?.fits).toBe(true)
+  })
+})
+
+describe('"Sugerir planes con lo que me sobra"', () => {
+  const free = (name: string): Place => ({ ...place('Plaza'), id: name, name })
+  const bar = (name: string): Place => ({ ...place('Bar'), id: name, name, category: 'vidaNocturna' })
+  const full = (days: DayPlan[]): Itinerary => ({
+    ...plan('Medellín, Antioquia, Colombia', days),
+    input: { destination: 'Medellín', startDate: '2026-12-10', endDate: '2026-12-12', budgetCOP: 0, categories: ['cultura'] },
+    missingCategories: [],
+    stats: { optimizedKm: 5, unoptimizedKm: 6, savingPercent: 10 },
+    generatedAt: '2026-11-17T00:00:00.000Z',
+  })
+  const museo = { ...place('Museo', 9), id: 'museo-antioquia', name: 'Museo de Antioquia', score: 9 }
+  const parque = { ...place('Parque temático', 8), id: 'parque-explora', name: 'Parque Explora', score: 5 }
+  const sample = () =>
+    full([
+      { ...day(1, [free('Plaza Botero'), bar('Bar A')]), alternatives: [museo, parque, bar('Bar B'), free('Plaza Cisneros')] },
+      { ...day(2, [free('Pueblito Paisa')]), alternatives: [museo] },
+    ])
+  const trip = (budgetCOP: number) => ({ travelers: 2, rooms: 1, budgetCOP })
+
+  it('ofrece paradas pagas que no entraron, con lo que sube el viaje, y todas caben', () => {
+    const it0 = sample()
+    const spare = trip(estimateTripBudget(it0, trip(0)).total + 300_000)
+    const options = spareSuggestions(it0, spare)
+    const byTitle = Object.fromEntries(options.map((o) => [o.title, o]))
+    expect(byTitle['Museo de Antioquia'].cost).toBe(2 * 20_000)
+    expect(byTitle['Parque Explora'].cost).toBe(2 * 120_000)
+    // Un segundo bar la misma noche no sube el gasto: no se ofrece como plan.
+    expect(byTitle['Bar B']).toBeUndefined()
+    // Gratis no se ofrece (ya se podría agregar sin plata).
+    expect(byTitle['Plaza Cisneros']).toBeUndefined()
+    // El museo se ofrece una vez, en el día con menos paradas.
+    expect(options.filter((o) => o.title === 'Museo de Antioquia')).toHaveLength(1)
+    expect(byTitle['Museo de Antioquia'].detail).toContain('Día 2')
+    // Agregarlo deja el plan dentro del presupuesto.
+    expect(estimateTripBudget(byTitle['Museo de Antioquia'].result, spare).difference).toBeGreaterThanOrEqual(0)
+    expect(byTitle['Museo de Antioquia'].result.days[1].places.map((p) => p.name)).toContain('Museo de Antioquia')
+    // Los más valorados primero.
+    expect(options.map((o) => o.title).indexOf('Museo de Antioquia')).toBeLessThan(
+      options.map((o) => o.title).indexOf('Parque Explora'),
+    )
+  })
+
+  it('no ofrece lo que no cabe, ni nada si no sobra', () => {
+    const it0 = sample()
+    const base = estimateTripBudget(it0, trip(0)).total
+    const titles = spareSuggestions(it0, trip(base + 100_000)).map((o) => o.title)
+    expect(titles).toContain('Museo de Antioquia')
+    expect(titles).not.toContain('Parque Explora') // $240.000: no cabe en $100.000
+    expect(titles).not.toContain('Una cena especial') // $300.000 para dos
+    // Lugares reales antes que los planes típicos.
+    expect(titles[0]).toBe('Museo de Antioquia')
+    expect(spareSuggestions(it0, trip(base))).toEqual([])
+  })
+
+  it('si el ajuste bajó el hospedaje, ofrece volver a hotel y quita el aviso del ajuste', () => {
+    const fitted = fitItineraryToBudget(sample(), trip(600_000))
+    expect(fitted.budgetPlan?.lodging).toBe('economico')
+    const hotel = spareSuggestions(fitted, trip(600_000)).find((o) => o.type === 'mejora')
+    expect(hotel?.title).toBe('Hotel en vez de hostal')
+    expect(hotel?.result.budgetPlan?.lodging).toBe('estandar')
+    expect(hotel?.result.budgetPlan?.adjustments.some((a) => a.startsWith('Hospedaje'))).toBe(false)
+  })
+})
+
+describe('planes típicos con lo que sobra', () => {
+  const it0 = (displayName: string, lat = 6.25, lon = -75.57): Itinerary => ({
+    destination: { query: displayName, displayName, lat, lon, radiusMeters: 8000 },
+    days: [day(1, [place('Plaza')]), day(2, [place('Plaza', 1)])],
+    input: { destination: displayName, startDate: '2026-12-10', endDate: '2026-12-11', budgetCOP: 0, categories: ['cultura'] },
+    missingCategories: [],
+    stats: { optimizedKm: 1, unoptimizedKm: 1, savingPercent: 0 },
+    generatedAt: '2026-11-17T00:00:00.000Z',
+  })
+  const trip = { travelers: 2, rooms: 1, budgetCOP: 5_000_000 }
+
+  it('ofrece planes según el destino: lancha en la costa, finca cafetera en el Eje', () => {
+    const titles = (it: Itinerary) => spareSuggestions(it, trip).map((o) => o.title)
+    expect(titles(it0('Cartagena de Indias, Bolívar, Colombia', 10.42, -75.55))).toContain('Paseo en lancha a las islas o playas cercanas')
+    expect(titles(it0('Medellín, Antioquia, Colombia'))).not.toContain('Paseo en lancha a las islas o playas cercanas')
+    expect(titles(it0('Salento, Quindío, Colombia', 4.64, -75.57))).toContain('Tour en una finca cafetera')
+  })
+
+  it('al agregarlo suma una línea "Planes extra" y se puede quitar', () => {
+    const tour = spareSuggestions(it0('Medellín, Antioquia, Colombia'), trip).find((o) => o.title === 'Tour guiado a pie')!
+    expect(tour.cost).toBe(2 * 60_000)
+    const extraLine = estimateTripBudget(tour.result, trip).lines.find((l) => l.id === 'extras')
+    expect(extraLine).toMatchObject({ amount: 120_000, detail: 'Tour guiado a pie' })
+    // Ya agregado: no se vuelve a ofrecer.
+    expect(spareSuggestions(tour.result, trip).some((o) => o.title === 'Tour guiado a pie')).toBe(false)
+    const back = removeExtra(tour.result, 'tour-guiado')
+    expect(estimateTripBudget(back, trip).lines.some((l) => l.id === 'extras')).toBe(false)
   })
 })

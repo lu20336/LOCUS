@@ -7,7 +7,7 @@
  */
 import type { DayPlan, Itinerary, Place } from '../../types/itinerary'
 import { haversineKm } from '../itinerary/geo'
-import { routeDistanceKm } from '../itinerary/generateItinerary'
+import { optimizeRoute, routeDistanceKm } from '../itinerary/generateItinerary'
 
 export type DayPart = 'mañana' | 'tarde' | 'noche'
 
@@ -82,4 +82,20 @@ export function replaceStop(itinerary: Itinerary, dayIndex: number, placeIndex: 
   if (!next) return null
   const places = itinerary.days[dayIndex].places.map((p, i) => (i === placeIndex ? next : p))
   return withDay(itinerary, dayIndex, places)
+}
+
+/**
+ * Agrega una parada a un día (ej. un plan pagado con lo que sobra del
+ * presupuesto). Las paradas de día se reordenan por la ruta más corta y la
+ * vida nocturna queda al final, como en el plan original.
+ */
+export function addStop(itinerary: Itinerary, dayIndex: number, place: Place): Itinerary {
+  const day = itinerary.days[dayIndex]
+  const all = [...day.places, place]
+  const daytime = optimizeRoute(
+    day.excursion ?? itinerary.destination,
+    all.filter((p) => p.category !== 'vidaNocturna'),
+  )
+  const night = all.filter((p) => p.category === 'vidaNocturna')
+  return withDayPlaces(itinerary, dayIndex, [...daytime, ...night])
 }

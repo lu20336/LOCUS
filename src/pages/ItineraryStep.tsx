@@ -41,7 +41,7 @@ import { findFeaturedNear } from '../lib/featuredDestinations'
 import { alternativeFor, dayParts, DAY_PART_LABELS, removeStop, replaceStop, type DayPart } from '../lib/flow/editItinerary'
 import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm, osmPlaceUrl } from '../lib/flow/itineraryView'
 import { PACES } from '../lib/flow/pace'
-import { estimateTripBudget, fitItineraryToBudget } from '../lib/flow/tripBudget'
+import { estimateTripBudget, fitItineraryToBudget, removeExtra, spareSuggestions } from '../lib/flow/tripBudget'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
 import { useItinerary } from '../lib/flow/useItinerary'
@@ -232,6 +232,7 @@ interface PlanViewProps {
 function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
   // Se recalcula al quitar o cambiar paradas.
   const budget = useMemo(() => estimateTripBudget(itinerary, trip), [itinerary, trip])
+  const spare = useMemo(() => spareSuggestions(itinerary, trip), [itinerary, trip])
   const [selected, setSelected] = useState(0)
   const tabs = useRef<(HTMLButtonElement | null)[]>([])
   const totalPlaces = itinerary.days.reduce((sum, d) => sum + d.places.length, 0)
@@ -366,6 +367,15 @@ function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
         estimate={budget}
         travelers={trip.travelers}
         adjustments={itinerary.budgetPlan?.adjustments ?? []}
+        spare={spare}
+        extras={itinerary.budgetPlan?.extras ?? []}
+        onRemoveExtra={(extra) => onEdit(removeExtra(itinerary, extra.id), `Quitamos ${extra.title}.`)}
+        onAddSpare={(option) =>
+          onEdit(
+            option.result,
+            option.type === 'mejora' ? `Listo: ${option.title.toLowerCase()}.` : `Agregamos «${option.title}» a tu viaje.`,
+          )
+        }
         // Si ni con todos los ajustes alcanza, volver a ajustar no sirve: se muestran las ideas.
         onFit={itinerary.budgetPlan?.fits === false ? undefined : () => onEdit(fitItineraryToBudget(itinerary, trip), 'Ajustamos el plan a tu presupuesto.')}
       />

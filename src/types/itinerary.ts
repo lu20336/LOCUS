@@ -114,4 +114,13 @@ export interface BudgetPlan {
   adjustments: string[]
   /** false si ni con todos los ajustes alcanza. */
   fits: boolean
+  /** Planes extra agregados con lo que sobraba (tour, cena especial, paseo en lancha…). */
+  extras?: BudgetExtra[]
+}
+
+export interface BudgetExtra {
+  id: string
+  title: string
+  /** Costo para todos los viajeros (COP). */
+  amount: number
 }
