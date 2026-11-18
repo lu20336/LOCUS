@@ -8,6 +8,7 @@
  * búsqueda en curso (progreso, errores) es local.
  */
 import { forwardRef, useEffect, useRef, useState } from 'react'
+import { getT } from '../lib/i18n/store'
 import { Shuffle } from 'lucide-react'
 import { CATEGORIES } from '../lib/itinerary/categories'
 import { ItineraryError } from '../lib/itinerary/errors'
@@ -20,6 +21,7 @@ import {
   type SuggestionProgress,
 } from '../lib/itinerary/suggestDestination'
 import { formatThousands } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import type { SuggestionSearch } from '../types/flow'
 import { ChipGroup } from './ChipGroup'
 import { CATEGORY_OPTIONS, CLIMATE_OPTIONS } from './choiceOptions'
@@ -31,10 +33,22 @@ interface DestinationSuggesterProps {
   error?: string
 }
 
+/** El motor emite el progreso con texto en español; aquí se reconstruye según la fase y el idioma activo. */
+function localizeProgress(p: SuggestionProgress, climateId: string | null | undefined): SuggestionProgress {
+  const t = getT()
+  if (p.phase === 'towns') return { ...p, message: t('sug.phase.towns') }
+  if (p.phase === 'elevation') {
+    const climate = climateId && climateId in CLIMATES ? CLIMATES[climateId as keyof typeof CLIMATES].label.toLowerCase() : ''
+    return { ...p, message: t('sug.phase.elevation', { climate }) }
+  }
+  return { ...p, message: t('sug.phase.activities', { town: p.town, current: p.current, total: p.total }) }
+}
+
 export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSuggesterProps>(function DestinationSuggester(
   { search, onChange, error },
   ref,
 ) {
+  const { t } = useI18n()
   const [progress, setProgress] = useState<SuggestionProgress | null>(null)
   const [searchError, setSearchError] = useState<string | null>(null)
   const [filterErrors, setFilterErrors] = useState<{ climate?: string; categories?: string }>({})
@@ -60,8 +74,8 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
 
   async function runSearch() {
     const errors = {
-      climate: search.climate ? undefined : 'Elige un clima.',
-      categories: search.categories.length ? undefined : 'Elige al menos una actividad.',
+      climate: search.climate ? undefined : t('sug.needClimate'),
+      categories: search.categories.length ? undefined : t('sug.needCategory'),
     }
     setFilterErrors(errors)
     if (!search.climate || errors.categories) return
@@ -70,20 +84,20 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
     const controller = new AbortController()
     abortRef.current = controller
     setSearchError(null)
-    setProgress({ phase: 'towns', message: 'Buscando pueblos y ciudades de Colombia…' })
+    setProgress({ phase: 'towns', message: t('sug.phase.towns') })
 
     try {
       const result = await suggestDestination(search.climate, search.categories, suggestionDeps, {
         signal: controller.signal,
         onProgress: (p) => {
-          if (!controller.signal.aborted) setProgress(p)
+          if (!controller.signal.aborted) setProgress(localizeProgress(p, search.climate))
         },
       })
       if (controller.signal.aborted) return
       onChange({ ...search, result, selectedId: null })
     } catch (err) {
       if (controller.signal.aborted) return // cancelada: no es un error
-      setSearchError(err instanceof ItineraryError ? err.message : 'Ocurrió un error inesperado. Inténtalo de nuevo.')
+      setSearchError(err instanceof ItineraryError ? err.message : t('sug.unexpected'))
     } finally {
       if (abortRef.current === controller) {
         abortRef.current = null
@@ -115,7 +129,7 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
     <div ref={ref} tabIndex={-1} className="flex flex-col gap-6 focus:outline-none">
       <ChipGroup
         name="climate"
-        legend="¿Qué clima prefieres?"
+        legend={t('sug.pickClimate')}
         type="radio"
         options={CLIMATE_OPTIONS}
         value={search.climate ? [search.climate] : []}
@@ -124,7 +138,7 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
       />
       <ChipGroup
         name="suggestCategories"
-        legend="¿Qué te gustaría hacer?"
+        legend={t('sug.whatToDo')}
         type="checkbox"
         options={CATEGORY_OPTIONS}
         value={search.categories}
@@ -139,7 +153,7 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
           onClick={runSearch}
           className="self-start rounded-xl border-2 border-teal px-5 py-2.5 font-semibold text-ink transition-colors hover:bg-teal/10"
         >
-          {result ? 'Buscar de nuevo' : 'Buscar destinos'}
+          {result ? t('sug.searchAgain') : t('sug.search')}
         </button>
       )}
 
@@ -147,12 +161,12 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
       {isSearching && (
         <div className="rounded-2xl border border-line bg-surface-2 p-4">
           <p role="status" aria-live="polite" className="text-sm font-medium text-ink">
-            Buscando destinos… unos segundos
+            {t('sug.searching')}
           </p>
           <p className="mt-0.5 text-xs text-muted">{progress.message}</p>
           <div
             role="progressbar"
-            aria-label="Progreso de la búsqueda"
+            aria-label={t('sug.progressLabel')}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={percent}
@@ -165,7 +179,7 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
           </div>
           <div className="mt-3 flex justify-end">
             <button type="button" onClick={cancelSearch} className="text-sm font-semibold text-ink underline underline-offset-2">
-              Cancelar
+              {t('common.cancel')}
             </button>
           </div>
         </div>
@@ -180,26 +194,24 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
       {result && !isSearching && (
         <fieldset ref={resultsRef} aria-describedby={error ? 'suggestion-error' : undefined} className="scroll-mt-24">
           <legend className="text-sm font-semibold text-ink">
-            Destinos sugeridos · clima {CLIMATES[result.climate].label.toLowerCase()}
+            {t('sug.resultsLegend', { climate: CLIMATES[result.climate].label.toLowerCase() })}
           </legend>
 
           {result.activitiesUnverified ? (
             <p role="status" className="mt-2 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-ink">
-              Estos destinos cumplen el clima que buscas, pero no alcanzamos a confirmar las actividades: el servicio
-              de mapas está ocupado. Puedes elegir uno o pulsar «Buscar de nuevo».
+              {t('sug.unverified')}
             </p>
           ) : (
             result.climateOnly && (
               <p role="status" className="mt-2 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-ink">
-                Estos cumplen el clima que buscas, aunque no encontramos todas las actividades confirmadas cerca.
+                {t('sug.climateOnly')}
               </p>
             )
           )}
 
           {result.restarted && (
             <p role="status" className="mt-2 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-ink">
-              Ya viste todos los destinos con estos filtros; volvimos a los primeros. Prueba otro clima u otras
-              actividades para ver lugares nuevos.
+              {t('sug.restarted')}
             </p>
           )}
 
@@ -222,8 +234,7 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
                   <span className="flex flex-col gap-1">
                     <span className="font-serif text-xl font-semibold text-navy">{candidate.name}</span>
                     <span className="text-sm text-muted">
-                      {formatThousands(Math.round(suggestion.elevation))} m de altitud · clima{' '}
-                      {CLIMATES[suggestion.climate].label.toLowerCase()}
+                      {t('sug.elevation', { meters: formatThousands(Math.round(suggestion.elevation)), climate: CLIMATES[suggestion.climate].label.toLowerCase() })}
                     </span>
                     {suggestion.activitiesChecked ? (
                       <span className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-sm">
@@ -232,13 +243,13 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
                           return (
                             <span key={category} className={found ? 'font-semibold text-ink' : 'text-muted line-through'}>
                               {CATEGORIES[category].label} <span aria-hidden="true">{found ? '✓' : '✗'}</span>
-                              <span className="sr-only">{found ? ': sí hay cerca' : ': no encontrado cerca'}</span>
+                              <span className="sr-only">{found ? t('sug.nearYes') : t('sug.nearNo')}</span>
                             </span>
                           )
                         })}
                       </span>
                     ) : (
-                      <span className="mt-1 text-sm text-muted">No alcanzamos a confirmar sus actividades.</span>
+                      <span className="mt-1 text-sm text-muted">{t('sug.notConfirmed')}</span>
                     )}
                   </span>
                 </label>
@@ -254,7 +265,7 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
                 className="inline-flex items-center gap-2 rounded-xl border-2 border-teal px-5 py-2.5 font-semibold text-ink transition-colors hover:bg-teal/10"
               >
                 <Shuffle aria-hidden="true" className="size-4" />
-                Sugiéreme otros destinos
+                {t('sug.others')}
               </button>
             </div>
           )}

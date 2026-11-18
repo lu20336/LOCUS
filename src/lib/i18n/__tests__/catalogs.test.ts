@@ -64,7 +64,8 @@ describe('catálogos de idiomas', () => {
       for (const [key, value] of Object.entries(dict)) {
         if (!value.includes('plural')) continue
         for (const count of [0, 1, 2, 5, 21]) {
-          const out = interpolate(value, { count, days: count, used: count, limit: count, hours: count }, lc)
+          const vars = Object.fromEntries(variables(value).map((v) => [v, count]))
+          const out = interpolate(value, vars, lc)
           expect(out, `${key} (${count})`).not.toMatch(/[{}]|plural/)
         }
       }

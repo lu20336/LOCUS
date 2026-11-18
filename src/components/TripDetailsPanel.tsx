@@ -6,6 +6,7 @@
 import { BedDouble, Users } from 'lucide-react'
 import { MAX_TRAVELERS, type TripDetailsForm } from '../lib/flow/useTripDetailsForm'
 import { formatThousands, parseBudget } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { Counter } from './Counter'
 import { DestinationSuggester } from './DestinationSuggester'
 import { FormField, inputClassName } from './FormField'
@@ -22,35 +23,36 @@ interface TripDetailsPanelProps {
 }
 
 export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, suggesterKey }: TripDetailsPanelProps) {
+  const { t } = useI18n()
   const { mode, draft, update, errors, registerField, isGeocoding, today } = form
 
   return (
     <div className="rounded-3xl border border-line bg-surface p-6 shadow-sm sm:p-8">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-teal-soft">Paso 1 de 4</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-teal-soft">{t('flow.step1')}</p>
           <h2 className="mt-1 text-2xl font-semibold text-navy sm:text-3xl">
-            {mode === 'suggested' ? 'Te sugerimos un destino' : 'Cuéntanos tu viaje'}
+            {mode === 'suggested' ? t('flow.suggestTitle') : t('flow.tellTitle')}
           </h2>
           <p className="mt-1 text-sm text-muted">
             {mode === 'suggested' ? (
               <>
-                Elige el clima y lo que te gusta hacer.{' '}
+                {t('flow.pickClimateAndLikes')}{' '}
                 <button type="button" onClick={onUseSearchBar} className="font-semibold text-ink underline underline-offset-2">
-                  Ya sé a dónde ir
+                  {t('flow.alreadyKnow')}
                 </button>
               </>
             ) : (
               <>
                 {draft.destination.trim() ? (
                   <>
-                    Destino: <strong className="text-ink">{draft.destination.trim()}</strong>.{' '}
+                    {t('flow.destinationLabel')} <strong className="text-ink">{draft.destination.trim()}</strong>.{' '}
                   </>
                 ) : (
-                  'Escribe tu destino en la barra de arriba. '
+                  t('flow.writeDestination')
                 )}
                 <button type="button" onClick={onSuggest} className="font-semibold text-ink underline underline-offset-2">
-                  ¿No sabes a dónde ir?
+                  {t('flow.dontKnow')}
                 </button>
               </>
             )}
@@ -59,7 +61,7 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
         <button
           type="button"
           onClick={onClose}
-          aria-label="Cerrar formulario"
+          aria-label={t('flow.closeForm')}
           className="grid size-10 shrink-0 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"
         >
           <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
@@ -80,8 +82,8 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
         )}
 
         <fieldset className="grid min-w-0 gap-6 sm:grid-cols-2">
-          <legend className="sr-only">Fechas del viaje</legend>
-          <FormField id="startDate" label="Fecha de salida" error={errors.startDate}>
+          <legend className="sr-only">{t('flow.tripDates')}</legend>
+          <FormField id="startDate" label={t('flow.startDate')} error={errors.startDate}>
             {(control) => (
               <input
                 {...control}
@@ -96,7 +98,7 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
               />
             )}
           </FormField>
-          <FormField id="endDate" label="Fecha de regreso" error={errors.endDate}>
+          <FormField id="endDate" label={t('flow.endDate')} error={errors.endDate}>
             {(control) => (
               <input
                 {...control}
@@ -114,11 +116,11 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
         </fieldset>
 
         <fieldset className="grid gap-6 sm:grid-cols-2">
-          <legend className="sr-only">Viajeros y habitaciones</legend>
+          <legend className="sr-only">{t('flow.travelersRooms')}</legend>
           <Counter
-            label="Viajeros"
+            label={t('flow.travelers')}
             icon={Users}
-            unit="un viajero"
+            unit={t('flow.oneTraveler')}
             value={form.travelers}
             min={1}
             max={MAX_TRAVELERS}
@@ -126,19 +128,19 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
             disabled={isGeocoding}
           />
           <Counter
-            label="Habitaciones"
+            label={t('flow.rooms')}
             icon={BedDouble}
-            unit="una habitación"
+            unit={t('flow.oneRoom')}
             value={form.rooms}
             min={1}
             max={form.travelers}
             onChange={form.setRooms}
-            hint={form.rooms === form.travelers && form.travelers > 1 ? 'Una habitación por viajero.' : undefined}
+            hint={form.rooms === form.travelers && form.travelers > 1 ? t('flow.roomPerTraveler') : undefined}
             disabled={isGeocoding}
           />
         </fieldset>
 
-        <FormField id="budget" label="Presupuesto total" error={errors.budget} hint={form.budgetHint}>
+        <FormField id="budget" label={t('flow.budget')} error={errors.budget} hint={form.budgetHint}>
           {(control) => (
             <div className="relative">
               <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center text-muted" aria-hidden="true">
@@ -185,18 +187,18 @@ export function TripDetailsPanel({ form, onClose, onUseSearchBar, onSuggest, sug
                 <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" />
                 <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
               </svg>
-              Buscando tu destino…
+              {t('flow.searchingDestination')}
             </>
           ) : (
             <>
-              Continuar
+              {t('common.continue')}
               <span aria-hidden="true">→</span>
             </>
           )}
         </button>
         {/* Anuncia el estado de carga a lectores de pantalla. */}
         <p className="sr-only" aria-live="polite">
-          {isGeocoding ? 'Buscando tu destino en el mapa…' : ''}
+          {isGeocoding ? t('flow.searchingDestinationMap') : ''}
         </p>
       </div>
     </div>

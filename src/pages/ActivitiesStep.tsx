@@ -29,19 +29,16 @@ import { prefetchPlaces } from '../lib/itinerary/fallbackClient'
 import { EXCURSION_RADIUS_METERS } from '../lib/itinerary/generateItinerary'
 import type { PlacePhoto } from '../lib/itinerary/placePhotos'
 import { countTripDays, formatDateRange } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { CATEGORIES, CATEGORY_IDS } from '../lib/itinerary/categories'
 import type { TripPace } from '../types/flow'
 import type { CategoryId } from '../types/itinerary'
 
 const ERROR_ID = 'activities-error'
 
-/** "1 lugar cerca", "54 lugares cerca", "Más de 100 lugares cerca". */
-function placesNearLabel(count: number): string {
-  if (count >= 100) return 'Más de 100 lugares cerca'
-  return `${count} ${count === 1 ? 'lugar' : 'lugares'} cerca`
-}
-
 export function ActivitiesStep() {
+  const { t } = useI18n()
+  const placesNearLabel = (count: number) => (count >= 100 ? t('act.placesNearMany') : t('act.placesNear', { count }))
   const {
     trip,
     categories: savedCategories,
@@ -146,7 +143,7 @@ export function ActivitiesStep() {
         )}
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/30 to-black/5" />
         <div className="w-full p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/85">Tu viaje a</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/85">{t('act.yourTripTo')}</p>
           <p className="mt-1 font-serif text-3xl font-semibold leading-tight text-white">{placeName}</p>
           <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/90">
             {region.length > 0 && (
@@ -157,11 +154,11 @@ export function ActivitiesStep() {
             )}
             <li className="flex items-center gap-1.5">
               <CalendarDays aria-hidden="true" className="size-4" />
-              {formatDateRange(trip.startDate, trip.endDate)} · {days} {days === 1 ? 'día' : 'días'}
+              {formatDateRange(trip.startDate, trip.endDate)} · {t('act.daysCount', { count: days })}
             </li>
             <li className="flex items-center gap-1.5">
               <Users aria-hidden="true" className="size-4" />
-              {trip.travelers} {trip.travelers === 1 ? 'viajero' : 'viajeros'}
+              {t('act.travelersCount', { count: trip.travelers })}
             </li>
           </ul>
         </div>
@@ -169,35 +166,34 @@ export function ActivitiesStep() {
 
       <form onSubmit={handleSubmit} noValidate className="flex flex-col gap-8 p-6 sm:p-8">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wider text-teal-soft">Paso 2 de 4</p>
+          <p className="text-sm font-semibold uppercase tracking-wider text-teal-soft">{t('flow.step2')}</p>
           <h1 id="step-title" tabIndex={-1} className="mt-1 text-3xl font-semibold text-navy focus:outline-none sm:text-4xl">
-            ¿Qué te gustaría hacer en {placeName}?
+            {t('act.title', { place: placeName })}
           </h1>
           <p className="mt-2 text-muted">
-            Elige una o varias actividades. Buscaremos lugares reales de cada una y armaremos la ruta que menos te
-            haga recorrer.
+            {t('act.intro')}
           </p>
           {fromSuggestion && (
             <p className="mt-3 inline-flex items-center gap-2 rounded-xl bg-teal/10 px-3 py-2 text-sm text-ink">
               <Check aria-hidden="true" className="size-4 shrink-0 text-teal-soft" />
-              Marcamos las que elegiste al buscar tu destino. Puedes cambiarlas.
+              {t('act.fromSearch')}
             </p>
           )}
           <p className="mt-3 text-sm text-muted" aria-live="polite">
-            {availability.status === 'loading' && 'Revisando qué hay cerca de tu destino…'}
+            {availability.status === 'loading' && t('act.checking')}
             {availability.status === 'ready' &&
               (nothingFound
-                ? `No encontramos actividades registradas a menos de 7 km de ${placeName}; elige las que prefieras y buscaremos un poco más lejos.`
-                : `Te mostramos lo que encontramos a menos de 7 km de ${placeName}.`)}
+                ? t('act.nothingFound', { place: placeName })
+                : t('act.showing', { place: placeName }))}
             {availability.status === 'unknown' &&
-              'No pudimos revisar qué hay cerca de tu destino; elige las actividades que prefieras.'}
+              t('act.unknown')}
           </p>
         </div>
 
         {/* Actividades */}
         <fieldset aria-describedby={showError ? ERROR_ID : undefined} aria-invalid={showError}>
           <legend className="text-lg font-semibold text-ink">
-            Actividades <span className="text-sm font-normal text-muted">· puedes elegir varias</span>
+            {t('act.activities')} <span className="text-sm font-normal text-muted">{t('act.pickMany')}</span>
           </legend>
           <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3">
             {availability.status === 'loading'
@@ -232,7 +228,7 @@ export function ActivitiesStep() {
                             alt=""
                             loading="lazy"
                             decoding="async"
-                            title={photo.credit ? `Foto: ${photo.credit.author} · ${photo.credit.license} · Wikimedia Commons` : undefined}
+                            title={photo.credit ? t('act.photo', { author: photo.credit.author, license: photo.credit.license }) : undefined}
                             className="size-full object-cover transition-transform duration-500 group-hover:scale-105"
                           />
                         ) : (
@@ -275,13 +271,13 @@ export function ActivitiesStep() {
           </div>
           {showError && (
             <p id={ERROR_ID} role="alert" className="mt-3 text-sm font-medium text-danger">
-              Elige al menos una actividad para armar tu itinerario.
+              {t('act.needOne')}
             </p>
           )}
           {/* Crédito de las fotos automáticas (lo exigen sus licencias libres). */}
           {credits.length > 0 && (
             <details className="mt-3 text-xs text-muted">
-              <summary className="cursor-pointer select-none hover:text-ink">Fotos de Wikimedia Commons · ver autores</summary>
+              <summary className="cursor-pointer select-none hover:text-ink">{t('act.photoCredits')}</summary>
               <ul className="mt-2 flex flex-col gap-1">
                 {credits.map((credit) => (
                   <li key={credit.url}>
@@ -299,7 +295,7 @@ export function ActivitiesStep() {
 
         {/* Ritmo */}
         <fieldset>
-          <legend className="text-lg font-semibold text-ink">Ritmo del viaje</legend>
+          <legend className="text-lg font-semibold text-ink">{t('act.pace')}</legend>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             {PACE_IDS.map((id) => (
               <label
@@ -315,7 +311,7 @@ export function ActivitiesStep() {
                   className="sr-only"
                 />
                 <span className="font-semibold text-ink">{PACES[id].label}</span>
-                <span className="text-sm text-ink">{PACES[id].placesPerDay} lugares por día</span>
+                <span className="text-sm text-ink">{t('act.placesPerDay', { count: PACES[id].placesPerDay })}</span>
                 <span className="text-xs text-muted">{PACES[id].description}</span>
               </label>
             ))}
@@ -341,10 +337,10 @@ export function ActivitiesStep() {
         <div className="flex flex-col gap-4 border-t border-line pt-6 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm text-muted" aria-live="polite">
             {chosen.length === 0
-              ? 'Aún no has elegido actividades.'
+              ? t('act.noneYet')
               : chosenTowns.length > 0
-                ? `Tu plan: ${days - chosenTowns.length} ${days - chosenTowns.length === 1 ? 'día' : 'días'} en ${placeName} y ${chosenTowns.length} de excursión (${chosenTowns.map((t) => t.name).join(', ')}).`
-                : `Tu plan: ${days} ${days === 1 ? 'día' : 'días'} × ${placesPerDay} lugares ≈ ${days * placesPerDay} lugares para visitar.`}
+                ? t('act.planWithTowns', { homeDays: days - chosenTowns.length, place: placeName, towns: chosenTowns.length, names: chosenTowns.map((town) => town.name).join(', ') })
+                : t('act.planSimple', { days, perDay: placesPerDay, total: days * placesPerDay })}
           </p>
           <div className="flex flex-col-reverse gap-3 sm:flex-row">
             <button
@@ -353,13 +349,13 @@ export function ActivitiesStep() {
               className="inline-flex items-center justify-center gap-2 rounded-xl border border-line px-5 py-3 font-semibold text-ink transition-colors hover:bg-surface-2"
             >
               <ArrowLeft aria-hidden="true" className="size-4" />
-              Editar mi viaje
+              {t('act.editTrip')}
             </button>
             <button
               type="submit"
               className="inline-flex items-center justify-center gap-2 rounded-xl bg-coral px-6 py-3 font-bold text-on-coral shadow-sm transition hover:brightness-105 active:brightness-95"
             >
-              Generar itinerario
+              {t('act.generate')}
               <ArrowRight aria-hidden="true" className="size-4" />
             </button>
           </div>

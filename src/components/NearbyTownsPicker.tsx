@@ -8,6 +8,7 @@
  */
 import { Check, MapPinned } from 'lucide-react'
 import { formatDuration } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { FALLBACK_MAX_KM, MAX_DRIVE_MINUTES } from '../lib/flow/nearbyTowns'
 import type { Excursion } from '../types/itinerary'
 
@@ -38,19 +39,20 @@ export function NearbyTownsPicker({
   onToggle,
   max,
 }: NearbyTownsPickerProps) {
-  const limit = byRoad ? `a ${formatDuration(MAX_DRIVE_MINUTES)} en carro` : `a ${FALLBACK_MAX_KM} km`
+  const { t } = useI18n()
+  const limit = byRoad ? t('town.limitDrive', { duration: formatDuration(MAX_DRIVE_MINUTES) }) : t('town.limitKm', { km: FALLBACK_MAX_KM })
   const unavailable =
     tripDays < 2
-      ? 'Necesitas un viaje de al menos 2 días.'
+      ? t('town.minTwoDays')
       : !loading && towns.length === 0
-        ? `No tenemos pueblos turísticos registrados ${limit} o menos de ${placeName}.`
+        ? t('town.none', { limit, place: placeName })
         : null
   const full = selectedIds.length >= max
 
   return (
     <fieldset>
       <legend className="text-lg font-semibold text-ink">
-        Pueblos cercanos <span className="text-sm font-normal text-muted">· opcional</span>
+        {t('town.title')} <span className="text-sm font-normal text-muted">{t('town.optional')}</span>
       </legend>
 
       <label
@@ -74,26 +76,26 @@ export function NearbyTownsPicker({
         <span>
           <span className="flex items-start gap-2 font-semibold text-ink">
             <MapPinned aria-hidden="true" className="mt-1 size-4 shrink-0 text-teal-soft" />
-            Quiero conocer pueblos cerca de {placeName}
+            {t('town.want', { place: placeName })}
           </span>
           <span id="towns-help" className="mt-0.5 block text-sm text-muted">
             {unavailable ??
-              `Pueblos ${limit} o menos. Cada uno que elijas será un día de excursión en tu itinerario.`}
+              t('town.help', { limit })}
           </span>
         </span>
       </label>
 
       {enabled && !unavailable && loading && (
         <p className="mt-4 text-sm text-muted" aria-live="polite">
-          Calculando cuánto se tarda en carro a cada pueblo…
+          {t('town.calculating')}
         </p>
       )}
       {enabled && !unavailable && !loading && (
         <div className="mt-4">
           <p className="text-sm text-muted" aria-live="polite">
             {selectedIds.length === 0
-              ? `Elige hasta ${max} ${max === 1 ? 'pueblo' : 'pueblos'} (uno por día; al menos un día se queda en ${placeName}).`
-              : `${selectedIds.length} de ${max} ${max === 1 ? 'pueblo elegido' : 'pueblos posibles'}.`}
+              ? t('town.pickUpTo', { max, place: placeName })
+              : t('town.picked', { selected: selectedIds.length, max })}
           </p>
           <ul className="mt-3 grid gap-3 sm:grid-cols-2">
             {towns.map((town) => {
@@ -125,8 +127,8 @@ export function NearbyTownsPicker({
                       <span className="mt-1 block text-xs text-muted">
                         {town.region} ·{' '}
                         {town.driveMinutes !== undefined
-                          ? `≈ ${formatDuration(town.driveMinutes)} en carro`
-                          : `a ${town.distanceKm} km en línea recta`}
+                          ? t('town.byCar', { duration: formatDuration(town.driveMinutes) })
+                          : t('town.straight', { km: town.distanceKm })}
                       </span>
                     </span>
                   </label>
@@ -136,8 +138,8 @@ export function NearbyTownsPicker({
           </ul>
           <p className="mt-3 text-xs text-muted">
             {byRoad
-              ? 'Tiempos estimados sin tráfico (Geoapify); en temporada o fines de semana pueden ser mayores.'
-              : 'Distancias en línea recta: por carretera pueden ser bastante mayores. Revisa el tiempo de viaje antes de ir.'}
+              ? t('town.noteRoad')
+              : t('town.noteStraight')}
           </p>
         </div>
       )}
