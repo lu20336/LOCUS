@@ -7,6 +7,7 @@ import { common } from './common'
 import { compare } from './compare'
 import { compareProviders } from './compareProviders'
 import { flow } from './flow'
+import { itinerary } from './itinerary'
 import { home } from './home'
 import { host } from './host'
 import { nav } from './nav'
@@ -16,4 +17,4 @@ import { trips } from './trips'
 import { weather } from './weather'
 
 /** Catálogo fr: debe tener EXACTAMENTE las mismas claves que es (lo exige el compilador y translations.test.ts). */
-export const fr: Record<MessageKey, string> = { ...agent, ...app, ...auth, ...bookings, ...common, ...compare, ...compareProviders, ...flow, ...home, ...host, ...nav, ...planner, ...plans, ...trips, ...weather }
+export const fr: Record<MessageKey, string> = { ...agent, ...app, ...auth, ...bookings, ...common, ...compare, ...compareProviders, ...flow, ...itinerary, ...home, ...host, ...nav, ...planner, ...plans, ...trips, ...weather }

@@ -59,6 +59,7 @@ import { useItinerary } from '../lib/flow/useItinerary'
 import { countTripDays, formatCOP, formatDateRange, formatDuration } from '../lib/format'
 import { CATEGORIES } from '../lib/itinerary/categories'
 import { allPlacesNear, placesSource } from '../lib/itinerary/fallbackClient'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { useAsync } from '../lib/useAsync'
 import { fetchForecast, type DailyForecast } from '../lib/weather/openMeteo'
 import type { TripDetails } from '../types/flow'
@@ -67,6 +68,7 @@ import type { BudgetExtra, DayPlan, Itinerary } from '../types/itinerary'
 const DayMap = lazy(() => import('../components/DayMap'))
 
 export function ItineraryStep() {
+  const { t } = useI18n()
   const { trip, categories, pace, excursions, goToStep, itinerary: savedItinerary, setItinerary } = useTripFlow()
   const { state, retry } = useItinerary(trip, categories, pace, excursions)
   const generated = state.status === 'done' ? state.itinerary : null
@@ -91,7 +93,7 @@ export function ItineraryStep() {
     if (!previous) return
     setHistory((h) => h.slice(0, -1))
     setItinerary(previous)
-    setNotice('Deshicimos el último cambio.')
+    setNotice(t('it.undone'))
   }
   const photos = useDestinationPhotos(trip?.destination ?? null)
   if (!trip) return null
@@ -111,26 +113,26 @@ export function ItineraryStep() {
         )}
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/30 to-black/5" />
         <div className="w-full p-6 sm:p-8">
-          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/85">Paso 3 de 4 · Itinerario</p>
+          <p className="text-xs font-semibold uppercase tracking-[0.18em] text-white/85">{t('it.step3')}</p>
           <h1
             id="step-title"
             tabIndex={-1}
             className="mt-1 font-serif text-3xl font-semibold leading-tight text-white focus:outline-none sm:text-4xl"
           >
-            Tu plan en {placeName}
+            {t('it.yourPlanIn', { place: placeName })}
           </h1>
           <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-sm text-white/90">
             <li className="flex items-center gap-1.5">
               <CalendarDays aria-hidden="true" className="size-4" />
-              {formatDateRange(trip.startDate, trip.endDate)} · {days} {days === 1 ? 'día' : 'días'}
+              {formatDateRange(trip.startDate, trip.endDate)} · {t('act.daysCount', { count: days })}
             </li>
             <li className="flex items-center gap-1.5">
               <Users aria-hidden="true" className="size-4" />
-              {trip.travelers} {trip.travelers === 1 ? 'viajero' : 'viajeros'}
+              {t('act.travelersCount', { count: trip.travelers })}
             </li>
             <li className="flex items-center gap-1.5">
               <Gauge aria-hidden="true" className="size-4" />
-              Ritmo {PACES[pace].label.toLowerCase()}
+              {t('it.pace', { pace: PACES[pace].label.toLowerCase() })}
             </li>
           </ul>
         </div>
@@ -143,7 +145,7 @@ export function ItineraryStep() {
             <div role="alert" className="rounded-2xl border border-danger/30 bg-danger/5 p-5">
               <p className="flex items-start gap-2 font-semibold text-ink">
                 <TriangleAlert aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-danger" />
-                No pudimos armar tu itinerario
+                {t('it.errorTitle')}
               </p>
               <p className="mt-1 text-sm text-muted">{state.message}</p>
               <div className="mt-4 flex flex-wrap gap-3">
@@ -154,7 +156,7 @@ export function ItineraryStep() {
                     className="inline-flex items-center gap-2 rounded-xl bg-coral px-4 py-2.5 font-semibold text-on-coral transition hover:brightness-95"
                   >
                     <RefreshCw aria-hidden="true" className="size-4" />
-                    Reintentar
+                    {t('common.retry')}
                   </button>
                 )}
                 <button
@@ -162,7 +164,7 @@ export function ItineraryStep() {
                   onClick={() => goToStep(2)}
                   className="inline-flex items-center gap-2 rounded-xl border border-line px-4 py-2.5 font-semibold text-ink transition-colors hover:bg-surface-2"
                 >
-                  Cambiar actividades
+                  {t('it.changeActivities')}
                 </button>
               </div>
             </div>
@@ -185,14 +187,14 @@ export function ItineraryStep() {
             className="inline-flex items-center gap-2 rounded-xl border border-line px-5 py-3 font-semibold text-ink transition-colors hover:bg-surface-2"
           >
             <ArrowLeft aria-hidden="true" className="size-4" />
-            Cambiar actividades
+            {t('it.changeActivities')}
           </button>
           <button
             type="button"
             onClick={() => goToStep(1)}
             className="inline-flex items-center gap-2 rounded-xl px-5 py-3 font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-ink"
           >
-            Cambiar destino o fechas
+            {t('it.changeDestination')}
           </button>
           {ready && (
             <button
@@ -200,7 +202,7 @@ export function ItineraryStep() {
               onClick={() => goToStep(4)}
               className="inline-flex items-center gap-2 rounded-xl bg-coral px-5 py-3 font-semibold text-on-coral transition hover:brightness-95 sm:ml-auto"
             >
-              Continuar: guardar y hospedaje →
+              {t('it.continue')}
             </button>
           )}
         </div>
@@ -210,11 +212,12 @@ export function ItineraryStep() {
 }
 
 function LoadingPlan({ placeName }: { placeName: string }) {
+  const { t } = useI18n()
   return (
     <div>
       <p className="flex items-center gap-2 text-sm text-muted">
         <Route aria-hidden="true" className="size-4 animate-pulse text-teal-soft" />
-        Buscando lugares reales en {placeName} (y en los pueblos que elegiste) y armando la ruta más corta…
+        {t('it.loading', { place: placeName })}
       </p>
       <div aria-hidden="true" className="mt-4 flex gap-2">
         {[0, 1, 2].map((i) => (
@@ -241,6 +244,7 @@ interface PlanViewProps {
 }
 
 function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
+  const { t } = useI18n()
   // Se recalcula al quitar o cambiar paradas.
   const budget = useMemo(() => estimateTripBudget(itinerary, trip), [itinerary, trip])
   // Lugares de todas las actividades cerca del destino (ya buscados desde el Paso 1):
@@ -286,47 +290,43 @@ function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
     <div className="flex flex-col gap-6">
       {/* Resumen */}
       <dl className={`grid grid-cols-2 gap-3 ${stats.savingPercent > 0 ? 'sm:grid-cols-4' : 'sm:grid-cols-3'}`}>
-        <Stat label="Lugares" value={String(totalPlaces)} />
+        <Stat label={t('it.places')} value={String(totalPlaces)} />
         <Stat
-          label="Recorrido total"
+          label={t('it.totalDistance')}
           value={formatDistance(stats.optimizedKm)}
-          hint={cityDays < itinerary.days.length ? `en línea recta, días en ${itinerary.destination.displayName.split(',')[0]}` : 'en línea recta'}
+          hint={cityDays < itinerary.days.length ? t('it.straightCity', { city: itinerary.destination.displayName.split(',')[0] }) : t('it.straight')}
         />
         {/* Solo si la optimización acortó el recorrido frente al orden sin optimizar. */}
         {stats.savingPercent > 0 && (
           <Stat
-            label="Ruta optimizada"
+            label={t('it.optimized')}
             value={`−${stats.savingPercent}%`}
-            hint={`${formatDistance(savedKm)} menos que sin optimizar`}
+            hint={t('it.lessThan', { distance: formatDistance(savedKm) })}
           />
         )}
         <Stat
-          label="Costo estimado"
+          label={t('it.estimatedCost')}
           value={formatCOP(budget.total)}
-          hint={`${budget.status === 'falta' ? 'se pasa de' : 'dentro de'} tu presupuesto de ${formatCOP(budget.budget)}`}
+          hint={t(budget.status === 'falta' ? 'it.overBudget' : 'it.withinBudget', { budget: formatCOP(budget.budget) })}
         />
       </dl>
 
       {placesSource.last !== 'live' && (
         <Alert tone="info">
-          El servicio principal de mapas está ocupado: armamos el plan con{' '}
-          {placesSource.last === 'static' ? 'lugares guardados' : 'una fuente alternativa'} de OpenStreetMap (menos lugares y
-          pueden no estar actualizados).
+          {t(placesSource.last === 'static' ? 'it.fallbackStatic' : 'it.fallbackAlt')}
         </Alert>
       )}
 
       {itinerary.missingCategories.length > 0 && (
         <p className="flex items-start gap-2 rounded-2xl bg-surface-2 p-4 text-sm text-ink">
           <TriangleAlert aria-hidden="true" className="mt-0.5 size-4 shrink-0 text-teal-soft" />
-          No encontramos lugares de{' '}
-          {itinerary.missingCategories.map((c) => CATEGORIES[c].label.toLowerCase()).join(' ni de ')} cerca de tu
-          destino; el plan incluye las demás actividades.
+          {t('it.missing', { categories: itinerary.missingCategories.map((c) => CATEGORIES[c].label.toLowerCase()).join(t('it.missingJoin')) })}
         </p>
       )}
 
       {/* Pestañas de días */}
       <div>
-        <div role="tablist" aria-label="Días del viaje" className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
+        <div role="tablist" aria-label={t('it.tripDays')} className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1">
           {itinerary.days.map((d, i) => {
             const active = d === day
             return (
@@ -347,7 +347,7 @@ function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
                   active ? 'border-navy bg-navy text-surface' : 'border-line text-ink hover:bg-surface-2'
                 }`}
               >
-                <span className="block text-sm font-semibold">Día {d.day}</span>
+                <span className="block text-sm font-semibold">{t('it.day', { day: d.day })}</span>
                 <span className={`block text-xs ${active ? 'text-white/80' : 'text-muted'}`}>{formatDayTab(d.date)}</span>
                 {d.excursion && (
                   <span className={`mt-0.5 flex items-center gap-1 text-xs font-semibold ${active ? 'text-white' : 'text-teal-soft'}`}>
@@ -369,7 +369,7 @@ function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
               className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 font-semibold text-teal-soft hover:bg-surface-2"
             >
               <Undo2 aria-hidden="true" className="size-4" />
-              Deshacer
+              {t('it.undo')}
             </button>
           )}
         </div>
@@ -390,20 +390,19 @@ function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
         adjustments={itinerary.budgetPlan?.adjustments ?? []}
         spare={spare}
         extras={itinerary.budgetPlan?.extras ?? []}
-        onRemoveExtra={(extra) => onEdit(removeExtra(itinerary, extra.id), `Quitamos ${extra.title}.`)}
+        onRemoveExtra={(extra) => onEdit(removeExtra(itinerary, extra.id), t('it.removedExtra', { title: extra.title }))}
         onAddSpare={(option) =>
           onEdit(
             option.result,
-            option.type === 'mejora' ? `Listo: ${option.title.toLowerCase()}.` : `Agregamos «${option.title}» a tu viaje.`,
+            option.type === 'mejora' ? t('it.done', { title: option.title.toLowerCase() }) : t('it.added', { title: option.title }),
           )
         }
         // Si ni con todos los ajustes alcanza, volver a ajustar no sirve: se muestran las ideas.
-        onFit={itinerary.budgetPlan?.fits === false ? undefined : () => onEdit(fitItineraryToBudget(itinerary, trip), 'Ajustamos el plan a tu presupuesto.')}
+        onFit={itinerary.budgetPlan?.fits === false ? undefined : () => onEdit(fitItineraryToBudget(itinerary, trip), t('it.fitted'))}
       />
 
       <p className="text-xs text-muted">
-        Lugares de OpenStreetMap. Las distancias son en línea recta; los horarios y precios de cada lugar pueden
-        cambiar, revísalos antes de ir.
+        {t('it.osmNote')}
       </p>
     </div>
   )
@@ -430,6 +429,7 @@ interface DayPanelProps {
 }
 
 function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps) {
+  const { t } = useI18n()
   const [activeId, setActiveId] = useState<string | null>(null)
   // En un día de excursión el recorrido sale del centro del pueblo.
   const start = day.excursion ?? itinerary.destination
@@ -459,14 +459,14 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
           <div>
             <p className="flex items-center gap-2 font-semibold text-ink">
               <MapPinned aria-hidden="true" className="size-4 text-teal-soft" />
-              Excursión de un día a {day.excursion.name}
+              {t('it.excursion', { name: day.excursion.name })}
             </p>
             <p className="text-sm text-ink">{day.excursion.tagline}</p>
             <p className="text-xs text-muted">
               {day.excursion.region} ·{' '}
               {day.excursion.driveMinutes !== undefined
-                ? `≈ ${formatDuration(day.excursion.driveMinutes)} en carro desde ${cityName}, sin tráfico`
-                : `a ${day.excursion.distanceKm} km de ${cityName} en línea recta`}
+                ? t('it.excursionDrive', { duration: formatDuration(day.excursion.driveMinutes), city: cityName })
+                : t('it.excursionStraight', { km: day.excursion.distanceKm, city: cityName })}
             </p>
           </div>
           <a
@@ -476,8 +476,8 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
             className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-teal-soft underline-offset-2 hover:underline"
           >
             <Navigation aria-hidden="true" className="size-4" />
-            Cómo llegar desde {cityName}
-            <span className="sr-only">(se abre en otra pestaña)</span>
+            {t('it.directionsFrom', { city: cityName })}
+            <span className="sr-only">{t('common.newTabHint')}</span>
           </a>
         </div>
       )}
@@ -485,21 +485,21 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
         <p className="flex items-start gap-3 rounded-2xl border border-dashed border-line p-5 text-ink">
           <Coffee aria-hidden="true" className="mt-0.5 size-5 shrink-0 text-teal-soft" />
           {day.excursion
-            ? `No encontramos lugares registrados en ${day.excursion.name}. Recorre su plaza y sus calles a tu ritmo.`
-            : `Día libre: no hubo más lugares para este día. Descansa o explora ${startName} a tu ritmo.`}
+            ? t('it.noPlacesTown', { name: day.excursion.name })
+            : t('it.freeDay', { name: startName })}
         </p>
       ) : (
         <>
           <div className="overflow-hidden rounded-2xl border border-line">
             <Suspense fallback={<div className="h-72 animate-pulse bg-surface-2 sm:h-96" />}>
-              <DayMap start={start} places={day.places} label={`Mapa del día ${day.day}`} activeId={activeId} />
+              <DayMap start={start} places={day.places} label={t('it.dayMap', { day: day.day })} activeId={activeId} />
             </Suspense>
           </div>
 
           <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
             <h2 className="font-sans text-lg font-semibold text-ink">
-              {day.places.length} {day.places.length === 1 ? 'parada' : 'paradas'} ·{' '}
-              <span className="font-normal text-muted">{formatDistance(day.distanceKm)} en total</span>
+              {t('common.stops', { count: day.places.length })} ·{' '}
+              <span className="font-normal text-muted">{t('it.inTotal', { distance: formatDistance(day.distanceKm) })}</span>
             </h2>
             {routeUrl && (
               <a
@@ -509,8 +509,8 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
                 className="inline-flex items-center gap-1.5 text-sm font-semibold text-teal-soft underline-offset-2 hover:underline"
               >
                 <Navigation aria-hidden="true" className="size-4" />
-                Abrir ruta en Google Maps
-                <span className="sr-only">(se abre en otra pestaña)</span>
+                {t('it.openRoute')}
+                <span className="sr-only">{t('common.newTabHint')}</span>
               </a>
             )}
           </div>
@@ -522,7 +522,7 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
               </span>
               <span className="flex items-center gap-1.5">
                 <MapPin aria-hidden="true" className="size-4" />
-                Salida desde el centro de {startName}
+                {t('it.startFrom', { name: startName })}
               </span>
             </li>
             {day.places.map((place, i) => {
@@ -531,7 +531,7 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
                 <li key={place.id} className="relative">
                   {parts[i] !== parts[i - 1] && <DayPartHeading part={parts[i]} />}
                   <p className="mb-2 ml-11 text-xs text-muted">
-                    {formatDistance(legs[i])} {i === 0 ? 'desde el centro' : 'desde la parada anterior'}
+                    {formatDistance(legs[i])} {i === 0 ? t('it.fromCenter') : t('it.fromPrevious')}
                   </p>
                   <div
                     onMouseEnter={() => setActiveId(place.id)}
@@ -548,7 +548,7 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="font-semibold text-ink">
-                        <span className="sr-only">Parada {i + 1}: </span>
+                        <span className="sr-only">{t('it.stopN', { n: i + 1 })} </span>
                         {place.name}
                       </p>
                       <p className="mt-0.5 flex items-center gap-1.5 text-sm text-muted">
@@ -563,7 +563,7 @@ function DayPanel({ day, dayIndex, itinerary, forecast, onEdit }: DayPanelProps)
                       className="shrink-0 rounded-lg p-2 text-muted transition-colors hover:bg-surface-2 hover:text-ink"
                     >
                       <ExternalLink aria-hidden="true" className="size-4" />
-                      <span className="sr-only">Ver {place.name} en OpenStreetMap (se abre en otra pestaña)</span>
+                      <span className="sr-only">{t('it.viewOnOsm', { name: place.name })} {t('common.newTabHint')}</span>
                     </a>
                   </div>
                   <StopActions itinerary={itinerary} dayIndex={dayIndex} placeIndex={i} onEdit={onEdit} />
@@ -588,8 +588,9 @@ function DayExtras({
   itinerary: Itinerary
   onEdit: (next: Itinerary, message: string) => void
 }) {
+  const { t } = useI18n()
   return (
-    <section aria-label="Planes extra de este día" className="mt-2 flex flex-col gap-3">
+    <section aria-label={t('it.extrasLabel')} className="mt-2 flex flex-col gap-3">
       {extras.map((extra) => {
         const part = extra.part ?? 'tarde'
         const Icon = part === 'todo el día' ? Sparkles : DAY_PART_ICONS[part]
@@ -598,7 +599,7 @@ function DayExtras({
           <div key={extra.id} className="rounded-2xl border border-teal/50 bg-teal/10 p-4">
             <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-teal-soft">
               <Icon aria-hidden="true" className="size-4" />
-              Plan extra · {part}
+              {t('it.extraPlan', { part: t(`it.part.${part}`) })}
             </p>
             <p className="mt-1 font-semibold text-ink">{extra.title}</p>
             {extra.venue && (
@@ -614,42 +615,40 @@ function DayExtras({
                   rel="noreferrer"
                   className="font-semibold text-teal-soft underline-offset-2 hover:underline"
                 >
-                  Ver en el mapa<span className="sr-only"> (se abre en otra pestaña)</span>
+                  {t('it.viewOnMap')}<span className="sr-only"> {t('common.newTabHint')}</span>
                 </a>
               </p>
             )}
             <p className="text-sm text-muted">
-              {formatCOP(extra.amount)} en total
-              {extra.replaced?.length
-                ? ` · ocupa el día: apartamos ${extra.replaced.length} ${extra.replaced.length === 1 ? 'parada' : 'paradas'} (vuelven si lo cambias de día o lo quitas)`
-                : ''}
-              {extra.covers ? ` · reemplaza la parada ${extra.covers.place.name} (vuelve si lo quitas)` : ''}
+              {t('it.inTotal', { distance: formatCOP(extra.amount) })}
+              {extra.replaced?.length ? ` · ${t('it.takesDay', { count: extra.replaced.length })}` : ''}
+              {extra.covers ? ` · ${t('it.replacesStop', { name: extra.covers.place.name })}` : ''}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-sm text-ink">
-                Día
+                {t('it.dayLabel')}
                 <select
                   value={extra.dayIndex}
                   onChange={(e) => {
                     const to = Number(e.target.value)
-                    onEdit(moveExtra(itinerary, extra.id, to), `Pasamos «${extra.title}» al día ${to + 1}.`)
+                    onEdit(moveExtra(itinerary, extra.id, to), t('it.movedExtra', { title: extra.title, day: to + 1 }))
                   }}
                   className="rounded-lg border border-line bg-surface px-2 py-1 text-sm text-ink"
                 >
                   {days.map((i) => (
                     <option key={i} value={i}>
-                      Día {i + 1} · {formatDayTab(itinerary.days[i].date)}
+                      {t('it.day', { day: i + 1 })} · {formatDayTab(itinerary.days[i].date)}
                     </option>
                   ))}
                 </select>
               </label>
               <button
                 type="button"
-                onClick={() => onEdit(removeExtra(itinerary, extra.id), `Quitamos «${extra.title}».`)}
+                onClick={() => onEdit(removeExtra(itinerary, extra.id), t('it.removedExtraQuoted', { title: extra.title }))}
                 className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-sm font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-ink"
               >
                 <Trash2 aria-hidden="true" className="size-4" />
-                Quitar
+                {t('it.remove')}
               </button>
             </div>
           </div>
@@ -684,28 +683,29 @@ function StopActions({
   const day = itinerary.days[dayIndex]
   const place = day.places[placeIndex]
   const next = alternativeFor(itinerary, dayIndex, placeIndex)
+  const { t } = useI18n()
   return (
     <div className="-mt-2 mb-3 ml-11 flex gap-1">
       <button
         type="button"
         disabled={!next}
-        title={next ? `Cambiar por ${next.name}` : 'No hay otro lugar de esta actividad cerca'}
+        title={next ? t('it.swapFor', { name: next.name }) : t('it.noAlternative')}
         onClick={() => {
           const changed = replaceStop(itinerary, dayIndex, placeIndex)
-          if (changed && next) onEdit(changed, `Cambiamos ${place.name} por ${next.name}.`)
+          if (changed && next) onEdit(changed, t('it.swapped', { from: place.name, to: next.name }))
         }}
         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-ink disabled:cursor-not-allowed disabled:opacity-40"
       >
         <Shuffle aria-hidden="true" className="size-3.5" />
-        Cambiar<span className="sr-only"> {place.name}</span>
+        {t('it.change')}<span className="sr-only"> {place.name}</span>
       </button>
       <button
         type="button"
-        onClick={() => onEdit(removeStop(itinerary, dayIndex, placeIndex), `Quitamos ${place.name} del día ${day.day}.`)}
+        onClick={() => onEdit(removeStop(itinerary, dayIndex, placeIndex), t('it.removedStop', { name: place.name, day: day.day }))}
         className="inline-flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-muted transition-colors hover:bg-surface-2 hover:text-danger"
       >
         <Trash aria-hidden="true" className="size-3.5" />
-        Quitar<span className="sr-only"> {place.name}</span>
+        {t('it.remove')}<span className="sr-only"> {place.name}</span>
       </button>
     </div>
   )

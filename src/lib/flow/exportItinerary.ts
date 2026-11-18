@@ -8,6 +8,7 @@
  */
 import type { DayPlan, Itinerary } from '../../types/itinerary'
 import { formatDateRange } from '../format'
+import { getT } from '../i18n/store'
 import { dayParts, DAY_PART_LABELS } from './editItinerary'
 import { formatDayTab, googleMapsRouteUrl } from './itineraryView'
 
@@ -17,7 +18,7 @@ const placeName = (it: Itinerary) => it.destination.displayName.split(',')[0]
 
 /** "Día 2 · vie 11 dic · Excursión a Turbaco" */
 export function dayTitle(day: DayPlan): string {
-  return `Día ${day.day} · ${formatDayTab(day.date)}${day.excursion ? ` · Excursión a ${day.excursion.name}` : ''}`
+  return `${getT()('it.day', { day: day.day })} · ${formatDayTab(day.date)}${day.excursion ? ` · ${getT()('it.excursionTo', { name: day.excursion.name })}` : ''}`
 }
 
 /** Paradas del día agrupadas por momento: [["Mañana", ["Museo del Oro", …]], …] */
@@ -43,7 +44,7 @@ export function stopsByPart(day: DayPlan): [string, string[]][] {
 
 export function itineraryToText(it: Itinerary): string {
   const days = it.days.length
-  const lines = [`Mi viaje a ${placeName(it)} · ${formatDateRange(it.input.startDate, it.input.endDate)} (${days} ${days === 1 ? 'día' : 'días'})`]
+  const lines = [`${getT()('it.myTripTo', { place: placeName(it) })} · ${formatDateRange(it.input.startDate, it.input.endDate)} (${getT()('act.daysCount', { count: days })})`]
   it.days.forEach((day, dayIndex) => {
     lines.push('', dayTitle(day))
     const extras = extraLines(it, dayIndex)

@@ -1,3 +1,4 @@
+import { getT } from '../i18n/store'
 /**
  * Guardar el viaje en el calendario del CELULAR, sin archivos de por medio:
  *
@@ -30,7 +31,7 @@ export function detectPlatform(
 
 /** Nombre del botón según el celular. */
 export function phoneCalendarLabel(platform: Platform): string {
-  return platform === 'ios' ? 'Calendario del iPhone' : 'Calendario del celular'
+  return getT()(platform === 'ios' ? 'it.calendarIphone' : 'it.calendarPhone')
 }
 
 export interface PhoneEvent {

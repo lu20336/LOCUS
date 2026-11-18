@@ -42,6 +42,7 @@ export function WeatherChip({ forecast }: { forecast: DailyForecast }) {
 }
 
 export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange }: Props<T>) {
+  const { t } = useI18n()
   const [selectedDay, setSelectedDay] = useState<number | 'all'>('all')
   const [selectedPlace, setSelectedPlace] = useState<string | null>(null)
   const { destination, days } = itinerary
@@ -62,7 +63,7 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
   return (
     <div className="grid gap-6 lg:grid-cols-[1fr_26rem]">
       <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Filtrar por día">
+        <div className="flex flex-wrap gap-2" role="group" aria-label={t('iv.filterByDay')}>
           {(['all', ...days.map((_, i) => i)] as (number | 'all')[]).map((d) => (
             <button
               key={String(d)}
@@ -73,7 +74,7 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
                 selectedDay === d ? 'border-teal bg-teal/15 text-ink' : 'border-line bg-surface text-ink hover:bg-surface-2'
               }`}
             >
-              {d === 'all' ? 'Todos los días' : `Día ${d + 1}`}
+              {d === 'all' ? t('iv.allDays') : t('it.day', { day: d + 1 })}
             </button>
           ))}
         </div>
@@ -83,14 +84,14 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
             <section key={day.date} aria-labelledby={`day-${day.day}`} className="rounded-3xl border border-line bg-surface p-5 shadow-sm">
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h3 id={`day-${day.day}`} className="text-xl font-semibold text-navy">
-                  Día {day.day} · {formatDate(day.date)}
+                  {t('it.day', { day: day.day })} · {formatDate(day.date)}
                 </h3>
-                <span className="text-sm text-muted">Recorrido en línea recta: {day.distanceKm} km</span>
+                <span className="text-sm text-muted">{t('iv.straightDistance', { km: day.distanceKm })}</span>
               </div>
               {forecastByDate.get(day.date) && <div className="mt-1"><WeatherChip forecast={forecastByDate.get(day.date)!} /></div>}
 
               {day.places.length === 0 ? (
-                <p className="mt-3 text-sm text-muted">Este día quedó libre: no encontramos más lugares con tus actividades.</p>
+                <p className="mt-3 text-sm text-muted">{t('iv.freeDay')}</p>
               ) : (
                 <ol className="mt-4 flex flex-col gap-2">
                   {day.places.map((p, pi) => (
@@ -114,15 +115,15 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
                         target="_blank"
                         rel="noreferrer"
                         className="shrink-0 text-xs font-semibold text-teal-soft underline underline-offset-2"
-                        aria-label={`Ver ${p.name} en OpenStreetMap`}
+                        aria-label={t('it.viewOnOsm', { name: p.name })}
                       >
-                        Ver en OSM
+                        {t('iv.viewOsm')}
                       </a>
                       {onChange && (
                         <span className="flex shrink-0 gap-1">
                           <button
                             type="button"
-                            aria-label={`Subir ${p.name}`}
+                            aria-label={t('iv.moveUp', { name: p.name })}
                             disabled={pi === 0}
                             onClick={() => onChange(movePlace(itinerary, { day: di, place: pi }, { day: di, place: pi - 1 }))}
                             className="grid size-8 place-items-center rounded-lg border border-line disabled:opacity-40"
@@ -131,7 +132,7 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
                           </button>
                           <button
                             type="button"
-                            aria-label={`Bajar ${p.name}`}
+                            aria-label={t('iv.moveDown', { name: p.name })}
                             disabled={pi === day.places.length - 1}
                             onClick={() => onChange(movePlace(itinerary, { day: di, place: pi }, { day: di, place: pi + 1 }))}
                             className="grid size-8 place-items-center rounded-lg border border-line disabled:opacity-40"
@@ -140,18 +141,18 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
                           </button>
                           {days.length > 1 && (
                             <select
-                              aria-label={`Mover ${p.name} a otro día`}
+                              aria-label={t('iv.moveToDay', { name: p.name })}
                               value=""
                               onChange={(e) => e.target.value !== '' && onChange(movePlace(itinerary, { day: di, place: pi }, { day: Number(e.target.value) }))}
                               className="h-8 rounded-lg border border-line bg-surface px-1 text-xs"
                             >
-                              <option value="">Mover a…</option>
-                              {days.map((_, i) => i !== di && <option key={i} value={i}>Día {i + 1}</option>)}
+                              <option value="">{t('iv.moveTo')}</option>
+                              {days.map((_, i) => i !== di && <option key={i} value={i}>{t('it.day', { day: i + 1 })}</option>)}
                             </select>
                           )}
                           <button
                             type="button"
-                            aria-label={`Quitar ${p.name}`}
+                            aria-label={t('iv.remove', { name: p.name })}
                             onClick={() => onChange(removePlace(itinerary, di, pi))}
                             className="grid size-8 place-items-center rounded-lg border border-danger/40 text-danger"
                           >
@@ -166,7 +167,7 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
 
               {onChange ? (
                 <label className="mt-3 block text-sm font-semibold text-ink">
-                  Notas del día
+                  {t('iv.dayNotes')}
                   <textarea
                     value={day.note ?? ''}
                     onChange={(e) => onChange(setDayNote(itinerary, di, e.target.value))}
@@ -183,7 +184,7 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
         )}
 
         <p className="text-xs text-muted">
-          Lugares de OpenStreetMap contributors. LOCUS no conoce horarios de apertura ni precios de estos lugares: confírmalos antes de ir. El pronóstico del clima es una estimación de{' '}
+          {t('iv.osmDisclaimer')}{' '}
           <a href="https://open-meteo.com" className="underline" target="_blank" rel="noreferrer">Open-Meteo</a>.
         </p>
       </div>
@@ -196,7 +197,7 @@ export function ItineraryView<T extends ViewableItinerary>({ itinerary, onChange
           center={[destination.lat, destination.lon]}
           zoom={12}
           className="h-80 lg:h-[34rem]"
-          ariaLabel={`Mapa del itinerario en ${destination.displayName.split(',')[0]}`}
+          ariaLabel={t('iv.mapLabel', { place: destination.displayName.split(',')[0] })}
         />
       </div>
     </div>
