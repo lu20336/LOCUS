@@ -129,6 +129,16 @@ export interface BudgetExtra {
   part?: ExtraPart
   /** Paradas que se apartaron del día para un plan de todo el día (vuelven si se mueve o se quita). */
   replaced?: Place[]
+  /** Lugar real donde se hace (ej. el restaurante de la cena), si se encontró uno en el mapa. */
+  venue?: ExtraVenue
+}
+
+export interface ExtraVenue extends GeoPoint {
+  id: string
+  name: string
+  kind: string
+  /** Cómo se presenta: "Lugar", "Punto de encuentro" o "Sale de". */
+  role: string
 }
 
 export type ExtraPart = 'mañana' | 'tarde' | 'noche' | 'todo el día'

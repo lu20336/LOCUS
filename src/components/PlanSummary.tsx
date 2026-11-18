@@ -8,7 +8,7 @@
  *   - En el celular, "Calendario del iPhone / del celular": lo guarda en el
  *     calendario del teléfono (Calendario de iOS, Samsung Calendar…).
  */
-import { CalendarPlus, Check, FileDown, LoaderCircle, MapPinned, Share2, Smartphone } from 'lucide-react'
+import { CalendarPlus, Check, FileDown, LoaderCircle, MapPinned, Share2, Smartphone, Sparkles } from 'lucide-react'
 import { useState } from 'react'
 import {
   dayTitle,
@@ -19,6 +19,8 @@ import {
   tripEvent,
 } from '../lib/flow/exportItinerary'
 import { downloadItineraryPdf } from '../lib/flow/itineraryPdf'
+import { osmPlaceUrl } from '../lib/flow/itineraryView'
+import { extrasForDay } from '../lib/flow/tripBudget'
 import { addToPhoneCalendar, detectPlatform, phoneCalendarLabel } from '../lib/flow/phoneCalendar'
 import { formatCOP, formatDateRange } from '../lib/format'
 import type { TripDetails } from '../types/flow'
@@ -123,29 +125,59 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
       </p>
 
       <ol className="mt-4 grid gap-4 sm:grid-cols-2 print:grid-cols-2">
-        {itinerary.days.map((day) => (
-          <li key={day.day} className="break-inside-avoid rounded-2xl bg-surface-2 p-4 print:border print:border-line">
-            <h3 className="font-sans text-base font-semibold text-ink">{dayTitle(day)}</h3>
-            {day.excursion && (
-              <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
-                <MapPinned aria-hidden="true" className="size-3.5 text-teal-soft" />
-                {day.excursion.tagline}
-              </p>
-            )}
-            {day.places.length === 0 ? (
-              <p className="mt-2 text-sm text-muted">Día libre para recorrer a tu ritmo.</p>
-            ) : (
-              <dl className="mt-2 flex flex-col gap-1.5 text-sm">
-                {stopsByPart(day).map(([part, names]) => (
-                  <div key={part} className="flex gap-2">
-                    <dt className="w-16 shrink-0 font-semibold text-muted">{part}</dt>
-                    <dd className="text-ink">{names.join(' → ')}</dd>
-                  </div>
-                ))}
-              </dl>
-            )}
-          </li>
-        ))}
+        {itinerary.days.map((day, dayIndex) => {
+          const extras = extrasForDay(itinerary, dayIndex)
+          return (
+            <li key={day.day} className="break-inside-avoid rounded-2xl bg-surface-2 p-4 print:border print:border-line">
+              <h3 className="font-sans text-base font-semibold text-ink">{dayTitle(day)}</h3>
+              {day.excursion && (
+                <p className="mt-0.5 flex items-center gap-1.5 text-xs text-muted">
+                  <MapPinned aria-hidden="true" className="size-3.5 text-teal-soft" />
+                  {day.excursion.tagline}
+                </p>
+              )}
+              {day.places.length === 0 && extras.length === 0 ? (
+                <p className="mt-2 text-sm text-muted">Día libre para recorrer a tu ritmo.</p>
+              ) : (
+                <dl className="mt-2 flex flex-col gap-1.5 text-sm">
+                  {stopsByPart(day).map(([part, names]) => (
+                    <div key={part} className="flex gap-2">
+                      <dt className="w-16 shrink-0 font-semibold text-muted">{part}</dt>
+                      <dd className="text-ink">{names.join(' → ')}</dd>
+                    </div>
+                  ))}
+                </dl>
+              )}
+              {extras.length > 0 && (
+                <ul aria-label="Planes extra" className="mt-2 flex flex-col gap-1.5">
+                  {extras.map((extra) => (
+                    <li key={extra.id} className="rounded-xl border border-teal/40 bg-teal/10 px-3 py-2 text-sm">
+                      <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-teal-soft">
+                        <Sparkles aria-hidden="true" className="size-3.5" />
+                        Plan extra · {extra.part ?? 'tarde'}
+                      </p>
+                      <p className="font-semibold text-ink">{extra.title}</p>
+                      {extra.venue && (
+                        <p className="text-ink">
+                          {extra.venue.role}:{' '}
+                          <a
+                            href={osmPlaceUrl(extra.venue)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="font-semibold text-teal-soft underline-offset-2 hover:underline"
+                          >
+                            {extra.venue.name}
+                            <span className="sr-only"> (ver en el mapa, se abre en otra pestaña)</span>
+                          </a>
+                        </p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </li>
+          )
+        })}
       </ol>
       <p className="mt-4 hidden text-xs text-muted print:block">
         Lugares de OpenStreetMap. Distancias en línea recta; revisa horarios y precios antes de ir. Planeado con LOCUS ·

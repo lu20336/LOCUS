@@ -27,7 +27,7 @@ export function extraLines(it: Pick<Itinerary, 'budgetPlan'>, dayIndex: number):
   return (it.budgetPlan?.extras ?? [])
     .filter((e) => e.dayIndex === dayIndex)
     .sort((a, b) => order.indexOf(a.part ?? 'tarde') - order.indexOf(b.part ?? 'tarde'))
-    .map((e) => `Plan extra (${e.part ?? 'tarde'}): ${e.title}`)
+    .map((e) => `Plan extra (${e.part ?? 'tarde'}): ${e.title}${e.venue ? ` · ${e.venue.role}: ${e.venue.name}` : ''}`)
 }
 
 export function stopsByPart(day: DayPlan): [string, string[]][] {

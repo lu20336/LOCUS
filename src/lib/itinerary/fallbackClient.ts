@@ -86,6 +86,13 @@ const prefetching = createPrefetchingClient(livePlacesClient, CATEGORY_IDS)
 
 export const placesClient: OsmClient = { geocode: livePlacesClient.geocode, findPlaces: prefetching.findPlaces }
 
+/**
+ * Todos los lugares (de todas las actividades) alrededor de un punto. Usa la
+ * búsqueda anticipada, así que si ya se hizo en el Paso 1 llega al instante.
+ */
+export const allPlacesNear = (center: GeoPoint, radiusMeters: number): Promise<Place[]> =>
+  prefetching.prefetch(center, radiusMeters)
+
 /** Empieza a buscar en segundo plano los lugares alrededor de un punto. */
 export const prefetchPlaces = (center: GeoPoint, radiusMeters: number) => {
   prefetching.prefetch(center, radiusMeters).catch(() => {
