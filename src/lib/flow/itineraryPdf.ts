@@ -16,6 +16,7 @@ import { formatCOP, formatDateRange, formatDuration } from '../format'
 import { CATEGORIES } from '../itinerary/categories'
 import { dayParts, DAY_PART_LABELS } from './editItinerary'
 import { APP_URL, icsFileName } from './exportItinerary'
+import { estimateTripBudget } from './tripBudget'
 import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm } from './itineraryView'
 
 type RGB = [number, number, number]
@@ -91,7 +92,7 @@ export async function buildItineraryPdf(it: Itinerary, trip: TripDetails, now: D
     ['Días', String(days)],
     ['Lugares', String(places)],
     ['Recorrido', formatDistance(it.days.reduce((sum, d) => sum + d.distanceKm, 0))],
-    ['Presupuesto por día', formatCOP(Math.round(trip.budgetCOP / days))],
+    ['Costo estimado', formatCOP(estimateTripBudget(it, trip).total)],
   ]
   const gap = 4
   const boxW = (CONTENT_W - gap * (stats.length - 1)) / stats.length
