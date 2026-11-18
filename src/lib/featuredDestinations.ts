@@ -12,6 +12,7 @@
  * la portada y el Modo B nunca se contradigan.
  */
 import type { CategoryId, Destination, GeoPoint } from '../types/itinerary'
+import { getT } from './i18n/store'
 import { haversineKm } from './itinerary/geo'
 import { climateForElevation, type ClimateId } from './itinerary/suggestDestination'
 
@@ -56,7 +57,9 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     id: 'cartagena',
     name: 'Cartagena',
     elevation: 2,
-    tagline: 'Historia y mar Caribe',
+    get tagline() {
+      return getT()('dtag.cartagena')
+    },
     places: [
       { name: 'Ciudad Amurallada', image: '/images/lugares/cartagena/ciudad-amurallada.jpg' },
       { name: 'Castillo San Felipe de Barajas', image: '/images/lugares/cartagena/castillo-san-felipe-de-barajas.jpg' },
@@ -78,7 +81,9 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     id: 'medellin',
     name: 'Medellín',
     elevation: 1495,
-    tagline: 'Clima templado todo el año',
+    get tagline() {
+      return getT()('dtag.medellin')
+    },
     places: [
       { name: 'Comuna 13', image: '/images/lugares/medellin/comuna-13.jpg' },
       { name: 'Parque Arví', image: '/images/lugares/medellin/parque-arvi.jpg' },
@@ -100,7 +105,9 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     id: 'bogota',
     name: 'Bogotá',
     elevation: 2640,
-    tagline: 'Cultura en las alturas',
+    get tagline() {
+      return getT()('dtag.bogota')
+    },
     places: [
       { name: 'La Candelaria', image: '/images/lugares/bogota/la-candelaria.jpg' },
       { name: 'Museo del Oro', image: '/images/lugares/bogota/museo-del-oro.jpg' },
@@ -123,7 +130,9 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     id: 'villa-de-leyva',
     name: 'Villa de Leyva',
     elevation: 2149,
-    tagline: 'Pueblo colonial, clima frío',
+    get tagline() {
+      return getT()('dtag.villa-de-leyva')
+    },
     places: [
       { name: 'Plaza Mayor', image: '/images/lugares/villa-de-leyva/plaza-mayor.jpg' },
       { name: 'Pozos Azules', image: '/images/lugares/villa-de-leyva/pozos-azules.jpg' },
@@ -145,7 +154,9 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     id: 'san-andres',
     name: 'San Andrés',
     elevation: 5,
-    tagline: 'Isla caribeña',
+    get tagline() {
+      return getT()('dtag.san-andres')
+    },
     places: [
       { name: 'Johnny Cay', image: '/images/lugares/san-andres/johnny-cay.jpg' },
       { name: 'Acuario y Haynes Cay', image: '/images/lugares/san-andres/acuario-y-haynes-cay.jpg' },
@@ -165,7 +176,9 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     id: 'salento',
     name: 'Salento',
     elevation: 1895,
-    tagline: 'Eje cafetero y aventura',
+    get tagline() {
+      return getT()('dtag.salento')
+    },
     places: [
       { name: 'Valle de Cocora', image: '/images/lugares/salento/valle-de-cocora.jpg' },
       { name: 'Calle Real', image: '/images/lugares/salento/calle-real.jpg' },
@@ -184,7 +197,9 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     id: 'santa-marta',
     name: 'Santa Marta',
     elevation: 6,
-    tagline: 'Playa y Sierra Nevada',
+    get tagline() {
+      return getT()('dtag.santa-marta')
+    },
     places: [
       { name: 'Parque Tayrona', image: '/images/lugares/santa-marta/parque-tayrona.jpg' },
       { name: 'Minca', image: '/images/lugares/santa-marta/minca.jpg' },
@@ -207,7 +222,9 @@ export const FEATURED_DESTINATIONS: FeaturedDestination[] = [
     id: 'guatape',
     name: 'Guatapé',
     elevation: 1925,
-    tagline: 'Piedra del Peñol y embalse',
+    get tagline() {
+      return getT()('dtag.guatape')
+    },
     places: [
       { name: 'Piedra del Peñol', image: '/images/lugares/guatape/piedra-del-penol.jpg' },
       { name: 'Calle del Recuerdo', image: '/images/lugares/guatape/calle-del-recuerdo.jpg' },

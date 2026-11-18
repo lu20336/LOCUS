@@ -29,10 +29,10 @@ export function DestinationCards({ onChoose }: { onChoose: (destination: Feature
                 title={item.name}
                 subtitle={item.tagline}
                 places={item.places}
-                srPrefix="Planear un viaje a"
+                srPrefix={t('dc.planTripTo')}
                 titleClassName="text-3xl"
                 className="h-[26rem] sm:h-96"
-                badge={<PhotoChip icon={CLIMATE_ICONS[climate]}>Clima {CLIMATES[climate].label.toLowerCase()}</PhotoChip>}
+                badge={<PhotoChip icon={CLIMATE_ICONS[climate]}>{t('rec.climate', { climate: CLIMATES[climate].label.toLowerCase() })}</PhotoChip>}
                 onClick={() => onChoose(item)}
               />
             </li>

@@ -71,4 +71,8 @@ export const misc = {
   'tg.fauna': "fauna",
   'tg.selva': "selva",
   'tg.escalada': "escalada",
+  'pc.searchFor': "Buscar destinos para",
+  'dc.planTripTo': "Planejar uma viagem a",
+  'ct.remove': "Remover {unit}",
+  'ct.add': "Adicionar {unit}",
 } as const

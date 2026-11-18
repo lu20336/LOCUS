@@ -9,6 +9,7 @@
  * está aquí, se ofrecen los planes generales de tripBudget.ts (tour, cena…).
  */
 import type { ExtraPart } from '../../types/itinerary'
+import { getT } from '../i18n/store'
 
 export interface DestinationPlan {
   id: string
@@ -33,72 +34,104 @@ export const DESTINATION_PLANS: DestinationPlan[] = [
   {
     id: 'islas-rosario',
     places: ['cartagena'],
-    title: 'Islas del Rosario en lancha',
-    detail: 'Día completo con almuerzo y playa',
+    get title() {
+      return getT()('dp.islas-rosario.t')
+    },
+    get detail() {
+      return getT()('dp.islas-rosario.d')
+    },
     perPerson: 250_000,
     part: 'todo el día',
-    venue: { role: 'Sale de', name: 'Muelle de La Bodeguita', kind: 'Muelle', match: /bodeguita/i },
+    venue: { get role() { return getT()('dr.sale-de') }, name: 'Muelle de La Bodeguita', get kind() { return getT()('dk.muelle') }, match: /bodeguita/i },
   },
   {
     id: 'chiva-rumbera',
     places: ['cartagena'],
-    title: 'Chiva rumbera',
-    detail: 'Recorrido nocturno con música y una parada para bailar',
+    get title() {
+      return getT()('dp.chiva-rumbera.t')
+    },
+    get detail() {
+      return getT()('dp.chiva-rumbera.d')
+    },
     perPerson: 70_000,
     part: 'noche',
-    venue: { role: 'Punto de encuentro', name: 'Torre del Reloj', kind: 'Monumento', match: /torre del reloj/i },
+    venue: { get role() { return getT()('dr.punto-de-encuentro') }, name: 'Torre del Reloj', get kind() { return getT()('dk.monumento') }, match: /torre del reloj/i },
   },
   {
     id: 'getsemani-grafiti',
     places: ['cartagena'],
-    title: 'Tour de grafitis y cultura por Getsemaní',
-    detail: 'Unas 2 horas con guía local',
+    get title() {
+      return getT()('dp.getsemani-grafiti.t')
+    },
+    get detail() {
+      return getT()('dp.getsemani-grafiti.d')
+    },
     perPerson: 60_000,
     part: 'tarde',
-    venue: { role: 'Punto de encuentro', name: 'Plaza de la Trinidad', kind: 'Plaza', match: /plaza de la trinidad/i },
+    venue: { get role() { return getT()('dr.punto-de-encuentro') }, name: 'Plaza de la Trinidad', get kind() { return getT()('dk.plaza') }, match: /plaza de la trinidad/i },
   },
   {
     id: 'volcan-totumo',
     places: ['cartagena'],
-    title: 'Baño de lodo en el Volcán del Totumo',
-    detail: 'Medio día con transporte desde la ciudad',
+    get title() {
+      return getT()('dp.volcan-totumo.t')
+    },
+    get detail() {
+      return getT()('dp.volcan-totumo.d')
+    },
     perPerson: 130_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'Volcán del Totumo', kind: 'Volcán de lodo', match: /totumo/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Volcán del Totumo', get kind() { return getT()('dk.volcan-de-lodo') }, match: /totumo/i },
   },
   {
     id: 'atardecer-bahia',
     places: ['cartagena'],
-    title: 'Atardecer en velero por la bahía',
-    detail: 'Unas 2 horas con una bebida',
+    get title() {
+      return getT()('dp.atardecer-bahia.t')
+    },
+    get detail() {
+      return getT()('dp.atardecer-bahia.d')
+    },
     perPerson: 160_000,
     part: 'tarde',
-    venue: { role: 'Sale de', name: 'Muelle de La Bodeguita', kind: 'Muelle', match: /bodeguita/i },
+    venue: { get role() { return getT()('dr.sale-de') }, name: 'Muelle de La Bodeguita', get kind() { return getT()('dk.muelle') }, match: /bodeguita/i },
   },
 
   // --- San Andrés -----------------------------------------------------------
   {
     id: 'johnny-cay',
     places: ['san andres'],
-    title: 'Johnny Cay y El Acuario en lancha',
-    detail: 'Día completo; la entrada a Johnny Cay se paga aparte',
+    get title() {
+      return getT()('dp.johnny-cay.t')
+    },
+    get detail() {
+      return getT()('dp.johnny-cay.d')
+    },
     perPerson: 90_000,
     part: 'todo el día',
-    venue: { role: 'Sale de', name: 'Playa Spratt Bight', kind: 'Playa', match: /spratt/i },
+    venue: { get role() { return getT()('dr.sale-de') }, name: 'Playa Spratt Bight', get kind() { return getT()('dk.playa') }, match: /spratt/i },
   },
   {
     id: 'buceo-san-andres',
     places: ['san andres', 'providencia'],
-    title: 'Bautizo de buceo',
-    detail: 'Una inmersión con instructor, sin experiencia previa',
+    get title() {
+      return getT()('dp.buceo-san-andres.t')
+    },
+    get detail() {
+      return getT()('dp.buceo-san-andres.d')
+    },
     perPerson: 250_000,
     part: 'mañana',
   },
   {
     id: 'vuelta-isla',
     places: ['san andres'],
-    title: 'Vuelta a la isla en carrito de golf',
-    detail: 'Hoyo Soplador, West View y La Piscinita',
+    get title() {
+      return getT()('dp.vuelta-isla.t')
+    },
+    get detail() {
+      return getT()('dp.vuelta-isla.d')
+    },
     perPerson: 80_000,
     part: 'tarde',
   },
@@ -107,262 +140,374 @@ export const DESTINATION_PLANS: DestinationPlan[] = [
   {
     id: 'tayrona',
     places: ['santa marta', 'taganga'],
-    title: 'Día en el Parque Tayrona',
-    detail: 'Transporte, entrada y caminata a las playas',
+    get title() {
+      return getT()('dp.tayrona.t')
+    },
+    get detail() {
+      return getT()('dp.tayrona.d')
+    },
     perPerson: 180_000,
     part: 'todo el día',
-    venue: { role: 'Lugar', name: 'Parque Nacional Natural Tayrona', kind: 'Parque nacional', match: /tayrona|el zaino/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Parque Nacional Natural Tayrona', get kind() { return getT()('dk.parque-nacional') }, match: /tayrona|el zaino/i },
   },
   {
     id: 'minca',
     places: ['santa marta'],
-    title: 'Minca: café, cascadas y aves',
-    detail: 'Día completo con transporte',
+    get title() {
+      return getT()('dp.minca.t')
+    },
+    get detail() {
+      return getT()('dp.minca.d')
+    },
     perPerson: 150_000,
     part: 'todo el día',
-    venue: { role: 'Lugar', name: 'Minca', kind: 'Pueblo', match: /^minca$/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Minca', get kind() { return getT()('dk.pueblo') }, match: /^minca$/i },
   },
   {
     id: 'buceo-taganga',
     places: ['santa marta', 'taganga'],
-    title: 'Bautizo de buceo en Taganga',
-    detail: 'Una inmersión con instructor',
+    get title() {
+      return getT()('dp.buceo-taganga.t')
+    },
+    get detail() {
+      return getT()('dp.buceo-taganga.d')
+    },
     perPerson: 250_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'Taganga', kind: 'Bahía', match: /taganga/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Taganga', get kind() { return getT()('dk.bahia') }, match: /taganga/i },
   },
 
   // --- Medellín -------------------------------------------------------------
   {
     id: 'comuna-13',
     places: ['medellin'],
-    title: 'Graffiti tour por la Comuna 13',
-    detail: 'Escaleras eléctricas, murales e historia con guía local',
+    get title() {
+      return getT()('dp.comuna-13.t')
+    },
+    get detail() {
+      return getT()('dp.comuna-13.d')
+    },
     perPerson: 60_000,
     part: 'mañana',
-    venue: { role: 'Punto de encuentro', name: 'Estación San Javier del Metro', kind: 'Metro', match: /san javier/i },
+    venue: { get role() { return getT()('dr.punto-de-encuentro') }, name: 'Estación San Javier del Metro', get kind() { return getT()('dk.metro') }, match: /san javier/i },
   },
   {
     id: 'guatape-desde-medellin',
     places: ['medellin'],
-    title: 'Día en Guatapé y la Piedra del Peñol',
-    detail: 'Transporte, subida a la piedra y paseo por el pueblo',
+    get title() {
+      return getT()('dp.guatape-desde-medellin.t')
+    },
+    get detail() {
+      return getT()('dp.guatape-desde-medellin.d')
+    },
     perPerson: 180_000,
     part: 'todo el día',
-    venue: { role: 'Lugar', name: 'Piedra del Peñol', kind: 'Mirador', match: /piedra del pe[ñn]ol/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Piedra del Peñol', get kind() { return getT()('dk.mirador') }, match: /piedra del pe[ñn]ol/i },
   },
   {
     id: 'metrocable-arvi',
     places: ['medellin'],
-    title: 'Metrocable y Parque Arví',
-    detail: 'Vistas de la ciudad desde el cable y caminata por el bosque',
+    get title() {
+      return getT()('dp.metrocable-arvi.t')
+    },
+    get detail() {
+      return getT()('dp.metrocable-arvi.d')
+    },
     perPerson: 40_000,
     part: 'tarde',
-    venue: { role: 'Sale de', name: 'Estación Acevedo del Metro', kind: 'Metro', match: /acevedo/i },
+    venue: { get role() { return getT()('dr.sale-de') }, name: 'Estación Acevedo del Metro', get kind() { return getT()('dk.metro') }, match: /acevedo/i },
   },
   {
     id: 'parapente-medellin',
     places: ['medellin', 'bello'],
-    title: 'Parapente en San Félix',
-    detail: 'Vuelo de unos 20 minutos con piloto',
+    get title() {
+      return getT()('dp.parapente-medellin.t')
+    },
+    get detail() {
+      return getT()('dp.parapente-medellin.d')
+    },
     perPerson: 250_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'San Félix (Bello)', kind: 'Zona de vuelo', match: /san f[eé]lix/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'San Félix (Bello)', get kind() { return getT()('dk.zona-de-vuelo') }, match: /san f[eé]lix/i },
   },
 
   // --- Bogotá ---------------------------------------------------------------
   {
     id: 'monserrate',
     places: ['bogota'],
-    title: 'Subida a Monserrate',
-    detail: 'En teleférico o funicular, con vista de toda la ciudad',
+    get title() {
+      return getT()('dp.monserrate.t')
+    },
+    get detail() {
+      return getT()('dp.monserrate.d')
+    },
     perPerson: 40_000,
     part: 'tarde',
-    venue: { role: 'Sale de', name: 'Estación del teleférico de Monserrate', kind: 'Teleférico', match: /monserrate/i },
+    venue: { get role() { return getT()('dr.sale-de') }, name: 'Estación del teleférico de Monserrate', get kind() { return getT()('dk.teleferico') }, match: /monserrate/i },
   },
   {
     id: 'catedral-sal',
     places: ['bogota', 'chia', 'cajica'],
-    title: 'Catedral de Sal de Zipaquirá',
-    detail: 'Medio día con transporte y entrada',
+    get title() {
+      return getT()('dp.catedral-sal.t')
+    },
+    get detail() {
+      return getT()('dp.catedral-sal.d')
+    },
     perPerson: 150_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'Catedral de Sal de Zipaquirá', kind: 'Catedral', match: /catedral de sal/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Catedral de Sal de Zipaquirá', get kind() { return getT()('dk.catedral') }, match: /catedral de sal/i },
   },
   {
     id: 'bici-bogota',
     places: ['bogota'],
-    title: 'Tour en bicicleta por Bogotá',
-    detail: 'Unas 4 horas por La Candelaria, mercados y grafitis',
+    get title() {
+      return getT()('dp.bici-bogota.t')
+    },
+    get detail() {
+      return getT()('dp.bici-bogota.d')
+    },
     perPerson: 90_000,
     part: 'mañana',
-    venue: { role: 'Punto de encuentro', name: 'La Candelaria', kind: 'Barrio', match: /^la candelaria$/i },
+    venue: { get role() { return getT()('dr.punto-de-encuentro') }, name: 'La Candelaria', get kind() { return getT()('dk.barrio') }, match: /^la candelaria$/i },
   },
   {
     id: 'andres-carne-de-res',
     places: ['bogota', 'chia'],
-    title: 'Noche en Andrés Carne de Res',
-    detail: 'Cena y rumba en Chía',
+    get title() {
+      return getT()('dp.andres-carne-de-res.t')
+    },
+    get detail() {
+      return getT()('dp.andres-carne-de-res.d')
+    },
     perPerson: 200_000,
     part: 'noche',
-    venue: { role: 'Lugar', name: 'Andrés Carne de Res (Chía)', kind: 'Restaurante', match: /andr[eé]s carne de res/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Andrés Carne de Res (Chía)', get kind() { return getT()('dk.restaurante') }, match: /andr[eé]s carne de res/i },
   },
 
   // --- Cali -----------------------------------------------------------------
   {
     id: 'clase-salsa-cali',
     places: ['cali'],
-    title: 'Clase de salsa caleña',
-    detail: 'Una hora y media en una escuela de salsa',
+    get title() {
+      return getT()('dp.clase-salsa-cali.t')
+    },
+    get detail() {
+      return getT()('dp.clase-salsa-cali.d')
+    },
     perPerson: 60_000,
     part: 'tarde',
   },
   {
     id: 'juanchito',
     places: ['cali'],
-    title: 'Noche de salsa en Juanchito',
-    detail: 'Salsotecas con orquesta en vivo',
+    get title() {
+      return getT()('dp.juanchito.t')
+    },
+    get detail() {
+      return getT()('dp.juanchito.d')
+    },
     perPerson: 80_000,
     part: 'noche',
-    venue: { role: 'Lugar', name: 'Juanchito', kind: 'Zona de salsotecas', match: /juanchito/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Juanchito', get kind() { return getT()('dk.zona-de-salsotecas') }, match: /juanchito/i },
   },
   {
     id: 'cristo-rey',
     places: ['cali'],
-    title: 'Atardecer en el Cristo Rey',
-    detail: 'Mirador sobre toda la ciudad',
+    get title() {
+      return getT()('dp.cristo-rey.t')
+    },
+    get detail() {
+      return getT()('dp.cristo-rey.d')
+    },
     perPerson: 40_000,
     part: 'tarde',
-    venue: { role: 'Lugar', name: 'Cristo Rey', kind: 'Mirador', match: /cristo rey/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Cristo Rey', get kind() { return getT()('dk.mirador') }, match: /cristo rey/i },
   },
 
   // --- Manizales ------------------------------------------------------------
   {
     id: 'termales-otono',
     places: ['manizales'],
-    title: 'Tarde en los Termales del Otoño',
-    detail: 'Piscinas de aguas termales',
+    get title() {
+      return getT()('dp.termales-otono.t')
+    },
+    get detail() {
+      return getT()('dp.termales-otono.d')
+    },
     perPerson: 90_000,
     part: 'tarde',
-    venue: { role: 'Lugar', name: 'Termales del Otoño', kind: 'Termales', match: /termales del oto/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Termales del Otoño', get kind() { return getT()('dk.termales') }, match: /termales del oto/i },
   },
   {
     id: 'nevado-ruiz',
     places: ['manizales'],
-    title: 'Tour al Nevado del Ruiz',
-    detail: 'Día completo en el Parque Nacional Natural Los Nevados',
+    get title() {
+      return getT()('dp.nevado-ruiz.t')
+    },
+    get detail() {
+      return getT()('dp.nevado-ruiz.d')
+    },
     perPerson: 250_000,
     part: 'todo el día',
-    venue: { role: 'Lugar', name: 'Parque Nacional Natural Los Nevados', kind: 'Parque nacional', match: /los nevados/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Parque Nacional Natural Los Nevados', get kind() { return getT()('dk.parque-nacional') }, match: /los nevados/i },
   },
   {
     id: 'recinto-pensamiento',
     places: ['manizales'],
-    title: 'Recinto del Pensamiento',
-    detail: 'Mariposario, telesilla y bosque de guaduas',
+    get title() {
+      return getT()('dp.recinto-pensamiento.t')
+    },
+    get detail() {
+      return getT()('dp.recinto-pensamiento.d')
+    },
     perPerson: 40_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'Recinto del Pensamiento', kind: 'Parque', match: /recinto del pensamiento/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Recinto del Pensamiento', get kind() { return getT()('dk.parque') }, match: /recinto del pensamiento/i },
   },
   {
     id: 'hacienda-venecia',
     places: ['manizales'],
-    title: 'Tour de café en la Hacienda Venecia',
-    detail: 'Recorrido por la finca, cata y almuerzo',
+    get title() {
+      return getT()('dp.hacienda-venecia.t')
+    },
+    get detail() {
+      return getT()('dp.hacienda-venecia.d')
+    },
     perPerson: 120_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'Hacienda Venecia', kind: 'Finca cafetera', match: /hacienda venecia/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Hacienda Venecia', get kind() { return getT()('dk.finca-cafetera') }, match: /hacienda venecia/i },
   },
 
   // --- Eje Cafetero (Salento, Filandia, Armenia, Pereira) ---------------------
   {
     id: 'cocora-caballo',
     places: ['salento', 'filandia', 'armenia', 'pereira'],
-    title: 'Cabalgata en el Valle de Cocora',
-    detail: 'Unas 3 horas entre las palmas de cera',
+    get title() {
+      return getT()('dp.cocora-caballo.t')
+    },
+    get detail() {
+      return getT()('dp.cocora-caballo.d')
+    },
     perPerson: 90_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'Valle de Cocora', kind: 'Valle', match: /cocora/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Valle de Cocora', get kind() { return getT()('dk.valle') }, match: /cocora/i },
   },
   {
     id: 'finca-eje',
     places: COFFEE_TOWNS,
-    title: 'Tour en una finca cafetera',
-    detail: 'Recorrido por el cafetal, cata y cómo se prepara',
+    get title() {
+      return getT()('dp.finca-eje.t')
+    },
+    get detail() {
+      return getT()('dp.finca-eje.d')
+    },
     perPerson: 70_000,
     part: 'tarde',
   },
   {
     id: 'tejo',
     places: ['salento', 'filandia'],
-    title: 'Jugar tejo',
-    detail: 'El deporte nacional, con mecha y cerveza',
+    get title() {
+      return getT()('dp.tejo.t')
+    },
+    get detail() {
+      return getT()('dp.tejo.d')
+    },
     perPerson: 30_000,
     part: 'noche',
   },
   {
     id: 'termales-santa-rosa',
     places: ['pereira', 'santa rosa de cabal'],
-    title: 'Termales de Santa Rosa de Cabal',
-    detail: 'Piscinas termales al pie de una cascada',
+    get title() {
+      return getT()('dp.termales-santa-rosa.t')
+    },
+    get detail() {
+      return getT()('dp.termales-santa-rosa.d')
+    },
     perPerson: 110_000,
     part: 'tarde',
-    venue: { role: 'Lugar', name: 'Termales de Santa Rosa de Cabal', kind: 'Termales', match: /termales/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Termales de Santa Rosa de Cabal', get kind() { return getT()('dk.termales') }, match: /termales/i },
   },
   {
     id: 'parque-del-cafe',
     places: ['armenia', 'montenegro', 'quimbaya', 'pereira'],
-    title: 'Día en el Parque del Café',
-    detail: 'Atracciones, show del café y teleférico',
+    get title() {
+      return getT()('dp.parque-del-cafe.t')
+    },
+    get detail() {
+      return getT()('dp.parque-del-cafe.d')
+    },
     perPerson: 100_000,
     part: 'todo el día',
-    venue: { role: 'Lugar', name: 'Parque del Café', kind: 'Parque temático', match: /parque del caf/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Parque del Café', get kind() { return getT()('dk.parque-tematico') }, match: /parque del caf/i },
   },
   {
     id: 'panaca',
     places: ['armenia', 'quimbaya', 'montenegro'],
-    title: 'Día en Panaca',
-    detail: 'Parque de la vida en el campo, con shows de animales',
+    get title() {
+      return getT()('dp.panaca.t')
+    },
+    get detail() {
+      return getT()('dp.panaca.d')
+    },
     perPerson: 90_000,
     part: 'todo el día',
-    venue: { role: 'Lugar', name: 'Panaca', kind: 'Parque temático', match: /panaca/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Panaca', get kind() { return getT()('dk.parque-tematico') }, match: /panaca/i },
   },
 
   // --- Guatapé --------------------------------------------------------------
   {
     id: 'piedra-penol',
     places: ['guatape'],
-    title: 'Subir la Piedra del Peñol',
-    detail: 'Unos 700 escalones y la mejor vista del embalse',
+    get title() {
+      return getT()('dp.piedra-penol.t')
+    },
+    get detail() {
+      return getT()('dp.piedra-penol.d')
+    },
     perPerson: 25_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'Piedra del Peñol', kind: 'Mirador', match: /piedra del pe[ñn]ol/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Piedra del Peñol', get kind() { return getT()('dk.mirador') }, match: /piedra del pe[ñn]ol/i },
   },
   {
     id: 'lancha-embalse',
     places: ['guatape'],
-    title: 'Paseo en lancha por el embalse',
-    detail: 'Una hora entre islas y fincas',
+    get title() {
+      return getT()('dp.lancha-embalse.t')
+    },
+    get detail() {
+      return getT()('dp.lancha-embalse.d')
+    },
     perPerson: 50_000,
     part: 'tarde',
-    venue: { role: 'Sale de', name: 'Malecón de Guatapé', kind: 'Malecón', match: /malec[oó]n/i },
+    venue: { get role() { return getT()('dr.sale-de') }, name: 'Malecón de Guatapé', get kind() { return getT()('dk.malecon') }, match: /malec[oó]n/i },
   },
 
   // --- Villa de Leyva -------------------------------------------------------
   {
     id: 'pozos-azules',
     places: ['villa de leyva'],
-    title: 'Pozos Azules y el desierto',
-    detail: 'Recorrido en bicicleta o cuatrimoto',
+    get title() {
+      return getT()('dp.pozos-azules.t')
+    },
+    get detail() {
+      return getT()('dp.pozos-azules.d')
+    },
     perPerson: 80_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'Pozos Azules', kind: 'Lagunas', match: /pozos azules/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Pozos Azules', get kind() { return getT()('dk.lagunas') }, match: /pozos azules/i },
   },
   {
     id: 'vinedo-leyva',
     places: ['villa de leyva'],
-    title: 'Tarde de vinos en un viñedo',
-    detail: 'Recorrido por el viñedo y cata',
+    get title() {
+      return getT()('dp.vinedo-leyva.t')
+    },
+    get detail() {
+      return getT()('dp.vinedo-leyva.d')
+    },
     perPerson: 80_000,
     part: 'tarde',
   },
@@ -371,26 +516,38 @@ export const DESTINATION_PLANS: DestinationPlan[] = [
   {
     id: 'rafting-fonce',
     places: ['san gil'],
-    title: 'Rafting en el río Fonce',
-    detail: 'Unas 2 horas, nivel principiante',
+    get title() {
+      return getT()('dp.rafting-fonce.t')
+    },
+    get detail() {
+      return getT()('dp.rafting-fonce.d')
+    },
     perPerson: 70_000,
     part: 'mañana',
-    venue: { role: 'Lugar', name: 'Río Fonce', kind: 'Río', match: /fonce/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Río Fonce', get kind() { return getT()('dk.rio') }, match: /fonce/i },
   },
   {
     id: 'chicamocha',
     places: ['san gil', 'bucaramanga'],
-    title: 'Parque Nacional del Chicamocha',
-    detail: 'Teleférico sobre el cañón',
+    get title() {
+      return getT()('dp.chicamocha.t')
+    },
+    get detail() {
+      return getT()('dp.chicamocha.d')
+    },
     perPerson: 100_000,
     part: 'todo el día',
-    venue: { role: 'Lugar', name: 'Parque Nacional del Chicamocha', kind: 'Parque', match: /chicamocha/i },
+    venue: { get role() { return getT()('dr.lugar') }, name: 'Parque Nacional del Chicamocha', get kind() { return getT()('dk.parque') }, match: /chicamocha/i },
   },
   {
     id: 'camino-guane',
     places: ['san gil', 'barichara'],
-    title: 'Camino Real de Barichara a Guane',
-    detail: 'Caminata de unas 2 horas por un camino de piedra',
+    get title() {
+      return getT()('dp.camino-guane.t')
+    },
+    get detail() {
+      return getT()('dp.camino-guane.d')
+    },
     perPerson: 40_000,
     part: 'mañana',
   },
@@ -399,17 +556,25 @@ export const DESTINATION_PLANS: DestinationPlan[] = [
   {
     id: 'rio-amazonas',
     places: ['leticia'],
-    title: 'Excursión por el río Amazonas',
-    detail: 'Puerto Nariño, delfines rosados y comunidades',
+    get title() {
+      return getT()('dp.rio-amazonas.t')
+    },
+    get detail() {
+      return getT()('dp.rio-amazonas.d')
+    },
     perPerson: 250_000,
     part: 'todo el día',
-    venue: { role: 'Sale de', name: 'Muelle de Leticia', kind: 'Muelle', match: /muelle/i },
+    venue: { get role() { return getT()('dr.sale-de') }, name: 'Muelle de Leticia', get kind() { return getT()('dk.muelle') }, match: /muelle/i },
   },
   {
     id: 'tubing-palomino',
     places: ['palomino'],
-    title: 'Bajar el río Palomino en neumático',
-    detail: 'Unas 2 horas hasta el mar',
+    get title() {
+      return getT()('dp.tubing-palomino.t')
+    },
+    get detail() {
+      return getT()('dp.tubing-palomino.d')
+    },
     perPerson: 50_000,
     part: 'tarde',
   },

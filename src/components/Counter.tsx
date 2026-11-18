@@ -32,7 +32,7 @@ export function Counter({ label, icon: Icon, value, min, max, onChange, unit, hi
           type="button"
           onClick={() => onChange(value - 1)}
           disabled={disabled || value <= min}
-          aria-label={`Quitar ${unit}`}
+          aria-label={t('ct.remove', { unit })}
           className={buttonClass}
         >
           <span aria-hidden="true">−</span>
@@ -44,7 +44,7 @@ export function Counter({ label, icon: Icon, value, min, max, onChange, unit, hi
           type="button"
           onClick={() => onChange(value + 1)}
           disabled={disabled || value >= max}
-          aria-label={`Agregar ${unit}`}
+          aria-label={t('ct.add', { unit })}
           className={buttonClass}
         >
           <span aria-hidden="true">+</span>
