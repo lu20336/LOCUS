@@ -172,6 +172,55 @@ export async function buildItineraryPdf(it: Itinerary, trip: TripDetails, now: D
     y += 5
   }
 
+  // --- Presupuesto estimado (con los planes extra, uno por línea) --------------
+  const budget = estimateTripBudget(it, trip)
+  const extras = it.budgetPlan?.extras ?? []
+  const ROW_H = 6.5
+  const rows = budget.lines.filter((l) => l.id !== 'extras')
+  ensure(16 + (rows.length + extras.length + 2) * ROW_H)
+  drawSectionHeader('Presupuesto estimado', `${formatCOP(budget.total)} de ${formatCOP(budget.budget)}`)
+  /** Una fila: concepto a la izquierda y valor a la derecha (los planes extra, con sangría). */
+  const row = (label: string, amount: number, indent = 0) => {
+    ensure(ROW_H)
+    font(10, indent ? 'normal' : 'bold')
+    color(INK)
+    text(label, MARGIN + 4 + indent, y, { maxWidth: CONTENT_W - 50 - indent })
+    text(formatCOP(amount), PAGE_W - MARGIN - 4, y, { align: 'right' })
+    y += ROW_H
+  }
+  for (const line of rows) row(line.label, line.amount)
+  if (extras.length > 0) {
+    row('Planes extra', extras.reduce((sum, e) => sum + e.amount, 0))
+    for (const extra of extras) row(`- ${extra.title}`, extra.amount, 4)
+  }
+  doc.setDrawColor(...LINE)
+  doc.line(MARGIN + 4, y - 3.5, PAGE_W - MARGIN - 4, y - 3.5)
+  y += 1
+  font(9)
+  color(budget.difference >= 0 ? TEAL : MUTED)
+  text(
+    budget.difference >= 0
+      ? `Te sobran unos ${formatCOP(budget.difference)}. Precios promedio estimados: pueden variar.`
+      : `Se pasa por unos ${formatCOP(-budget.difference)}. Precios promedio estimados: pueden variar.`,
+    MARGIN + 4,
+    y,
+  )
+  y += 8
+
+  function drawSectionHeader(title: string, right: string) {
+    doc.setFillColor(...LIGHT)
+    doc.roundedRect(MARGIN, y, CONTENT_W, 10, 2, 2, 'F')
+    doc.setFillColor(...TEAL_BRIGHT)
+    doc.rect(MARGIN, y, 1.6, 10, 'F')
+    font(11.5, 'bold')
+    color(NAVY)
+    text(title, MARGIN + 5, y + 6.6)
+    font(9, 'bold')
+    color(MUTED)
+    text(right, PAGE_W - MARGIN - 4, y + 6.6, { align: 'right' })
+    y += 15
+  }
+
   function drawDayHeader(day: DayPlan) {
     doc.setFillColor(...LIGHT)
     doc.roundedRect(MARGIN, y, CONTENT_W, 10, 2, 2, 'F')

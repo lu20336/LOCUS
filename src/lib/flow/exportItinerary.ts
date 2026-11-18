@@ -42,6 +42,11 @@ export function itineraryToText(it: Itinerary): string {
     const route = googleMapsRouteUrl(day.excursion ?? it.destination, day.places)
     if (route) lines.push(`  Ruta: ${route}`)
   }
+  const extras = it.budgetPlan?.extras ?? []
+  if (extras.length > 0) {
+    lines.push('', 'Planes extra')
+    for (const extra of extras) lines.push(`  ${extra.title}`)
+  }
   lines.push('', `Planeado con LOCUS · ${APP_URL}`)
   return lines.join('\n')
 }

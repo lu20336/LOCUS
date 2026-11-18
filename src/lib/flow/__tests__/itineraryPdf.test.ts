@@ -55,6 +55,33 @@ describe('PDF del itinerario', () => {
     expect(raw).toContain('Página 1 de')
   })
 
+  it('cierra con el presupuesto estimado y lista cada plan extra', async () => {
+    const it0 = plan(2)
+    const withExtras: Itinerary = {
+      ...it0,
+      budgetPlan: {
+        lodging: 'estandar',
+        food: 'estandar',
+        transport: 'estandar',
+        adjustments: [],
+        fits: true,
+        extras: [
+          { id: 'lancha-islas', title: 'Paseo en lancha a las islas', amount: 550_000 },
+          { id: 'tour-guiado', title: 'Tour guiado a pie', amount: 150_000 },
+        ],
+      },
+    }
+    const raw = (await buildItineraryPdf(withExtras, { ...trip, budgetCOP: 9_000_000 })).output()
+    expect(raw).toContain('Presupuesto estimado')
+    expect(raw).toContain('Alojamiento')
+    expect(raw).toContain('Planes extra')
+    expect(raw).toContain('Paseo en lancha a las islas')
+    expect(raw).toContain('Tour guiado a pie')
+    expect(raw).toContain('Te sobran unos')
+    // Sin planes extra no aparece esa fila.
+    expect((await buildItineraryPdf(it0, trip)).output()).not.toContain('Planes extra')
+  })
+
   it('pasa a otra página cuando el plan es largo, con número en cada una', async () => {
     const doc = await buildItineraryPdf(plan(9), trip)
     expect(doc.getNumberOfPages()).toBeGreaterThan(1)
