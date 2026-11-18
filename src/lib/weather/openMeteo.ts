@@ -8,6 +8,7 @@
  * Diferenciamos SIEMPRE el pronóstico (incierto) de las condiciones actuales
  * (estimación del modelo para este momento, no una medición de estación).
  */
+import { getT } from '../i18n/store'
 
 export interface DailyForecast {
   date: string
@@ -40,21 +41,22 @@ export interface Forecast {
   fetchedAt: string
 }
 
-/** Códigos WMO de Open-Meteo → texto en español. */
+/** Códigos WMO de Open-Meteo → texto en el idioma actual de la interfaz. */
 export function describeWeatherCode(code: number): string {
-  if (code === 0) return 'Despejado'
-  if (code === 1) return 'Mayormente despejado'
-  if (code === 2) return 'Parcialmente nublado'
-  if (code === 3) return 'Nublado'
-  if (code === 45 || code === 48) return 'Niebla'
-  if (code >= 51 && code <= 57) return 'Llovizna'
-  if (code >= 61 && code <= 67) return 'Lluvia'
-  if (code >= 71 && code <= 77) return 'Nieve'
-  if (code >= 80 && code <= 82) return 'Aguaceros'
-  if (code === 85 || code === 86) return 'Aguaceros de nieve'
-  if (code === 95) return 'Tormenta eléctrica'
-  if (code === 96 || code === 99) return 'Tormenta con granizo'
-  return 'Sin dato'
+  const t = getT()
+  if (code === 0) return t('weather.clear')
+  if (code === 1) return t('weather.mostlyClear')
+  if (code === 2) return t('weather.partlyCloudy')
+  if (code === 3) return t('weather.overcast')
+  if (code === 45 || code === 48) return t('weather.fog')
+  if (code >= 51 && code <= 57) return t('weather.drizzle')
+  if (code >= 61 && code <= 67) return t('weather.rain')
+  if (code >= 71 && code <= 77) return t('weather.snow')
+  if (code >= 80 && code <= 82) return t('weather.showers')
+  if (code === 85 || code === 86) return t('weather.snowShowers')
+  if (code === 95) return t('weather.thunderstorm')
+  if (code === 96 || code === 99) return t('weather.thunderHail')
+  return t('weather.unknown')
 }
 
 interface OpenMeteoResponse {

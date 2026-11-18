@@ -1,3 +1,4 @@
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { CLIMATE_ICONS } from './choiceOptions'
 import { FEATURED_DESTINATIONS, climateOf, type FeaturedDestination } from '../lib/featuredDestinations'
 import { CLIMATES } from '../lib/itinerary/suggestDestination'
@@ -9,12 +10,13 @@ import { PhotoCard, PhotoChip } from './PhotoCard'
  * ocupa dos (8 tarjetas = 3 filas completas).
  */
 export function DestinationCards({ onChoose }: { onChoose: (destination: FeaturedDestination) => void }) {
+  const { t } = useI18n()
   return (
     <section aria-labelledby="inspiration-title">
       <h2 id="inspiration-title" className="text-3xl font-semibold text-navy sm:text-4xl">
-        Viaja por Colombia
+        {t('home.destinations.title')}
       </h2>
-      <p className="mt-2 text-muted sm:text-lg">Del Caribe a los Andes: elige uno y armamos tu plan.</p>
+      <p className="mt-2 text-muted sm:text-lg">{t('home.destinations.subtitle')}</p>
 
       <ul className="-mx-4 mt-8 flex snap-x snap-mandatory scroll-px-4 gap-5 overflow-x-auto px-4 pt-2 pb-4 sm:mx-0 sm:grid sm:grid-cols-2 sm:overflow-visible sm:px-0 lg:grid-cols-3">
         {FEATURED_DESTINATIONS.map((item, index) => {

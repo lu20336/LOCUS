@@ -1,3 +1,5 @@
+import { getT } from '../i18n/store'
+import type { Locale } from '../i18n/locales'
 import { createContext, useContext } from 'react'
 import type { User } from 'firebase/auth'
 
@@ -8,6 +10,8 @@ export interface UserProfile {
   onboardingSkipped: boolean
   aiPersonalization: boolean
   isHost: boolean
+  /** Idioma preferido (ver src/lib/i18n/locales.ts). */
+  language?: Locale
 }
 
 export interface HostProfileInput {
@@ -41,21 +45,22 @@ export function useAuth(): AuthContextValue {
   return value
 }
 
-/** Mensajes en español para los errores más comunes de Firebase Auth. */
+/** Mensajes de error de Firebase Auth en el idioma actual de la interfaz. */
 export function authErrorMessage(error: unknown): string {
   const code = (error as { code?: string } | null)?.code ?? ''
-  const messages: Record<string, string> = {
-    'auth/invalid-credential': 'Correo o contraseña incorrectos.',
-    'auth/wrong-password': 'Correo o contraseña incorrectos.',
-    'auth/user-not-found': 'Correo o contraseña incorrectos.',
-    'auth/email-already-in-use': 'Ya existe una cuenta con ese correo. Prueba iniciando sesión.',
-    'auth/weak-password': 'La contraseña es muy corta: usa al menos 6 caracteres.',
-    'auth/invalid-email': 'Ese correo no parece válido.',
-    'auth/too-many-requests': 'Demasiados intentos. Espera unos minutos e inténtalo de nuevo.',
-    'auth/popup-closed-by-user': 'Cerraste la ventana de Google antes de terminar.',
-    'auth/cancelled-popup-request': 'Cerraste la ventana de Google antes de terminar.',
-    'auth/operation-not-allowed': 'Este método de ingreso aún no está activado en el proyecto (Firebase Authentication).',
-    'auth/network-request-failed': 'No hay conexión. Revisa tu internet e inténtalo de nuevo.',
+  const t = getT()
+  const keys: Record<string, string> = {
+    'auth/invalid-credential': 'auth.error.invalidCredential',
+    'auth/wrong-password': 'auth.error.invalidCredential',
+    'auth/user-not-found': 'auth.error.invalidCredential',
+    'auth/email-already-in-use': 'auth.error.emailInUse',
+    'auth/weak-password': 'auth.error.weakPassword',
+    'auth/invalid-email': 'auth.error.invalidEmail',
+    'auth/too-many-requests': 'auth.error.tooMany',
+    'auth/popup-closed-by-user': 'auth.error.popupClosed',
+    'auth/cancelled-popup-request': 'auth.error.popupClosed',
+    'auth/operation-not-allowed': 'auth.error.notAllowed',
+    'auth/network-request-failed': 'auth.error.network',
   }
-  return messages[code] ?? 'No pudimos completar la acción. Inténtalo de nuevo.'
+  return t(keys[code] ?? 'auth.error.generic')
 }

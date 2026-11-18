@@ -20,7 +20,8 @@ import { FEATURED_DESTINATIONS, climateOf } from '../featuredDestinations'
 import { osmPlaceUrl } from '../flow/itineraryView'
 import { resolveDestination, findFeaturedDestination } from '../flow/resolveDestination'
 import { AIRLINE_SITES, findAirport, flightLinks, nearestAirports } from '../flights/airports'
-import { formatCOP } from '../format'
+import { formatCOP, formatDate } from '../format'
+import { getT } from '../i18n/store'
 import { osmClient, suggestionDeps } from '../itinerary/browserClient'
 import { placesClient } from '../itinerary/fallbackClient'
 import { getReferenceLodging } from '../catalog/referenceLodging'
@@ -220,7 +221,7 @@ async function searchListings(a: Record<string, unknown>): Promise<ToolOutcome> 
     }
   }
   const cards: AgentCard[] = top.map((l) => ({
-    kind: 'listing', id: l.id, title: l.title, subtitle: `${LISTING_TYPES[l.type]} · ${l.municipality}`, price: `${formatCOP(l.pricePerNight)} / noche`,
+    kind: 'listing', id: l.id, title: l.title, subtitle: `${LISTING_TYPES[l.type]} · ${l.municipality}`, price: getT()('agent.card.perNight', { price: formatCOP(l.pricePerNight) }),
     cover: l.photoCount > 0 ? l.cover : undefined, href: `/hospedajes/${l.id}${checkIn && checkOut ? `?llegada=${checkIn}&salida=${checkOut}&huespedes=${guests}` : ''}`,
   }))
   return {
@@ -281,7 +282,7 @@ async function searchExperiences(a: Record<string, unknown>): Promise<ToolOutcom
       experiences: top.map((e) => ({ id: e.id, title: e.title, category: EXPERIENCE_CATEGORIES[e.category], municipality: e.municipality, pricePerPersonCOP: e.pricePerPerson, durationMinutes: e.durationMinutes, capacity: e.capacity })),
       note: list.length === 0 ? 'No hay experiencias publicadas en LOCUS para esos criterios. No inventes ninguna.' : undefined,
     },
-    cards: top.map((e) => ({ kind: 'experience', id: e.id, title: e.title, subtitle: `${EXPERIENCE_CATEGORIES[e.category]} · ${e.municipality}`, price: `${formatCOP(e.pricePerPerson)} / persona`, cover: e.photoCount > 0 ? e.cover : undefined, href: `/experiencias/${e.id}` })),
+    cards: top.map((e) => ({ kind: 'experience', id: e.id, title: e.title, subtitle: `${EXPERIENCE_CATEGORIES[e.category]} · ${e.municipality}`, price: getT()('agent.card.perPerson', { price: formatCOP(e.pricePerPerson) }), cover: e.photoCount > 0 ? e.cover : undefined, href: `/experiencias/${e.id}` })),
   }
 }
 
@@ -322,7 +323,7 @@ async function weather(a: Record<string, unknown>): Promise<ToolOutcome> {
       forecast: daily.map((d) => ({ date: d.date, summary: d.description, minC: Math.round(d.tMin), maxC: Math.round(d.tMax), rainProbabilityPct: d.precipitationProbability, rainMm: d.precipitationMm, rainRisk: rainRisk(d) })),
       note: 'Es un PRONÓSTICO (estimación, puede cambiar), no una certeza. Fuente: Open-Meteo.',
     },
-    cards: [{ kind: 'weather', title: `Clima en ${place.displayName.split(',')[0]} (pronóstico)`, lines: daily.map((d) => `${d.date}: ${d.description}, ${Math.round(d.tMin)}–${Math.round(d.tMax)} °C, lluvia ${d.precipitationProbability}%`) }],
+    cards: [{ kind: 'weather', title: getT()('agent.card.weatherTitle', { place: place.displayName.split(',')[0] }), lines: daily.map((d) => getT()('agent.card.weatherLine', { date: formatDate(d.date), description: d.description, min: Math.round(d.tMin), max: Math.round(d.tMax), rain: d.precipitationProbability })) }],
   }
 }
 
@@ -340,7 +341,7 @@ async function findPlaces(a: Record<string, unknown>): Promise<ToolOutcome> {
       places: best.map((p) => ({ name: p.name, category: CATEGORIES[p.category].label, kind: p.kind })),
       note: best.length === 0 ? 'OpenStreetMap no devolvió lugares para esas categorías.' : 'No tienes horarios de apertura ni precios: no los inventes.',
     },
-    cards: best.length > 0 ? [{ kind: 'places', title: `Lugares cerca de ${place.displayName.split(',')[0]}`, items: best.slice(0, 10).map((p) => ({ name: p.name, kind: p.kind, href: osmPlaceUrl(p) })) }] : [],
+    cards: best.length > 0 ? [{ kind: 'places', title: getT()('agent.card.placesTitle', { place: place.displayName.split(',')[0] }), items: best.slice(0, 10).map((p) => ({ name: p.name, kind: p.kind, href: osmPlaceUrl(p) })) }] : [],
   }
 }
 
@@ -369,7 +370,7 @@ async function planItinerary(a: Record<string, unknown>, ctx: ToolContext): Prom
       missingCategories: itinerary.missingCategories,
       note: 'No tienes horarios ni precios de estos lugares: no inventes costos ni horarios. El usuario puede guardar el plan con la tarjeta.',
     },
-    cards: [{ kind: 'itinerary', title: `Itinerario por ${place.displayName.split(',')[0]}`, days: itinerary.days.length, places: total, itinerary }],
+    cards: [{ kind: 'itinerary', title: getT()('agent.card.itineraryTitle', { place: place.displayName.split(',')[0] }), days: itinerary.days.length, places: total, itinerary }],
   }
 }
 
@@ -434,7 +435,7 @@ async function inference(a: Record<string, unknown>, ctx: ToolContext): Promise<
   const text = str(a.text, 200)
   if (text.length < 3) return { result: { saved: false, reason: 'Texto vacío.' } }
   await saveInference(db, ctx.uid, str(a.key, 40), text)
-  return { result: { saved: true }, cards: [{ kind: 'note', text: `Anoté en tu perfil: «${text}». Puedes quitarlo cuando quieras en Mi perfil.` }] }
+  return { result: { saved: true }, cards: [{ kind: 'note', text: getT()('agent.card.noteSaved', { text }) }] }
 }
 
 const EXECUTORS: Record<string, (args: Record<string, unknown>, ctx: ToolContext) => Promise<ToolOutcome>> = {

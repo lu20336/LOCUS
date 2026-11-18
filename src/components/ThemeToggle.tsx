@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useI18n } from '../lib/i18n/I18nProvider'
 
 type Theme = 'light' | 'dark'
 
@@ -14,6 +15,7 @@ const currentTheme = (): Theme =>
  * y lo guardamos en localStorage.
  */
 export function ThemeToggle() {
+  const { t } = useI18n()
   const [theme, setTheme] = useState<Theme>(currentTheme)
 
   function toggle() {
@@ -32,8 +34,8 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggle}
-      aria-label={isDark ? 'Activar modo claro' : 'Activar modo oscuro'}
-      title={isDark ? 'Modo claro' : 'Modo oscuro'}
+      aria-label={isDark ? t('nav.toggleLight') : t('nav.toggleDark')}
+      title={isDark ? t('nav.toggleLight') : t('nav.toggleDark')}
       className="grid size-10 place-items-center rounded-full border border-line bg-surface text-ink transition-colors hover:bg-surface-2"
     >
       {isDark ? (

@@ -38,12 +38,14 @@ service cloud.firestore {
       allow read: if isOwner(userId);
       allow create, update: if isOwner(userId)
         && request.resource.data.keys().hasOnly(
-          ['displayName', 'phone', 'onboardingCompleted', 'onboardingSkipped', 'aiPersonalization', 'isHost', 'createdAt', 'updatedAt'])
+          ['displayName', 'phone', 'onboardingCompleted', 'onboardingSkipped', 'aiPersonalization', 'isHost', 'language', 'createdAt', 'updatedAt'])
         && isStr(request.resource.data.get('displayName', ''), 0, 80)
         && isStr(request.resource.data.get('phone', ''), 0, 30)
         && request.resource.data.get('onboardingCompleted', false) is bool
         && request.resource.data.get('aiPersonalization', false) is bool
-        && request.resource.data.get('isHost', false) is bool;
+        && request.resource.data.get('isHost', false) is bool
+        // Idioma preferido de la interfaz y del agente (src/lib/i18n/locales.ts).
+        && request.resource.data.get('language', 'es') in ['es', 'en', 'pt', 'fr', 'de'];
 
       // Perfil del viajero. `declared` = lo que dijo el usuario; `inferred` = lo
       // que deduce el agente. El agente SOLO escribe en `inferred` (ver

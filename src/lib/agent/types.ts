@@ -1,4 +1,5 @@
 import type { Itinerary } from '../../types/itinerary'
+import type { Locale } from '../i18n/locales'
 import type { FlightLink } from '../flights/airports'
 
 /**
@@ -24,6 +25,10 @@ export interface ChatMessage {
   error?: boolean
   /** Respuesta del modo guiado (sin IA). */
   guided?: boolean
+  /** En un mensaje de error: el texto del usuario que se puede reenviar con "Reintentar". */
+  retryText?: string
+  /** El error permite reintentar. */
+  retryable?: boolean
 }
 
 export interface ToolContext {
@@ -32,6 +37,8 @@ export interface ToolContext {
   /** El usuario autorizó usar su perfil para personalizar. */
   aiConsent: boolean
   today: string
+  /** Idioma de la interfaz (las tarjetas y avisos se generan en él). */
+  locale: Locale
 }
 
 export interface ToolOutcome {

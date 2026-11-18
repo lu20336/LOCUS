@@ -1,3 +1,4 @@
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { CATEGORY_IDS, CATEGORIES } from '../lib/itinerary/categories'
 import type { CategoryId } from '../types/itinerary'
 import { ACTIVITY_IMAGES, CATEGORY_ICONS } from './choiceOptions'
@@ -14,6 +15,7 @@ import { PhotoCard } from './PhotoCard'
  *    ver index.css).
  */
 export function ActivityCards({ onChoose }: { onChoose: (category: CategoryId) => void }) {
+  const { t } = useI18n()
   const renderCard = (category: CategoryId, copy = '') => {
     const Icon = CATEGORY_ICONS[category]
     return (
@@ -38,9 +40,9 @@ export function ActivityCards({ onChoose }: { onChoose: (category: CategoryId) =
   return (
     <section aria-labelledby="activities-title" data-force-motion>
       <h2 id="activities-title" className="text-3xl font-semibold text-navy sm:text-4xl">
-        ¿Qué te gustaría hacer?
+        {t('home.activities.title')}
       </h2>
-      <p className="mt-2 text-muted sm:text-lg">Elige una actividad y te sugerimos a dónde ir.</p>
+      <p className="mt-2 text-muted sm:text-lg">{t('home.activities.subtitle')}</p>
 
       {/* Bordes difuminados: las tarjetas entran y salen suavemente. */}
       <div className="group/marquee -mx-4 mt-6 overflow-hidden px-4 [mask-image:linear-gradient(to_right,transparent,black_5%,black_95%,transparent)]">
