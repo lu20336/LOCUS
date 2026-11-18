@@ -6,13 +6,14 @@
 import { useState } from 'react'
 import { ChevronDown, CircleCheck, Plus, Sparkles, TriangleAlert, Wallet, X } from 'lucide-react'
 import { formatCOP } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { COST_LEVEL_LABELS, type SpareOption, type TripBudget } from '../lib/flow/tripBudget'
 import type { BudgetExtra } from '../types/itinerary'
 
 const STATUS = {
-  holgado: { title: 'Te alcanza', tone: 'text-teal-soft', bar: 'bg-teal', Icon: CircleCheck },
-  justo: { title: 'Te alcanza, pero justo', tone: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-500', Icon: CircleCheck },
-  falta: { title: 'No te alcanza', tone: 'text-danger', bar: 'bg-danger', Icon: TriangleAlert },
+  holgado: { title: 'bc.ok', tone: 'text-teal-soft', bar: 'bg-teal', Icon: CircleCheck },
+  justo: { title: 'bc.tight', tone: 'text-amber-600 dark:text-amber-400', bar: 'bg-amber-500', Icon: CircleCheck },
+  falta: { title: 'bc.short', tone: 'text-danger', bar: 'bg-danger', Icon: TriangleAlert },
 } as const
 
 export function BudgetCard({
@@ -38,6 +39,7 @@ export function BudgetCard({
   extras?: BudgetExtra[]
   onRemoveExtra?: (extra: BudgetExtra) => void
 }) {
+  const { t } = useI18n()
   const { status, total, budget, difference, lines, tips, level } = estimate
   const [showSpare, setShowSpare] = useState(false)
   const s = STATUS[status]
@@ -50,27 +52,27 @@ export function BudgetCard({
         <div>
           <h3 id="budget-title" className="flex items-center gap-2 text-lg font-semibold text-navy">
             <Wallet aria-hidden="true" className="size-5 text-teal-soft" />
-            ¿Te alcanza el presupuesto?
+            {t('bc.title')}
           </h3>
           <p className={`mt-1 flex items-center gap-1.5 font-semibold ${s.tone}`}>
             <s.Icon aria-hidden="true" className="size-4" />
-            {s.title}
-            {status === 'falta' ? ` · faltan unos ${formatCOP(-difference)}` : ` · te sobran unos ${formatCOP(difference)}`}
+            {t(s.title)}
+            {status === 'falta' ? ` · ${t('bc.missing', { amount: formatCOP(-difference) })}` : ` · ${t('bc.left', { amount: formatCOP(difference) })}`}
           </p>
         </div>
         <dl className="text-right text-sm">
-          <dt className="text-muted">Costo estimado</dt>
+          <dt className="text-muted">{t('it.estimatedCost')}</dt>
           <dd className="text-xl font-semibold text-navy">{formatCOP(total)}</dd>
           <dd className="text-muted">
-            de {formatCOP(budget)}
-            {travelers > 1 && <> · {formatCOP(Math.round(total / travelers / 1000) * 1000)} por persona</>}
+            {t('bc.of', { budget: formatCOP(budget) })}
+            {travelers > 1 && <> · {t('bc.perPerson', { amount: formatCOP(Math.round(total / travelers / 1000) * 1000) })}</>}
           </dd>
         </dl>
       </div>
 
       <div
         role="meter"
-        aria-label="Parte del presupuesto que usa el viaje"
+        aria-label={t('bc.meter')}
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={used}
@@ -92,18 +94,18 @@ export function BudgetCard({
       </ul>
 
       {extras.length > 0 && onRemoveExtra && (
-        <ul aria-label="Planes extra que agregaste" className="mt-1 flex flex-wrap gap-2">
+        <ul aria-label={t('bc.addedExtras')} className="mt-1 flex flex-wrap gap-2">
           {extras.map((extra) => (
             <li
               key={extra.id}
               className="inline-flex items-center gap-1.5 rounded-full border border-teal/40 bg-teal/10 py-1 pl-3 pr-1 text-sm text-ink"
             >
               {extra.title}
-              {extra.dayIndex !== undefined && ` · Día ${extra.dayIndex + 1}`} · {formatCOP(extra.amount)}
+              {extra.dayIndex !== undefined && ` · ${t('it.day', { day: extra.dayIndex + 1 })}`} · {formatCOP(extra.amount)}
               <button
                 type="button"
                 onClick={() => onRemoveExtra(extra)}
-                aria-label={`Quitar ${extra.title}`}
+                aria-label={t('iv.remove', { name: extra.title })}
                 className="grid size-6 place-items-center rounded-full text-muted transition-colors hover:bg-surface-2 hover:text-ink"
               >
                 <X aria-hidden="true" className="size-3.5" />
@@ -115,7 +117,7 @@ export function BudgetCard({
 
       {adjustments.length > 0 && (
         <div className="mt-3 rounded-2xl border border-teal/40 bg-teal/10 p-4">
-          <p className="text-sm font-semibold text-ink">Ajustamos tu plan para que cumpla tu presupuesto:</p>
+          <p className="text-sm font-semibold text-ink">{t('bc.adjusted')}</p>
           <ul className="mt-1.5 flex list-disc flex-col gap-1 pl-5 text-sm text-ink">
             {adjustments.map((text) => (
               <li key={text}>{text}</li>
@@ -127,14 +129,14 @@ export function BudgetCard({
       {status === 'falta' && onFit && (
         <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-danger/40 bg-danger/10 p-4">
           <p className="min-w-0 flex-1 text-sm text-ink">
-            Con los cambios que hiciste el plan se pasa de tu presupuesto.
+            {t('bc.overAfterEdits')}
           </p>
           <button
             type="button"
             onClick={onFit}
             className="rounded-xl bg-navy px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-navy/90"
           >
-            Ajustar a mi presupuesto
+            {t('bc.fit')}
           </button>
         </div>
       )}
@@ -149,14 +151,14 @@ export function BudgetCard({
             className="inline-flex items-center gap-2 rounded-xl border-2 border-teal px-4 py-2.5 text-sm font-semibold text-ink transition-colors hover:bg-teal/10"
           >
             <Sparkles aria-hidden="true" className="size-4 text-teal-soft" />
-            Sugerir planes con lo que me sobra ({formatCOP(difference)})
+            {t('bc.suggest', { amount: formatCOP(difference) })}
             <ChevronDown aria-hidden="true" className={`size-4 transition-transform ${showSpare ? 'rotate-180' : ''}`} />
           </button>
 
           {showSpare && (
             <div id="spare-plans" className="mt-3">
               <p className="text-sm text-muted">
-                Todos caben en lo que te sobra. Al agregar uno, la lista se actualiza con lo que queda.
+                {t('bc.allFit')}
               </p>
               <ul className="mt-2 flex flex-col gap-2">
                 {spare.map((option) => (
@@ -172,11 +174,11 @@ export function BudgetCard({
                     <button
                       type="button"
                       onClick={() => onAddSpare(option)}
-                      aria-label={`Agregar ${option.title} (${formatCOP(option.cost)})`}
+                      aria-label={t('bc.addAria', { title: option.title, cost: formatCOP(option.cost) })}
                       className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-navy px-3 py-1.5 text-sm font-semibold text-white transition-colors hover:bg-navy/90"
                     >
                       <Plus aria-hidden="true" className="size-4" />
-                      Agregar
+                      {t('bc.add')}
                     </button>
                   </li>
                 ))}
@@ -188,12 +190,12 @@ export function BudgetCard({
 
       {tips.length > 0 && (
         <div className="mt-3 rounded-2xl bg-surface-2 p-4">
-          <p className="text-sm font-semibold text-ink">Para que te alcance puedes:</p>
+          <p className="text-sm font-semibold text-ink">{t('bc.tipsTitle')}</p>
           <ul className="mt-1.5 flex list-disc flex-col gap-1 pl-5 text-sm text-ink">
             {tips.map((tip) => (
               <li key={tip.text}>
                 {tip.text}
-                {tip.saves ? <span className="text-muted"> · ahorras unos {formatCOP(tip.saves)}</span> : null}
+                {tip.saves ? <span className="text-muted"> · {t('bc.saves', { amount: formatCOP(tip.saves) })}</span> : null}
               </li>
             ))}
           </ul>
@@ -201,8 +203,7 @@ export function BudgetCard({
       )}
 
       <p className="mt-3 text-xs text-muted">
-        Estimado con precios promedio de un {COST_LEVEL_LABELS[level]} en Colombia. Los precios reales pueden variar según
-        la temporada y dónde comas o te hospedes.
+        {t('bc.estimateNote', { level: COST_LEVEL_LABELS[level] })}
       </p>
     </section>
   )
