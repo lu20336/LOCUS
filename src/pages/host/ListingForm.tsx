@@ -1,5 +1,6 @@
 /** Formulario de publicación/edición de alojamientos (anfitrión). */
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useI18n } from '../../lib/i18n/I18nProvider'
 import { useNavigate, useParams } from 'react-router'
 import { FormField, inputClassName } from '../../components/FormField'
 import { LocationPicker } from '../../components/host/LocationPicker'
@@ -33,6 +34,7 @@ function NumberField({ id, label, value, onChange, error, hint, min = 0, step = 
 }
 
 export default function ListingForm() {
+  const { t } = useI18n()
   const { id } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -68,8 +70,8 @@ export default function ListingForm() {
   const toggleAmenity = (a: string) => set('amenities', draft.amenities.includes(a) ? draft.amenities.filter((x) => x !== a) : [...draft.amenities, a])
 
   if (id && loaded.loading) return <Container><Spinner /></Container>
-  if (id && !loaded.loading && !loaded.data?.item) return <Container className="py-10"><Alert>No encontramos esta publicación o no te pertenece.</Alert></Container>
-  if (existing && existing.hostId !== user?.uid) return <Container className="py-10"><Alert>Esta publicación no te pertenece.</Alert></Container>
+  if (id && !loaded.loading && !loaded.data?.item) return <Container className="py-10"><Alert>{t('hf.notFound')}</Alert></Container>
+  if (existing && existing.hostId !== user?.uid) return <Container className="py-10"><Alert>{t('hf.notYours')}</Alert></Container>
 
   const canSubmitReview = !existing || existing.status === 'draft' || existing.status === 'rejected'
   const keepsStatus = existing && (existing.status === 'pending' || existing.status === 'published')
@@ -81,7 +83,7 @@ export default function ListingForm() {
     const found = validateListingDraft(next, status === 'pending')
     setErrors(found)
     if (hasFormErrors(found)) {
-      setMessage('Revisa los campos marcados en rojo.')
+      setMessage(t('hf.reviewFields'))
       topRef.current?.scrollIntoView({ behavior: 'smooth' })
       return
     }
@@ -94,7 +96,7 @@ export default function ListingForm() {
       await replacePhotos(db, 'listings', savedId, photos.map((p) => ({ dataUrl: p.dataUrl, alt: p.alt })))
       navigate('/anfitrion', { replace: true })
     } catch {
-      setMessage('No pudimos guardar. Revisa tu conexión e inténtalo de nuevo.')
+      setMessage(t('hf.saveError'))
       topRef.current?.scrollIntoView({ behavior: 'smooth' })
     } finally {
       setSaving(false)
@@ -104,39 +106,39 @@ export default function ListingForm() {
   return (
     <Container className="max-w-3xl py-8 sm:py-10">
       <div ref={topRef} />
-      <PageHeader eyebrow="Modo anfitrión" title={existing ? 'Editar alojamiento' : 'Publicar un alojamiento'}>
-        Completa la información. Puedes guardar un borrador y terminarlo después; al enviarlo a revisión, el equipo de LOCUS lo aprueba antes de que sea visible.
+      <PageHeader eyebrow={t('hb.eyebrow')} title={existing ? t('hf.editListing') : t('hf.newListing')}>
+        {t('hf.listingIntro')}
       </PageHeader>
       {message && <div className="mb-4"><Alert>{message}</Alert></div>}
 
       <form onSubmit={(e) => e.preventDefault()} noValidate className="flex flex-col gap-6">
-        <Section title="Información general">
-          <FormField id="title" label="Nombre del alojamiento" error={errors.title}>{(c) => <input {...c} value={draft.title} maxLength={100} onChange={(e) => set('title', e.target.value)} className={inputClassName} />}</FormField>
-          <FormField id="desc" label="Descripción" error={errors.description} hint="Cuenta qué hace especial el lugar, cómo llegar y qué hay cerca.">{(c) => <textarea {...c} rows={5} maxLength={4000} value={draft.description} onChange={(e) => set('description', e.target.value)} className={inputClassName} />}</FormField>
-          <FormField id="type" label="Tipo de alojamiento">{(c) => <select {...c} value={draft.type} onChange={(e) => set('type', e.target.value as ListingType)} className={selectClassName}>{Object.entries(LISTING_TYPES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>}</FormField>
+        <Section title={t('hf.general')}>
+          <FormField id="title" label={t('hf.listingName')} error={errors.title}>{(c) => <input {...c} value={draft.title} maxLength={100} onChange={(e) => set('title', e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="desc" label={t('hf.description')} error={errors.description} hint={t('hf.descHint')}>{(c) => <textarea {...c} rows={5} maxLength={4000} value={draft.description} onChange={(e) => set('description', e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="type" label={t('hf.listingType')}>{(c) => <select {...c} value={draft.type} onChange={(e) => set('type', e.target.value as ListingType)} className={selectClassName}>{Object.entries(LISTING_TYPES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>}</FormField>
           <div className="grid gap-4 sm:grid-cols-4">
-            <NumberField id="cap" label="Capacidad (huéspedes)" value={draft.capacity} min={1} onChange={(n) => set('capacity', n)} error={errors.capacity} />
-            <NumberField id="bed" label="Habitaciones" value={draft.bedrooms} onChange={(n) => set('bedrooms', n)} error={errors.bedrooms} />
-            <NumberField id="beds" label="Camas" value={draft.beds} min={1} onChange={(n) => set('beds', n)} error={errors.beds} />
-            <NumberField id="bath" label="Baños" value={draft.bathrooms} onChange={(n) => set('bathrooms', n)} error={errors.bathrooms} />
+            <NumberField id="cap" label={t('hf.capacity')} value={draft.capacity} min={1} onChange={(n) => set('capacity', n)} error={errors.capacity} />
+            <NumberField id="bed" label={t('flow.rooms')} value={draft.bedrooms} onChange={(n) => set('bedrooms', n)} error={errors.bedrooms} />
+            <NumberField id="beds" label={t('hf.beds')} value={draft.beds} min={1} onChange={(n) => set('beds', n)} error={errors.beds} />
+            <NumberField id="bath" label={t('hf.baths')} value={draft.bathrooms} onChange={(n) => set('bathrooms', n)} error={errors.bathrooms} />
           </div>
         </Section>
 
-        <Section title="Ubicación">
+        <Section title={t('hf.location')}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField id="dep" label="Departamento" error={errors.department}>{(c) => <select {...c} value={draft.department} onChange={(e) => set('department', e.target.value)} className={selectClassName}><option value="">Elige…</option>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select>}</FormField>
-            <FormField id="mun" label="Municipio" error={errors.municipality}>{(c) => <input {...c} value={draft.municipality} onChange={(e) => set('municipality', e.target.value)} className={inputClassName} />}</FormField>
+            <FormField id="dep" label={t('hf.department')} error={errors.department}>{(c) => <select {...c} value={draft.department} onChange={(e) => set('department', e.target.value)} className={selectClassName}><option value="">{t('xp.choose')}</option>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select>}</FormField>
+            <FormField id="mun" label={t('hd.municipalityShort')} error={errors.municipality}>{(c) => <input {...c} value={draft.municipality} onChange={(e) => set('municipality', e.target.value)} className={inputClassName} />}</FormField>
           </div>
-          <FormField id="addr" label="Dirección o referencia" hint="No se muestra la dirección exacta hasta que confirmes una reserva si prefieres usar solo una referencia (ej. «Vereda Boquía, a 10 min del parque»).">{(c) => <input {...c} value={draft.addressReference} maxLength={300} onChange={(e) => set('addressReference', e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="addr" label={t('hf.address')} hint={t('hf.addressHint')}>{(c) => <input {...c} value={draft.addressReference} maxLength={300} onChange={(e) => set('addressReference', e.target.value)} className={inputClassName} />}</FormField>
           <LocationPicker lat={draft.lat} lon={draft.lon} onChange={(la, lo) => setDraft((d) => ({ ...d, lat: la, lon: lo }))} error={errors.lat} searchHint={draft.municipality} />
         </Section>
 
-        <Section title="Fotografías">
+        <Section title={t('hf.photos')}>
           <PhotoUploader photos={photos} onChange={setPhotos} />
           {errors.photoCount && <Alert>{errors.photoCount}</Alert>}
         </Section>
 
-        <Section title="Comodidades">
+        <Section title={t('lp.amenities')}>
           <div className="grid gap-2 sm:grid-cols-2">
             {Object.entries(AMENITIES).map(([k, label]) => (
               <label key={k} className="flex items-center gap-2 rounded-xl border border-line px-3 py-2 text-sm">
@@ -146,36 +148,36 @@ export default function ListingForm() {
           </div>
         </Section>
 
-        <Section title="Tarifas y reservas">
+        <Section title={t('hf.rates')}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <NumberField id="price" label="Precio por noche (COP)" value={draft.pricePerNight} step={1000} onChange={(n) => set('pricePerNight', n)} error={errors.pricePerNight} />
-            <NumberField id="clean" label="Tarifa de limpieza (COP, una vez)" value={draft.cleaningFee} step={1000} onChange={(n) => set('cleaningFee', n)} error={errors.cleaningFee} />
-            <NumberField id="inc" label="Huéspedes incluidos en el precio" value={draft.includedGuests} min={1} onChange={(n) => set('includedGuests', n)} error={errors.includedGuests} />
-            <NumberField id="extra" label="Cobro por huésped extra (COP/noche)" value={draft.extraGuestFee} step={1000} onChange={(n) => set('extraGuestFee', n)} error={errors.extraGuestFee} />
-            <NumberField id="min" label="Estadía mínima (noches)" value={draft.minNights} min={1} onChange={(n) => set('minNights', n)} error={errors.minNights} />
-            <NumberField id="max" label="Estadía máxima (noches)" value={draft.maxNights} min={1} onChange={(n) => set('maxNights', n)} error={errors.maxNights} />
+            <NumberField id="price" label={t('hf.pricePerNight')} value={draft.pricePerNight} step={1000} onChange={(n) => set('pricePerNight', n)} error={errors.pricePerNight} />
+            <NumberField id="clean" label={t('hf.cleaning')} value={draft.cleaningFee} step={1000} onChange={(n) => set('cleaningFee', n)} error={errors.cleaningFee} />
+            <NumberField id="inc" label={t('hf.included')} value={draft.includedGuests} min={1} onChange={(n) => set('includedGuests', n)} error={errors.includedGuests} />
+            <NumberField id="extra" label={t('hf.extraFee')} value={draft.extraGuestFee} step={1000} onChange={(n) => set('extraGuestFee', n)} error={errors.extraGuestFee} />
+            <NumberField id="min" label={t('hf.minNights')} value={draft.minNights} min={1} onChange={(n) => set('minNights', n)} error={errors.minNights} />
+            <NumberField id="max" label={t('hf.maxNights')} value={draft.maxNights} min={1} onChange={(n) => set('maxNights', n)} error={errors.maxNights} />
           </div>
-          <FormField id="mode" label="¿Cómo aceptas reservas?">{(c) => <select {...c} value={draft.bookingMode} onChange={(e) => set('bookingMode', e.target.value as 'instant' | 'request')} className={selectClassName}><option value="instant">Reserva inmediata (se confirma sola)</option><option value="request">Por solicitud (tú la aceptas)</option></select>}</FormField>
-          <FormField id="pol" label="Política de cancelación" hint={CANCELLATION_POLICIES[draft.cancellationPolicy].description}>{(c) => <select {...c} value={draft.cancellationPolicy} onChange={(e) => set('cancellationPolicy', e.target.value as ListingDraft['cancellationPolicy'])} className={selectClassName}>{Object.entries(CANCELLATION_POLICIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>}</FormField>
-          <p className="text-sm text-muted">La disponibilidad (fechas bloqueadas) se administra en el calendario, después de guardar.</p>
+          <FormField id="mode" label={t('hf.bookingMode')}>{(c) => <select {...c} value={draft.bookingMode} onChange={(e) => set('bookingMode', e.target.value as 'instant' | 'request')} className={selectClassName}><option value="instant">{t('hf.modeInstant')}</option><option value="request">{t('hf.modeRequest')}</option></select>}</FormField>
+          <FormField id="pol" label={t('hf.cancelPolicy')} hint={CANCELLATION_POLICIES[draft.cancellationPolicy].description}>{(c) => <select {...c} value={draft.cancellationPolicy} onChange={(e) => set('cancellationPolicy', e.target.value as ListingDraft['cancellationPolicy'])} className={selectClassName}>{Object.entries(CANCELLATION_POLICIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>}</FormField>
+          <p className="text-sm text-muted">{t('hf.availabilityNote')}</p>
         </Section>
 
-        <Section title="Reglas del alojamiento">
+        <Section title={t('hf.rulesTitle')}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField id="cin" label="Hora de llegada">{(c) => <input {...c} type="time" value={draft.checkInTime} onChange={(e) => set('checkInTime', e.target.value)} className={inputClassName} />}</FormField>
-            <FormField id="cout" label="Hora de salida">{(c) => <input {...c} type="time" value={draft.checkOutTime} onChange={(e) => set('checkOutTime', e.target.value)} className={inputClassName} />}</FormField>
+            <FormField id="cin" label={t('hf.checkInTime')}>{(c) => <input {...c} type="time" value={draft.checkInTime} onChange={(e) => set('checkInTime', e.target.value)} className={inputClassName} />}</FormField>
+            <FormField id="cout" label={t('hf.checkOutTime')}>{(c) => <input {...c} type="time" value={draft.checkOutTime} onChange={(e) => set('checkOutTime', e.target.value)} className={inputClassName} />}</FormField>
           </div>
-          <FormField id="rules" label="Reglas y restricciones" hint="Ej. no fiestas, no fumar, silencio después de las 10 p. m.">{(c) => <textarea {...c} rows={3} maxLength={2000} value={draft.rules} onChange={(e) => set('rules', e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="rules" label={t('hf.rules')} hint={t('hf.rulesHint')}>{(c) => <textarea {...c} rows={3} maxLength={2000} value={draft.rules} onChange={(e) => set('rules', e.target.value)} className={inputClassName} />}</FormField>
         </Section>
 
         <div className="flex flex-wrap justify-end gap-3">
-          <Button variant="ghost" className="border border-line" onClick={() => navigate('/anfitrion')} disabled={saving}>Cancelar</Button>
+          <Button variant="ghost" className="border border-line" onClick={() => navigate('/anfitrion')} disabled={saving}>{t('common.cancel')}</Button>
           {keepsStatus ? (
-            <Button onClick={() => save('draft')} disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</Button>
+            <Button onClick={() => save('draft')} disabled={saving}>{saving ? t('trips.detail.saving') : t('trips.detail.saveChanges')}</Button>
           ) : (
             <>
-              <Button variant="secondary" onClick={() => save('draft')} disabled={saving}>{saving ? 'Guardando…' : 'Guardar borrador'}</Button>
-              {canSubmitReview && <Button onClick={() => save('pending')} disabled={saving}>Enviar a revisión</Button>}
+              <Button variant="secondary" onClick={() => save('draft')} disabled={saving}>{saving ? t('trips.detail.saving') : t('hf.saveDraft')}</Button>
+              {canSubmitReview && <Button onClick={() => save('pending')} disabled={saving}>{t('hd.sendReview')}</Button>}
             </>
           )}
         </div>
