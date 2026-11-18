@@ -19,8 +19,7 @@ import {
   tripEvent,
 } from '../lib/flow/exportItinerary'
 import { downloadItineraryPdf } from '../lib/flow/itineraryPdf'
-import { osmPlaceUrl } from '../lib/flow/itineraryView'
-import { extrasForDay } from '../lib/flow/tripBudget'
+import { extrasForDay, venueMapUrl } from '../lib/flow/tripBudget'
 import { addToPhoneCalendar, detectPlatform, phoneCalendarLabel } from '../lib/flow/phoneCalendar'
 import { formatCOP, formatDateRange } from '../lib/format'
 import type { TripDetails } from '../types/flow'
@@ -161,7 +160,7 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
                         <p className="text-ink">
                           {extra.venue.role}:{' '}
                           <a
-                            href={osmPlaceUrl(extra.venue)}
+                            href={venueMapUrl(extra.venue, itinerary.destination.displayName.split(',')[0])}
                             target="_blank"
                             rel="noreferrer"
                             className="font-semibold text-teal-soft underline-offset-2 hover:underline"
