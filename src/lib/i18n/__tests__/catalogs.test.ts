@@ -16,9 +16,7 @@ const base = es as Record<string, string>
 /** Variables usadas fuera y dentro de las ramas de plural, sin repetir y ordenadas. */
 function variables(text: string): string[] {
   const names = new Set<string>()
-  for (const m of text.matchAll(/\{(\w+)(?:\s*,\s*plural)?/g)) {
-    if (!['one', 'other', 'few', 'many', 'zero', 'two'].includes(m[1])) names.add(m[1])
-  }
+  for (const m of text.matchAll(/\{(\w+)\s*(?:,\s*plural|\})/g)) names.add(m[1])
   return [...names].sort()
 }
 
