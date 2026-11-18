@@ -69,8 +69,18 @@ export function I18nProvider({ children }: { children: ReactNode }) {
         document.documentElement.lang = locale
       })
       .catch(() => {
-        // Sin red para descargar el idioma: se mantiene el español en vez de dejar la app en blanco.
+        // Sin red para descargar el idioma (o página en caché de una versión anterior, cuyo archivo de idioma
+        // ya no existe): se recarga UNA vez para tomar la versión nueva; si sigue fallando, se mantiene el español.
         if (cancelled) return
+        try {
+          if (typeof window !== 'undefined' && sessionStorage.getItem('locus:i18n:reloaded') !== locale) {
+            sessionStorage.setItem('locus:i18n:reloaded', locale)
+            window.location.reload()
+            return
+          }
+        } catch {
+          // sin sessionStorage: se sigue con el respaldo en español
+        }
         setActiveLocale(DEFAULT_LOCALE, es)
         setDictionary(es)
         document.documentElement.lang = DEFAULT_LOCALE
