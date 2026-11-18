@@ -11,6 +11,7 @@ import { fetchPublished } from '../lib/catalog/repo'
 import { getReferenceLodging } from '../lib/catalog/referenceLodging'
 import { stayFit } from '../lib/flow/tripBudget'
 import { formatCOP } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { db } from '../lib/firebase/client'
 import { haversineKm } from '../lib/itinerary/geo'
 import { useAsync } from '../lib/useAsync'
@@ -48,6 +49,7 @@ export function StaysSection({
    */
   lodgingAllowance?: number
 }) {
+  const { t, meta } = useI18n()
   const listings = useAsync(() => fetchPublished<Listing>(db, 'listings'), [])
   const withBudget = lodgingAllowance !== undefined && Boolean(checkIn && checkOut)
   const near = useMemo(() => {
@@ -75,28 +77,27 @@ export function StaysSection({
   const [visibleRefs, setVisibleRefs] = useState(REF_PAGE)
 
   return (
-    <section aria-label={`Alojamientos en ${placeName}`} className="flex flex-col gap-5">
+    <section aria-label={t('stay.sectionLabel', { place: placeName })} className="flex flex-col gap-5">
       {showLocus && (<>
       <div>
-        <h2 className="text-2xl font-semibold text-navy">Dónde hospedarte en {placeName}</h2>
-        <p className="mt-1 text-sm text-muted">Reservables en LOCUS, publicados por anfitriones.</p>
+        <h2 className="text-2xl font-semibold text-navy">{t('stay.whereTitle', { place: placeName })}</h2>
+        <p className="mt-1 text-sm text-muted">{t('stay.bookable')}</p>
         {withBudget && (
           <p className="mt-2 text-sm text-ink">
             {lodgingAllowance! > 0 ? (
               <>
-                Según tu presupuesto te quedan unos <strong>{formatCOP(lodgingAllowance!)}</strong> para hospedarte todo
-                el viaje (después de comida, transporte y entradas).
-                {near.length > 0 && ' Primero te mostramos los que caben.'}
+                {t('stay.budgetLeft', { amount: formatCOP(lodgingAllowance!) })}
+                {near.length > 0 && t('stay.fitsFirst')}
               </>
             ) : (
-              <>Con tu presupuesto no queda dinero para hospedarte después de comida, transporte y entradas.</>
+              <>{t('stay.noBudget')}</>
             )}
           </p>
         )}
       </div>
 
       {listings.loading ? (
-        <Spinner label="Buscando alojamientos…" />
+        <Spinner label={t('stay.searching')} />
       ) : listings.error ? (
         <Alert>{listings.error}</Alert>
       ) : near.length > 0 ? (
@@ -106,9 +107,9 @@ export function StaysSection({
               {fit && (
                 <span className="self-start">
                   {fit.fits ? (
-                    <Badge tone="teal">Dentro de tu presupuesto · {formatCOP(fit.total)} en total</Badge>
+                    <Badge tone="teal">{t('stay.withinBudget', { total: formatCOP(fit.total) })}</Badge>
                   ) : (
-                    <Badge tone="warn">Se pasa por {formatCOP(fit.over)} · {formatCOP(fit.total)} en total</Badge>
+                    <Badge tone="warn">{t('stay.overBudget', { over: formatCOP(fit.over), total: formatCOP(fit.total) })}</Badge>
                   )}
                 </span>
               )}
@@ -118,30 +119,30 @@ export function StaysSection({
         </ul>
       ) : (
         <Alert tone="info">
-          Todavía no hay anfitriones de LOCUS cerca de {placeName}. Más abajo puedes ver alojamientos de referencia (no reservables aquí) o{' '}
-          <Link to="/anfitrion" className="font-semibold underline">publicar el tuyo</Link>.
+          {t('stay.noHostsA', { place: placeName })}{' '}
+          <Link to="/anfitrion" className="font-semibold underline">{t('stay.noHostsLink')}</Link>.
         </Alert>
       )}
 
-      {near.length > 6 && <ButtonLink to="/explorar" variant="secondary" className="self-start">Ver todos los alojamientos</ButtonLink>}
+      {near.length > 6 && <ButtonLink to="/explorar" variant="secondary" className="self-start">{t('stay.seeAll')}</ButtonLink>}
       </>)}
 
       <div className="flex flex-col gap-3 rounded-3xl border border-line bg-surface-2 p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <h3 className="text-lg font-semibold text-navy">{showLocus ? 'Más opciones en la zona' : `Alojamientos en ${placeName}`}</h3>
-          <Badge>Solo para ver · no reservables en LOCUS</Badge>
+          <h3 className="text-lg font-semibold text-navy">{showLocus ? t('stay.moreOptions') : t('stay.staysIn', { place: placeName })}</h3>
+          <Badge>{t('stay.viewOnly')}</Badge>
         </div>
         <p className="text-sm text-muted">
-          Establecimientos reales de OpenStreetMap cerca de {placeName}. No tenemos sus precios, fotos ni disponibilidad: contáctalos directamente.
+          {t('stay.referenceNote', { place: placeName })}
         </p>
-        {reference.loading && <Spinner label="Buscando alojamientos…" />}
+        {reference.loading && <Spinner label={t('stay.searching')} />}
         {reference.error && (
           <>
-            <Alert>No pudimos consultar los alojamientos de referencia en este momento.</Alert>
-            <Button variant="secondary" className="self-start" onClick={reference.reload}>Reintentar</Button>
+            <Alert>{t('stay.refError')}</Alert>
+            <Button variant="secondary" className="self-start" onClick={reference.reload}>{t('common.retry')}</Button>
           </>
         )}
-        {!reference.loading && !reference.error && osmPlaces.length === 0 && <p className="text-sm text-muted">No encontramos alojamientos registrados en OpenStreetMap en esta zona.</p>}
+        {!reference.loading && !reference.error && osmPlaces.length === 0 && <p className="text-sm text-muted">{t('stay.noneOsm')}</p>}
         {osmPlaces.length > 0 && (
           <div className="grid gap-4 lg:grid-cols-[1fr_22rem]">
             <div className="flex flex-col gap-2">
@@ -150,11 +151,11 @@ export function StaysSection({
                 <li key={p.id} onMouseEnter={() => setSelectedRef(p.id)} className={`flex items-start gap-3 rounded-2xl border bg-surface p-3 ${selectedRef === p.id ? 'border-teal' : 'border-line'}`}>
                   <div className="min-w-0 flex-1">
                     <p className="font-semibold text-ink">{p.name}</p>
-                    <p className="text-sm text-muted">{p.kind} · {haversineKm({ lat, lon }, p).toFixed(1)} km del centro</p>
+                    <p className="text-sm text-muted">{t('stay.fromCenter', { kind: p.kind, km: haversineKm({ lat, lon }, p).toFixed(1) })}</p>
                     <p className="mt-1 flex flex-wrap gap-3 text-sm">
-                      {p.website && <a href={p.website} target="_blank" rel="noreferrer noopener" className="font-semibold text-teal-soft underline">Sitio web</a>}
-                      {p.phone && <span className="text-muted">Tel. {p.phone}</span>}
-                      <a href={`https://www.openstreetmap.org/${p.id}`} target="_blank" rel="noreferrer noopener" className="text-muted underline">Ver en el mapa</a>
+                      {p.website && <a href={p.website} target="_blank" rel="noreferrer noopener" className="font-semibold text-teal-soft underline">{t('stay.website')}</a>}
+                      {p.phone && <span className="text-muted">{t('stay.phone', { phone: p.phone })}</span>}
+                      <a href={`https://www.openstreetmap.org/${p.id}`} target="_blank" rel="noreferrer noopener" className="text-muted underline">{t('stay.viewOnMap')}</a>
                     </p>
                   </div>
                   <FavoriteButton item={{ kind: 'place', refId: p.id, title: p.name, subtitle: p.kind }} />
@@ -163,17 +164,17 @@ export function StaysSection({
             </ul>
             {osmPlaces.length > visibleRefs && (
               <Button variant="secondary" className="self-start" onClick={() => setVisibleRefs((n) => n + REF_PAGE)}>
-                Ver más alojamientos ({osmPlaces.length - visibleRefs})
+                {t('stay.seeMore', { count: osmPlaces.length - visibleRefs })}
               </Button>
             )}
             </div>
-            <LocusMap markers={osmMarkers} selectedId={selectedRef} onSelect={setSelectedRef} center={[lat, lon]} zoom={12} className="h-72" ariaLabel="Mapa de alojamientos de referencia" />
+            <LocusMap markers={osmMarkers} selectedId={selectedRef} onSelect={setSelectedRef} center={[lat, lon]} zoom={12} className="h-72" ariaLabel={t('stay.refMap')} />
           </div>
         )}
         {osmPlaces.length > 0 && (
           <p className="text-xs text-muted">
-            {osmPlaces.length} alojamientos · Datos © OpenStreetMap contributors (ODbL)
-            {reference.data?.source === 'static' && reference.data.generatedAt ? ` · actualizado el ${new Date(reference.data.generatedAt).toLocaleDateString('es-CO')}` : ''}.
+            {t('stay.count', { count: osmPlaces.length })}
+            {reference.data?.source === 'static' && reference.data.generatedAt ? t('stay.updatedOn', { date: new Date(reference.data.generatedAt).toLocaleDateString(meta.bcp47) }) : ''}.
           </p>
         )}
       </div>

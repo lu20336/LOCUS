@@ -1,22 +1,25 @@
 import { fetchForecast, rainRisk } from '../lib/weather/openMeteo'
 import { useAsync } from '../lib/useAsync'
+import { getBcp47 } from '../lib/i18n/store'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { Badge } from './ui'
 
 const riskTone = { bajo: 'teal', medio: 'warn', alto: 'danger' } as const
 const shortDate = (iso: string) =>
-  new Intl.DateTimeFormat('es-CO', { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`))
+  new Intl.DateTimeFormat(getBcp47(), { weekday: 'short', day: 'numeric', timeZone: 'UTC' }).format(new Date(`${iso}T00:00:00Z`))
 
 /** Clima actual y pronóstico de 7 días (Open-Meteo). Distingue "ahora" de "pronóstico". */
-export function WeatherPanel({ lat, lon, title = 'El clima' }: { lat: number; lon: number; title?: string }) {
+export function WeatherPanel({ lat, lon, title }: { lat: number; lon: number; title?: string }) {
+  const { t } = useI18n()
   const { data, loading, error, reload } = useAsync(() => fetchForecast(lat, lon, 7), [lat, lon])
 
   return (
     <section aria-labelledby="weather-title" className="rounded-3xl border border-line bg-surface p-5">
-      <h2 id="weather-title" className="text-xl font-semibold text-navy">{title}</h2>
-      {loading && <p className="mt-3 text-sm text-muted" role="status">Consultando el clima…</p>}
+      <h2 id="weather-title" className="text-xl font-semibold text-navy">{title ?? t('wp.title')}</h2>
+      {loading && <p className="mt-3 text-sm text-muted" role="status">{t('wp.loading')}</p>}
       {error && (
         <p className="mt-3 text-sm text-muted">
-          No pudimos consultar el clima. <button className="font-semibold underline" onClick={reload}>Reintentar</button>
+          {t('wp.error')} <button className="font-semibold underline" onClick={reload}>{t('common.retry')}</button>
         </p>
       )}
       {data && (
@@ -25,7 +28,7 @@ export function WeatherPanel({ lat, lon, title = 'El clima' }: { lat: number; lo
             <p className="mt-2 text-ink">
               <span className="text-3xl font-semibold">{Math.round(data.current.temperature)} °C</span>{' '}
               <span className="text-muted">
-                ahora · {data.current.description} · sensación {Math.round(data.current.apparentTemperature)} °C · humedad {data.current.humidity} %
+                {t('wp.now', { description: data.current.description, feels: Math.round(data.current.apparentTemperature), humidity: data.current.humidity })}
               </span>
             </p>
           )}
@@ -40,7 +43,7 @@ export function WeatherPanel({ lat, lon, title = 'El clima' }: { lat: number; lo
             ))}
           </ul>
           <p className="mt-3 text-xs text-muted">
-            El pronóstico es una estimación y puede cambiar; la temperatura “ahora” es el valor del modelo para este momento, no una medición. Datos de{' '}
+            {t('wp.note')}{' '}
             <a href="https://open-meteo.com" target="_blank" rel="noreferrer" className="underline">Open-Meteo</a> (CC BY 4.0).
           </p>
         </>
