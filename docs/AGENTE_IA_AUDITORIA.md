@@ -10,9 +10,13 @@
 
 ## Correcciones (`src/lib/agent/`)
 
-- `resilience.ts`: clasifica errores (transitorio, límite de cuota, timeout, permanente, configuración, bloqueado, cancelado); reintentos con *backoff* exponencial y *jitter* (×2 en cuota, respeta `Retry-After` hasta 15 s) **solo** para errores transitorios; timeout por intento (30 s) con cancelación inmediata por señal externa.
-- `agent.ts`: envío de un solo vuelo (un mensaje a la vez, `requestId`); la sesión se reconstruye desde el historial confirmado tras un fallo; timeout de herramientas (20 s) y plazo total del turno (100 s); mensajes de error claros en el idioma activo; botón de reintento manual que conserva el texto y el contexto; el interfaz sale del estado "pensando" siempre.
+- `resilience.ts`: clasifica errores (transitorio, límite de cuota, timeout, permanente, configuración, bloqueado, cancelado); reintentos con *backoff* exponencial y *jitter* (×2 en cuota, respeta `Retry-After` hasta 15 s) **solo** para errores transitorios; timeout por intento (45 s) con cancelación inmediata por señal externa.
+- `agent.ts`: envío de un solo vuelo (un mensaje a la vez, `requestId`); la sesión se reconstruye desde el historial confirmado tras un fallo; timeout de herramientas (20 s) y plazo total del turno (150 s); mensajes de error claros en el idioma activo; botón de reintento manual que conserva el texto y el contexto; el interfaz sale del estado "pensando" siempre.
 - `telemetry.ts`: registro seguro en `sessionStorage` (máx. 100): marca de tiempo, proveedor, latencia, estado, código de error, reintentos, causa. **Sin contenido de conversaciones, claves ni datos personales**; botón "Copiar detalles técnicos".
+
+## Latencia observada en producción
+
+En la verificación en producción (18-nov-2026) cada llamada a `gemini-3.8-flash` tardaba 15–45 s con el razonamiento por defecto, lo que agotaba el timeout de 30 s y obligaba a reintentar. Se subió el timeout por intento a 45 s y se fijó `thinkingConfig.thinkingLevel = LOW` (menos razonamiento = respuestas más rápidas); si el modelo rechazara ese parámetro, el error queda registrado en el log técnico y basta con retirarlo de `agent.ts`.
 
 ## Pruebas
 

@@ -40,11 +40,11 @@ export const GEMINI_MODEL = (import.meta.env.VITE_GEMINI_MODEL as string | undef
 const MAX_TOOL_ROUNDS = 4
 const MAX_TOOL_CALLS = 8
 /** Tiempo máximo de UNA llamada al modelo (el SDK usa 180 s por defecto: demasiado). */
-export const MODEL_TIMEOUT_MS = 30_000
+export const MODEL_TIMEOUT_MS = 45_000
 /** Tiempo máximo de UNA herramienta (consultas a OpenStreetMap, clima, Firestore…). */
 export const TOOL_TIMEOUT_MS = 20_000
 /** Tiempo máximo de todo un turno (modelo + herramientas + reintentos). */
-export const TURN_DEADLINE_MS = 100_000
+export const TURN_DEADLINE_MS = 150_000
 export const MAX_ATTEMPTS = 3
 /** Incluye el "pensamiento" del modelo; un tope bajo dejaba respuestas vacías. */
 const MAX_OUTPUT_TOKENS = 4096
@@ -234,7 +234,7 @@ export class AgentSession {
         model: GEMINI_MODEL,
         systemInstruction: buildSystemInstruction(this.ctx.today, this.profileSummary, this.language),
         tools: [{ functionDeclarations: TOOL_DECLARATIONS }],
-        generationConfig: { temperature: 0.4, maxOutputTokens: MAX_OUTPUT_TOKENS },
+        generationConfig: { temperature: 0.4, maxOutputTokens: MAX_OUTPUT_TOKENS, thinkingConfig: { thinkingLevel: 'LOW' as never } },
       },
       { timeout: MODEL_TIMEOUT_MS },
     )

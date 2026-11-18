@@ -97,7 +97,11 @@ export function formatDateRange(startISO: string, endISO: string): string {
   if (startISO === endISO) return formatDate(startISO)
   const [startYear, startMonth, startDay] = startISO.split('-').map(Number)
   const [endYear, endMonth] = endISO.split('-').map(Number)
-  if (startYear === endYear && startMonth === endMonth) return `${startDay}–${formatDate(endISO)}`
+  if (startYear === endYear && startMonth === endMonth) {
+    // En español queda "10–12 dic 2026"; en otros idiomas el orden día/mes cambia: Intl arma el rango correcto.
+    if (getBcp47().startsWith('es')) return `${startDay}–${formatDate(endISO)}`
+    return dateFormat({ day: 'numeric', month: 'short', year: 'numeric' }).formatRange(utc(startISO), utc(endISO))
+  }
   return `${formatDate(startISO)} – ${formatDate(endISO)}`
 }
 

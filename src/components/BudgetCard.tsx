@@ -64,7 +64,7 @@ export function BudgetCard({
           <dt className="text-muted">{t('it.estimatedCost')}</dt>
           <dd className="text-xl font-semibold text-navy">{formatCOP(total)}</dd>
           <dd className="text-muted">
-            {t('bc.of', { budget: formatCOP(budget) })}
+            {t('bc.of', { amount: formatCOP(budget) })}
             {travelers > 1 && <> · {t('bc.perPerson', { amount: formatCOP(Math.round(total / travelers / 1000) * 1000) })}</>}
           </dd>
         </dl>

@@ -23,17 +23,24 @@ import { optimizeRoute } from '../itinerary/generateItinerary'
 import { addStop, withDayPlaces } from './editItinerary'
 import type { Listing } from '../domain/types'
 import { formatCOP } from '../format'
+import { getT } from '../i18n/store'
 import { destinationPlans, type DestinationPlan } from './destinationPlans'
 import { osmPlaceUrl } from './itineraryView'
 import { normalizePlaceName } from './resolveDestination'
 
 export type CostLevel = 'alto' | 'medio' | 'economico'
 
-export const COST_LEVEL_LABELS: Record<CostLevel, string> = {
-  alto: 'destino costoso',
-  medio: 'ciudad o destino turístico',
-  economico: 'pueblo o destino económico',
-}
+export const COST_LEVEL_LABELS = {
+  get alto() {
+    return getT()('tb.level.alto')
+  },
+  get medio() {
+    return getT()('tb.level.medio')
+  },
+  get economico() {
+    return getT()('tb.level.economico')
+  },
+} as Record<CostLevel, string>
 
 /** Destinos donde todo cuesta más (temporada turística casi todo el año). */
 const HIGH_COST = ['cartagena', 'san andres', 'providencia', 'baru']
@@ -191,46 +198,46 @@ export function estimateTripBudget(
   const lines: BudgetLine[] = [
     {
       id: 'alojamiento',
-      label: 'Alojamiento',
+      label: getT()('tb.lodging'),
       amount: lodging,
       detail:
         nights === 0
-          ? 'Viaje de un día: sin noches'
-          : `${plural(nights, 'noche', 'noches')} × ${plural(rooms, 'habitación', 'habitaciones')} × ${money(price.roomNight)}` +
-            (style?.lodging === 'economico' ? ' · hostal o casa de huéspedes' : ''),
+          ? getT()('tb.noNights')
+          : getT()('tb.lodgingDetail', { nights, rooms, price: money(price.roomNight) }) +
+            (style?.lodging === 'economico' ? getT()('tb.hostel') : ''),
     },
     {
       id: 'comida',
-      label: 'Comida',
+      label: getT()('tb.food'),
       amount: food,
       detail:
-        `${plural(days, 'día', 'días')} × ${plural(people, 'persona', 'personas')} × ${money(price.foodPerPersonDay)}` +
-        (style?.food === 'economico' ? ' · corrientazo y comida local' : ''),
+        getT()('tb.foodDetail', { days, people, price: money(price.foodPerPersonDay) }) +
+        (style?.food === 'economico' ? getT()('tb.localFood') : ''),
     },
     {
       id: 'transporte',
-      label: 'Transporte',
+      label: getT()('tb.transport'),
       amount: transport,
       detail:
-        (style?.transport === 'economico' ? 'Bus y a pie' : 'Taxis y buses') +
+        (style?.transport === 'economico' ? getT()('tb.busWalk') : getT()('tb.taxiBus')) +
         (excursionDays.length > 0
-          ? ` en la ciudad, más el bus a ${excursionDays.map((d) => d.excursion!.name).join(' y ')}`
-          : `: ${money(price.transportPerPersonDay)} por persona al día`),
+          ? getT()('tb.inCityPlusBus', { towns: excursionDays.map((d) => d.excursion!.name).join(getT()('tb.and')) })
+          : getT()('tb.perDay', { price: money(price.transportPerPersonDay) })),
     },
     {
       id: 'entradas',
-      label: 'Entradas y actividades',
+      label: getT()('tb.entries'),
       amount: entries,
       detail:
         entries === 0
-          ? 'Los lugares del plan son gratis (plazas, playas, miradores…)'
-          : `${money(entriesPerPerson)} por persona en museos, parques y salidas`,
+          ? getT()('tb.entriesFree')
+          : getT()('tb.entriesPaid', { price: money(entriesPerPerson) }),
     },
   ]
   const extras = style?.extras ?? []
   const extrasAmount = extras.reduce((sum, e) => sum + e.amount, 0)
   if (extras.length > 0) {
-    lines.push({ id: 'extras', label: 'Planes extra', amount: extrasAmount, detail: listNames(extras.map((e) => e.title)) })
+    lines.push({ id: 'extras', label: getT()('tb.extras'), amount: extrasAmount, detail: listNames(extras.map((e) => e.title)) })
   }
 
   const total = lines.reduce((sum, l) => sum + l.amount, 0)

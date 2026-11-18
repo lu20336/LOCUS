@@ -1,3 +1,4 @@
+import { getBcp47 } from '../i18n/store'
 /**
  * Utilidades de la vista del itinerario (Paso 3): distancias entre paradas y
  * enlaces para abrir los lugares y la ruta del día en un mapa.
@@ -15,7 +16,7 @@ export function legDistancesKm(start: GeoPoint, places: readonly GeoPoint[]): nu
 /** 0,35 → "350 m"; 2,345 → "2,3 km". */
 export function formatDistance(km: number): string {
   if (km < 1) return `${Math.max(10, Math.round((km * 1000) / 10) * 10)} m`
-  return `${km.toLocaleString('es-CO', { maximumFractionDigits: 1 })} km`
+  return `${km.toLocaleString(getBcp47(), { maximumFractionDigits: 1 })} km`
 }
 
 /** Página del lugar en OpenStreetMap (id "node/123" → openstreetmap.org/node/123). */
@@ -49,7 +50,7 @@ export function googleMapsRouteUrl(
 /** "2026-12-10" → "jue 10 dic" (para las pestañas de los días). */
 export function formatDayTab(iso: string): string {
   const [year, month, day] = iso.split('-').map(Number)
-  const parts = new Intl.DateTimeFormat('es-CO', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
+  const parts = new Intl.DateTimeFormat(getBcp47(), { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' })
     .formatToParts(new Date(Date.UTC(year, month - 1, day)))
   const part = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value.replace('.', '') ?? ''
   return `${part('weekday')} ${part('day')} ${part('month')}`
