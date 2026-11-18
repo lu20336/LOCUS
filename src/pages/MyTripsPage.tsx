@@ -15,6 +15,7 @@ import { useToast } from '../components/Toast'
 import { NextTripCard, TripCard, type TripActions } from '../components/trips/TripCard'
 import { Alert, Button, ButtonLink, CardGridSkeleton, Container, EmptyState, PageHeader } from '../components/ui'
 import { useAuth } from '../lib/auth/authContext'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { openAgent } from '../lib/agent/openAgent'
 import { fetchBookings } from '../lib/catalog/repo'
 import { FEATURED_DESTINATIONS } from '../lib/featuredDestinations'
@@ -30,6 +31,7 @@ import { bookingLink, bookingWhen } from './TripsPage'
 type Tab = 'upcoming' | 'past' | 'ideas'
 
 export default function MyTripsPage() {
+  const { t: tr } = useI18n()
   const { user } = useAuth()
   const toast = useToast()
   const [params, setParams] = useSearchParams()
@@ -77,19 +79,19 @@ export default function MyTripsPage() {
     onDuplicate: async (t) => {
       try {
         const id = await duplicateItinerary(db, user!.uid, t)
-        toast('Viaje duplicado', { action: { label: 'Abrir copia', to: `/mis-viajes/${id}` } })
+        toast(tr('trips.toast.duplicated'), { action: { label: tr('trips.toast.openCopy'), to: `/mis-viajes/${id}` } })
         trips.reload()
       } catch {
-        toast('No pudimos duplicar el viaje. Inténtalo de nuevo.', { tone: 'error' })
+        toast(tr('trips.toast.duplicateError'), { tone: 'error' })
       }
     },
     onShare: async (t) => {
-      const text = shareSummary(t, formatDateRange)
+      const text = shareSummary(t, formatDateRange, tr)
       try {
         if (navigator.share) await navigator.share({ title: t.title, text })
         else {
           await navigator.clipboard.writeText(text)
-          toast('Copiamos el resumen del viaje para que lo pegues donde quieras', { tone: 'info' })
+          toast(tr('trips.toast.copiedSummary'), { tone: 'info' })
         }
       } catch {
         // El usuario canceló el menú de compartir: no es un error.
@@ -104,10 +106,10 @@ export default function MyTripsPage() {
     try {
       await renameItinerary(db, user.uid, renaming.id, newName)
       setRenaming(null)
-      toast('Nombre actualizado')
+      toast(tr('trips.toast.renamed'))
       trips.reload()
     } catch {
-      toast('No pudimos cambiar el nombre.', { tone: 'error' })
+      toast(tr('trips.toast.renameError'), { tone: 'error' })
     } finally {
       setBusy(false)
     }
@@ -119,10 +121,10 @@ export default function MyTripsPage() {
     try {
       await removeItinerary(db, user.uid, deleting.id)
       setDeleting(null)
-      toast('Viaje eliminado', { tone: 'info' })
+      toast(tr('trips.toast.deleted'), { tone: 'info' })
       trips.reload()
     } catch {
-      toast('No pudimos eliminar el viaje.', { tone: 'error' })
+      toast(tr('trips.toast.deleteError'), { tone: 'error' })
     } finally {
       setBusy(false)
     }
@@ -148,30 +150,30 @@ export default function MyTripsPage() {
   return (
     <Container className="max-w-5xl">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <PageHeader eyebrow="Tu espacio" title="Mis viajes">
-          Itinerarios, viajes próximos y por hacer, todo en un solo lugar.
+        <PageHeader eyebrow={tr('nav.yourSpace')} title={tr('nav.myTrips')}>
+          {tr('trips.intro')}
         </PageHeader>
         <div className="flex flex-wrap gap-2">
-          <ButtonLink to="/" className="!py-2.5"><Plus aria-hidden="true" className="size-4" />Planear un viaje</ButtonLink>
-          <Button variant="secondary" className="!py-2.5" onClick={() => openAgent('Organízame un viaje por Colombia')}><Sparkles aria-hidden="true" className="size-4" />Pedirle a LOCUS</Button>
+          <ButtonLink to="/" className="!py-2.5"><Plus aria-hidden="true" className="size-4" />{tr('trips.planTrip')}</ButtonLink>
+          <Button variant="secondary" className="!py-2.5" onClick={() => openAgent(tr('trips.askPrompt'))}><Sparkles aria-hidden="true" className="size-4" />{tr('trips.askLocus')}</Button>
         </div>
       </div>
 
       {draft && (
         <div className="anim-rise mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-coral/40 bg-coral/10 p-4">
           <div>
-            <p className="font-semibold text-ink">Tienes un plan sin guardar: {draft.destination.displayName.split(',')[0]}</p>
-            <p className="text-sm text-muted">{formatDateRange(draft.startDate, draft.endDate)} · termínalo y guárdalo en tu cuenta para encontrarlo aquí.</p>
+            <p className="font-semibold text-ink">{tr('trips.draftTitle', { place: draft.destination.displayName.split(',')[0] })}</p>
+            <p className="text-sm text-muted">{tr('trips.draftText', { dates: formatDateRange(draft.startDate, draft.endDate) })}</p>
           </div>
-          <ButtonLink to="/planear" className="!py-2">Continuar plan</ButtonLink>
+          <ButtonLink to="/planear" className="!py-2">{tr('trips.draftCta')}</ButtonLink>
         </div>
       )}
 
       {upcomingBookings.length > 0 && (
-        <section aria-label="Reservas próximas" className="mb-6 rounded-3xl border border-line bg-surface p-4 sm:p-5">
+        <section aria-label={tr('trips.upcomingBookings')} className="mb-6 rounded-3xl border border-line bg-surface p-4 sm:p-5">
           <div className="flex items-center justify-between gap-2">
-            <h2 className="font-sans text-base font-semibold text-ink">Reservas próximas</h2>
-            <Link to="/reservas" className="text-sm font-semibold text-teal-soft underline-offset-2 hover:underline">Ver todas</Link>
+            <h2 className="font-sans text-base font-semibold text-ink">{tr('trips.upcomingBookings')}</h2>
+            <Link to="/reservas" className="text-sm font-semibold text-teal-soft underline-offset-2 hover:underline">{tr('trips.seeAll')}</Link>
           </div>
           <ul className="anim-stagger mt-3 grid gap-2 sm:grid-cols-3">
             {upcomingBookings.map((b, i) => (
@@ -187,20 +189,20 @@ export default function MyTripsPage() {
       )}
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-wrap gap-2" role="group" aria-label="Tipo de viajes">
-          {tabButton('upcoming', 'Próximos', grouped.upcoming.length)}
-          {tabButton('past', 'Realizados', grouped.past.length)}
-          {tabButton('ideas', 'Ideas guardadas', ideas.length)}
+        <div className="flex flex-wrap gap-2" role="group" aria-label={tr('trips.tabsLabel')}>
+          {tabButton('upcoming', tr('trips.tab.upcoming'), grouped.upcoming.length)}
+          {tabButton('past', tr('trips.tab.past'), grouped.past.length)}
+          {tabButton('ideas', tr('trips.tab.ideas'), ideas.length)}
         </div>
         {tab !== 'ideas' && all.length > 0 && (
           <label className="relative block w-full sm:w-64">
-            <span className="sr-only">Buscar en mis viajes</span>
+            <span className="sr-only">{tr('trips.searchLabel')}</span>
             <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
             <input
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar por nombre o destino"
+              placeholder={tr('trips.searchPlaceholder')}
               className="w-full rounded-xl border border-line bg-surface py-2.5 pl-9 pr-3 text-sm text-ink focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
             />
           </label>
@@ -208,30 +210,30 @@ export default function MyTripsPage() {
       </div>
 
       {trips.loading ? (
-        <CardGridSkeleton count={3} label="Cargando tus viajes" />
+        <CardGridSkeleton count={3} label={tr('trips.loading')} />
       ) : trips.error ? (
         <div className="flex flex-col items-start gap-3">
-          <Alert>No pudimos cargar tus viajes.</Alert>
-          <Button variant="secondary" onClick={trips.reload}>Reintentar</Button>
+          <Alert>{tr('trips.loadError')}</Alert>
+          <Button variant="secondary" onClick={trips.reload}>{tr('common.retry')}</Button>
         </div>
       ) : tab === 'ideas' ? (
         <Ideas ideas={ideas} />
       ) : all.length === 0 ? (
         <EmptyState
           icon={Luggage}
-          title="Aquí vivirán tus viajes"
+          title={tr('trips.emptyTitle')}
           action={
             <div className="flex flex-wrap justify-center gap-3">
-              <ButtonLink to="/">Planear mi primer viaje</ButtonLink>
-              <Button variant="secondary" onClick={() => openAgent('Organízame un viaje por Colombia')}>Pedirle ideas a LOCUS</Button>
+              <ButtonLink to="/">{tr('trips.planFirst')}</ButtonLink>
+              <Button variant="secondary" onClick={() => openAgent(tr('trips.askPrompt'))}>{tr('trips.askIdeas')}</Button>
             </div>
           }
         >
-          Arma un itinerario día a día con lugares reales y se guardará aquí. También puedes pedirle a tu compañero LOCUS que lo organice por ti.
+          {tr('trips.emptyText')}
         </EmptyState>
       ) : visible.length === 0 ? (
-        <EmptyState icon={tab === 'past' ? History : Search} title={query ? 'No encontramos viajes con ese nombre' : tab === 'past' ? 'Todavía no tienes viajes realizados' : 'No tienes viajes próximos'}>
-          {query ? 'Prueba con otro nombre o destino.' : tab === 'past' ? 'Cuando termine uno de tus viajes, quedará aquí como recuerdo.' : 'Planea tu próxima escapada y aparecerá aquí.'}
+        <EmptyState icon={tab === 'past' ? History : Search} title={query ? tr('trips.noMatch') : tab === 'past' ? tr('trips.noPast') : tr('trips.noUpcoming')}>
+          {query ? tr('trips.noMatchHint') : tab === 'past' ? tr('trips.noPastHint') : tr('trips.noUpcomingHint')}
         </EmptyState>
       ) : (
         <div className="flex flex-col gap-6">
@@ -250,13 +252,13 @@ export default function MyTripsPage() {
 
       <ConfirmDialog
         open={Boolean(renaming)}
-        title="Renombrar viaje"
-        confirmLabel="Guardar nombre"
+        title={tr('trips.renameTitle')}
+        confirmLabel={tr('trips.renameConfirm')}
         busy={busy}
         onConfirm={() => void confirmRename()}
         onCancel={() => setRenaming(null)}
       >
-        <label htmlFor="trip-new-name" className="font-semibold text-ink">Nuevo nombre</label>
+        <label htmlFor="trip-new-name" className="font-semibold text-ink">{tr('trips.newName')}</label>
         <input
           id="trip-new-name"
           value={newName}
@@ -267,10 +269,8 @@ export default function MyTripsPage() {
         />
       </ConfirmDialog>
 
-      <ConfirmDialog open={Boolean(deleting)} title="¿Eliminar este viaje?" confirmLabel="Eliminar" danger busy={busy} onConfirm={() => void confirmDelete()} onCancel={() => setDeleting(null)}>
-        <p>
-          Se eliminará <strong>{deleting?.title}</strong> de tu cuenta. Esta acción no se puede deshacer.
-        </p>
+      <ConfirmDialog open={Boolean(deleting)} title={tr('trips.deleteTitle')} confirmLabel={tr('common.delete')} danger busy={busy} onConfirm={() => void confirmDelete()} onCancel={() => setDeleting(null)}>
+        <p>{tr('trips.deleteBody', { title: deleting?.title ?? '' })}</p>
       </ConfirmDialog>
     </Container>
   )
@@ -278,6 +278,7 @@ export default function MyTripsPage() {
 
 /** Ideas guardadas: destinos que el usuario marcó con el corazón; se convierten en viaje con un clic. */
 function Ideas({ ideas }: { ideas: { refId: string; title: string; subtitle?: string }[] }) {
+  const { t: tr } = useI18n()
   const saved = new Set(ideas.map((i) => i.refId))
   const suggestions = FEATURED_DESTINATIONS.filter((d) => !saved.has(d.id)).slice(0, 3)
   const Card = ({ id, title, subtitle }: { id: string; title: string; subtitle?: string }) => {
@@ -294,8 +295,8 @@ function Ideas({ ideas }: { ideas: { refId: string; title: string; subtitle?: st
             {(dest?.tagline || subtitle) && <p className="text-sm text-muted">{dest?.tagline ?? subtitle}</p>}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link to={`/?destino=${id}`} className="rounded-xl bg-coral px-3.5 py-2 text-sm font-bold text-on-coral transition hover:brightness-105">Planear este viaje</Link>
-            <Link to={`/destinos/${id}`} className="rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink transition hover:bg-surface-2">Ver destino</Link>
+            <Link to={`/?destino=${id}`} className="rounded-xl bg-coral px-3.5 py-2 text-sm font-bold text-on-coral transition hover:brightness-105">{tr('trips.ideas.planThis')}</Link>
+            <Link to={`/destinos/${id}`} className="rounded-xl border border-line px-3.5 py-2 text-sm font-semibold text-ink transition hover:bg-surface-2">{tr('trips.ideas.seeDestination')}</Link>
           </div>
         </div>
       </article>
@@ -310,13 +311,13 @@ function Ideas({ ideas }: { ideas: { refId: string; title: string; subtitle?: st
           ))}
         </ul>
       ) : (
-        <EmptyState icon={Heart} title="Guarda destinos para decidir después">
-          Toca el corazón en cualquier destino y lo verás aquí, listo para convertirlo en un viaje con un clic.
+        <EmptyState icon={Heart} title={tr('trips.ideas.emptyTitle')}>
+          {tr('trips.ideas.emptyText')}
         </EmptyState>
       )}
       {suggestions.length > 0 && (
-        <section aria-label="Ideas de LOCUS">
-          <h2 className="mb-3 text-xl font-semibold text-navy">Ideas para tu próxima escapada</h2>
+        <section aria-label={tr('trips.ideas.label')}>
+          <h2 className="mb-3 text-xl font-semibold text-navy">{tr('trips.ideas.suggestions')}</h2>
           <ul className="anim-stagger grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {suggestions.map((d, n) => (
               <li key={d.id} style={{ '--i': n } as CSSProperties}><Card id={d.id} title={d.name} /></li>

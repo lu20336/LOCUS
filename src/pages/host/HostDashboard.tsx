@@ -9,6 +9,7 @@ import { deleteItem, fetchBookings, fetchByHost, setItemStatus, type CatalogKind
 import type { Booking, Experience, Listing, ListingStatus, StayPricing } from '../../lib/domain/types'
 import { db } from '../../lib/firebase/client'
 import { formatCOP, todayISO } from '../../lib/format'
+import { useI18n } from '../../lib/i18n/I18nProvider'
 import { usePlans } from '../../lib/plans/planContext'
 import { useAsync } from '../../lib/useAsync'
 import { STATUS_LABELS, bookingLink, bookingWhen } from '../TripsPage'
@@ -140,6 +141,7 @@ function Stats({ bookings }: { bookings: Booking[] }) {
 
 /** Plan del anfitrión (demostrativo) y publicaciones usadas, más lo que espera su respuesta. */
 function HostStrip({ used, pending }: { used: number; pending: number }) {
+  const { t } = useI18n()
   const { planFor } = usePlans()
   const plan = planFor('host')
   const limit = plan.maxListings
@@ -147,31 +149,31 @@ function HostStrip({ used, pending }: { used: number; pending: number }) {
     <div className="mb-8 grid gap-3 md:grid-cols-2">
       <div className="anim-rise flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-line bg-surface p-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-teal-soft">Tu plan de anfitrión</p>
+          <p className="text-xs font-semibold uppercase tracking-wider text-teal-soft">{t('host.yourPlan')}</p>
           <p className="font-serif text-lg font-semibold text-navy">{plan.name}</p>
           <p className="text-sm text-muted">
-            {used} {limit === undefined ? 'publicaciones' : `de ${limit} publicaciones`} · comisión {plan.commissionPct}% (demostración)
+            {limit === undefined ? t('host.listingsUsedUnlimited', { used }) : t('host.listingsUsed', { used, limit })} · {t('host.commission', { pct: plan.commissionPct ?? 0 })}
           </p>
         </div>
         <Link to="/planes" className="inline-flex items-center gap-1.5 rounded-xl border-2 border-teal px-3.5 py-2 text-sm font-bold text-ink transition hover:bg-teal/10">
           <Sparkles aria-hidden="true" className="size-4" />
-          Ver planes
+          {t('promo.seePlans')}
         </Link>
       </div>
       {pending > 0 ? (
         <Link to="/anfitrion/reservas" className="anim-rise flex items-center gap-3 rounded-2xl border border-coral/40 bg-coral/10 p-4 transition hover:bg-coral/15">
           <CalendarCheck aria-hidden="true" className="size-7 shrink-0 text-coral" />
           <span>
-            <span className="block font-semibold text-ink">{pending} {pending === 1 ? 'solicitud espera' : 'solicitudes esperan'} tu respuesta</span>
-            <span className="block text-sm text-muted">Responde pronto: los huéspedes valoran la rapidez.</span>
+            <span className="block font-semibold text-ink">{t('host.pendingTitle', { count: pending })}</span>
+            <span className="block text-sm text-muted">{t('host.pendingHint')}</span>
           </span>
         </Link>
       ) : (
         <div className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-4">
           <CalendarCheck aria-hidden="true" className="size-7 shrink-0 text-teal-soft" />
           <span>
-            <span className="block font-semibold text-ink">Estás al día</span>
-            <span className="block text-sm text-muted">No tienes solicitudes pendientes.</span>
+            <span className="block font-semibold text-ink">{t('host.upToDate')}</span>
+            <span className="block text-sm text-muted">{t('host.noPending')}</span>
           </span>
         </div>
       )}
@@ -180,6 +182,7 @@ function HostStrip({ used, pending }: { used: number; pending: number }) {
 }
 
 export default function HostDashboard() {
+  const { t } = useI18n()
   const { user, profile, loading } = useAuth()
   const listings = useAsync(() => fetchByHost<Listing>(db, 'listings', user!.uid), [user?.uid, profile?.isHost])
   const experiences = useAsync(() => fetchByHost<Experience>(db, 'experiences', user!.uid), [user?.uid, profile?.isHost])
@@ -194,7 +197,7 @@ export default function HostDashboard() {
       <PageHeader eyebrow="Modo anfitrión" title="Tu panel de anfitrión">Administra tus publicaciones y reservas. Los pagos están en modo de prueba.</PageHeader>
 
       <p className="-mt-4 mb-6 text-sm text-muted">
-        Estás en modo anfitrión. <Link to="/mis-viajes" className="font-semibold text-teal-soft underline">Cambiar a mi espacio de viajero</Link>
+        {t('host.modeNotice')} <Link to="/mis-viajes" className="font-semibold text-teal-soft underline">{t('host.switchToTraveler')}</Link>
       </p>
 
       <div className="mb-8 flex flex-wrap gap-3">
@@ -229,7 +232,7 @@ export default function HostDashboard() {
             {recent.map((b) => (
               <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-4 py-3 text-sm">
                 <span><Link to={bookingLink(b)} className="font-semibold hover:underline">{b.itemTitle}</Link> · {b.guestName} · {bookingWhen(b)}</span>
-                <span className="flex items-center gap-2"><span>{formatCOP((b.pricing as StayPricing).total)}</span><Badge tone={STATUS_LABELS[b.status].tone}>{STATUS_LABELS[b.status].label}</Badge></span>
+                <span className="flex items-center gap-2"><span>{formatCOP((b.pricing as StayPricing).total)}</span><Badge tone={STATUS_LABELS[b.status].tone}>{t(STATUS_LABELS[b.status].label)}</Badge></span>
               </li>
             ))}
           </ul>

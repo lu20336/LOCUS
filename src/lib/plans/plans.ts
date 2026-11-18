@@ -16,6 +16,7 @@ export interface Plan {
   id: string
   audience: Audience
   name: string
+  /** Clave de traducción. */
   tagline: string
   /** Precio mensual de prueba (COP). 0 = gratis. */
   monthlyCOP: number
@@ -28,48 +29,49 @@ export interface Plan {
   commissionPct?: number
   /** Publicaciones activas incluidas (solo anfitriones; sin valor = ilimitadas). */
   maxListings?: number
-  /** Beneficios principales (tarjeta). */
+  /** Beneficios principales (tarjeta): claves de traducción. */
   highlights: string[]
 }
 
 export const BADGE_LABEL: Record<PlanBadge, string> = {
-  popular: 'Más popular',
-  'best-value': 'Mejor valor',
-  recommended: 'Recomendado',
+  popular: 'plans.badge.popular',
+  'best-value': 'plans.badge.bestValue',
+  recommended: 'plans.badge.recommended',
 }
 
+// Los nombres comerciales (LOCUS Plus, Host Pro…) son marcas y no se traducen; el resto son claves de traducción.
 export const GUEST_PLANS: Plan[] = [
   {
     id: 'guest-free',
     audience: 'guest',
     name: 'LOCUS Free',
-    tagline: 'Explora y planea sin costo.',
+    tagline: 'plans.guest.free.tagline',
     monthlyCOP: 0,
     annualCOP: 0,
     trialDays: 0,
-    highlights: ['Explora destinos, hospedajes y experiencias', 'Hasta 3 itinerarios guardados', 'Compañero de IA básico', 'Favoritos y comparador de precios'],
+    highlights: ['plans.guest.free.h1', 'plans.guest.free.h2', 'plans.guest.free.h3', 'plans.guest.free.h4'],
   },
   {
     id: 'guest-plus',
     audience: 'guest',
     name: 'LOCUS Plus',
-    tagline: 'Para quien viaja varias veces al año.',
+    tagline: 'plans.guest.plus.tagline',
     monthlyCOP: 14_900,
     annualCOP: 149_000,
     badge: 'popular',
     trialDays: 14,
-    highlights: ['Hasta 20 itinerarios guardados', 'Recomendaciones más personalizadas', 'Más mensajes con el compañero de IA', 'Colecciones de viajes y planificación avanzada'],
+    highlights: ['plans.guest.plus.h1', 'plans.guest.plus.h2', 'plans.guest.plus.h3', 'plans.guest.plus.h4'],
   },
   {
     id: 'guest-premium',
     audience: 'guest',
     name: 'LOCUS Premium',
-    tagline: 'Toda la experiencia, sin límites.',
+    tagline: 'plans.guest.premium.tagline',
     monthlyCOP: 29_900,
     annualCOP: 299_000,
     badge: 'best-value',
     trialDays: 14,
-    highlights: ['Itinerarios ilimitados y colaborativos', 'Compañero de IA ampliado', 'Alertas de escapadas y beneficios exclusivos', 'Soporte prioritario'],
+    highlights: ['plans.guest.premium.h1', 'plans.guest.premium.h2', 'plans.guest.premium.h3', 'plans.guest.premium.h4'],
   },
 ]
 
@@ -78,38 +80,38 @@ export const HOST_PLANS: Plan[] = [
     id: 'host-free',
     audience: 'host',
     name: 'Host Free',
-    tagline: 'Empieza a recibir viajeros.',
+    tagline: 'plans.host.free.tagline',
     monthlyCOP: 0,
     annualCOP: 0,
     trialDays: 0,
     commissionPct: 10,
     maxListings: 2,
-    highlights: ['Hasta 2 publicaciones', 'Calendario y gestión de reservas', 'Estadísticas básicas', 'Comisión del 10 % por reserva'],
+    highlights: ['plans.host.free.h1', 'plans.host.free.h2', 'plans.host.free.h3', 'plans.host.free.h4'],
   },
   {
     id: 'host-pro',
     audience: 'host',
     name: 'Host Pro',
-    tagline: 'Más visibilidad y mejores herramientas.',
+    tagline: 'plans.host.pro.tagline',
     monthlyCOP: 59_900,
     annualCOP: 599_000,
     badge: 'recommended',
     trialDays: 30,
     commissionPct: 6,
     maxListings: 10,
-    highlights: ['Hasta 10 publicaciones', 'Estadísticas completas y reportes mensuales', '1 publicación destacada al mes', 'Comisión reducida del 6 %'],
+    highlights: ['plans.host.pro.h1', 'plans.host.pro.h2', 'plans.host.pro.h3', 'plans.host.pro.h4'],
   },
   {
     id: 'host-business',
     audience: 'host',
     name: 'Host Business',
-    tagline: 'Para quien administra varios alojamientos.',
+    tagline: 'plans.host.business.tagline',
     monthlyCOP: 149_900,
     annualCOP: 1_499_000,
     badge: 'best-value',
     trialDays: 30,
     commissionPct: 4,
-    highlights: ['Publicaciones ilimitadas', 'Reportes exportables y automatizaciones', 'Destacados frecuentes y equipo con varios usuarios', 'Comisión reducida del 4 %'],
+    highlights: ['plans.host.business.h1', 'plans.host.business.h2', 'plans.host.business.h3', 'plans.host.business.h4'],
   },
 ]
 
@@ -120,10 +122,11 @@ export const findPlan = (id: string) => ALL_PLANS.find((p) => p.id === id)
 
 /* ───────────────────────────── Comparación ───────────────────────────── */
 
-/** true/false = incluido o no; texto = valor del plan (ej. "Hasta 3"). */
+/** true/false = incluido o no; texto = clave de traducción (empieza por "plans.") o un valor literal (ej. "20"). */
 export type FeatureValue = boolean | string
 
 export interface FeatureRow {
+  /** Clave de traducción del nombre de la funcionalidad. */
   label: string
   /** Valor por plan, en el mismo orden que plansFor(audience). */
   values: [FeatureValue, FeatureValue, FeatureValue]
@@ -132,31 +135,31 @@ export interface FeatureRow {
 }
 
 export const GUEST_FEATURES: FeatureRow[] = [
-  { label: 'Explorar destinos, hospedajes y experiencias', values: [true, true, true] },
-  { label: 'Comparador de precios entre plataformas', values: [true, true, true] },
-  { label: 'Favoritos', values: ['Ilimitados', 'Ilimitados', 'Ilimitados'] },
-  { label: 'Itinerarios guardados', values: ['Hasta 3', 'Hasta 20', 'Ilimitados'] },
-  { label: 'Mensajes diarios con el compañero de IA', values: ['20', '60', '150'] },
-  { label: 'Recomendaciones personalizadas', values: ['Básicas', 'Avanzadas', 'Avanzadas + sorpresa semanal'] },
-  { label: 'Planificación avanzada (varios destinos, presupuesto por categoría)', values: [false, true, true] },
-  { label: 'Colecciones de viajes', values: [false, true, true], soon: true },
-  { label: 'Alertas de escapadas y precios', values: [false, false, true], soon: true },
-  { label: 'Itinerarios colaborativos con amigos', values: [false, false, true], soon: true },
-  { label: 'Beneficios exclusivos con anfitriones aliados', values: [false, false, true], soon: true },
-  { label: 'Soporte prioritario', values: [false, false, true] },
+  { label: 'plans.f.explore', values: [true, true, true] },
+  { label: 'plans.f.compare', values: [true, true, true] },
+  { label: 'plans.f.favorites', values: ['plans.v.unlimited', 'plans.v.unlimited', 'plans.v.unlimited'] },
+  { label: 'plans.f.itineraries', values: ['plans.v.upTo3', 'plans.v.upTo20', 'plans.v.unlimitedM'] },
+  { label: 'plans.f.aiMessages', values: ['20', '60', '150'] },
+  { label: 'plans.f.recommendations', values: ['plans.v.basic', 'plans.v.advanced', 'plans.v.advancedWeekly'] },
+  { label: 'plans.f.advancedPlanning', values: [false, true, true] },
+  { label: 'plans.f.collections', values: [false, true, true], soon: true },
+  { label: 'plans.f.alerts', values: [false, false, true], soon: true },
+  { label: 'plans.f.collab', values: [false, false, true], soon: true },
+  { label: 'plans.f.perks', values: [false, false, true], soon: true },
+  { label: 'plans.f.support', values: [false, false, true] },
 ]
 
 export const HOST_FEATURES: FeatureRow[] = [
-  { label: 'Publicaciones activas', values: ['Hasta 2', 'Hasta 10', 'Ilimitadas'] },
-  { label: 'Calendario, disponibilidad y reservas', values: [true, true, true] },
-  { label: 'Fotos y ficha completa', values: [true, true, true] },
-  { label: 'Estadísticas', values: ['Básicas', 'Completas', 'Completas + comparativas'] },
-  { label: 'Reportes mensuales', values: [false, true, true], soon: true },
-  { label: 'Publicaciones destacadas', values: [false, '1 al mes', 'Frecuentes'], soon: true },
-  { label: 'Automatizaciones (mensajes, bloqueos)', values: [false, false, true], soon: true },
-  { label: 'Equipo con varios usuarios', values: [false, false, true], soon: true },
-  { label: 'Comisión por reserva confirmada', values: ['10 %', '6 %', '4 %'] },
-  { label: 'Soporte prioritario', values: [false, false, true] },
+  { label: 'plans.f.listings', values: ['plans.v.upTo2', 'plans.v.upTo10', 'plans.v.unlimitedF'] },
+  { label: 'plans.f.hostCore', values: [true, true, true] },
+  { label: 'plans.f.photos', values: [true, true, true] },
+  { label: 'plans.f.stats', values: ['plans.v.basicF', 'plans.v.completeF', 'plans.v.completeCompare'] },
+  { label: 'plans.f.reports', values: [false, true, true], soon: true },
+  { label: 'plans.f.featured', values: [false, 'plans.v.onePerMonth', 'plans.v.frequent'], soon: true },
+  { label: 'plans.f.automation', values: [false, false, true], soon: true },
+  { label: 'plans.f.team', values: [false, false, true], soon: true },
+  { label: 'plans.f.commission', values: ['10 %', '6 %', '4 %'] },
+  { label: 'plans.f.support', values: [false, false, true] },
 ]
 
 export const featuresFor = (audience: Audience) => (audience === 'guest' ? GUEST_FEATURES : HOST_FEATURES)
@@ -165,6 +168,7 @@ export const featuresFor = (audience: Audience) => (audience === 'guest' ? GUEST
 
 export interface Coupon {
   code: string
+  /** Clave de traducción de la descripción. */
   label: string
   /** Porcentaje de descuento (1-100). */
   percentOff: number
@@ -177,9 +181,9 @@ export interface Coupon {
 
 /** Cupones DEMOSTRATIVOS (no generan ninguna obligación de pago). */
 export const COUPONS: Coupon[] = [
-  { code: 'LANZAMIENTO30', label: '30 % de descuento los primeros 3 meses (promoción de lanzamiento)', percentOff: 30, months: 3, audience: 'all' },
-  { code: 'AMIGO20', label: '20 % de descuento el primer mes (invitación de un amigo)', percentOff: 20, months: 1, audience: 'guest' },
-  { code: 'FUNDADOR', label: 'Host Pro gratis los primeros 3 meses (Anfitriones Fundadores)', percentOff: 100, months: 3, audience: 'host', planIds: ['host-pro'] },
+  { code: 'LANZAMIENTO30', label: 'plans.coupon.launch', percentOff: 30, months: 3, audience: 'all' },
+  { code: 'AMIGO20', label: 'plans.coupon.friend', percentOff: 20, months: 1, audience: 'guest' },
+  { code: 'FUNDADOR', label: 'plans.coupon.founder', percentOff: 100, months: 3, audience: 'host', planIds: ['host-pro'] },
 ]
 
 export const normalizeCoupon = (code: string) => code.trim().toUpperCase().replace(/\s+/g, '')
@@ -196,9 +200,9 @@ export function validateCoupon(code: string, plan: Plan): CouponResult {
 }
 
 export const COUPON_ERRORS: Record<Extract<CouponResult, { ok: false }>['reason'], string> = {
-  unknown: 'Ese código no existe.',
-  'not-applicable': 'Ese código no aplica para este plan.',
-  'free-plan': 'El plan gratuito no necesita código.',
+  unknown: 'plans.couponError.unknown',
+  'not-applicable': 'plans.couponError.notApplicable',
+  'free-plan': 'plans.couponError.freePlan',
 }
 
 export interface Price {
@@ -255,9 +259,9 @@ export interface Subscription {
 }
 
 export const STATUS_LABEL: Record<SubscriptionStatus, string> = {
-  active: 'Activa',
-  trialing: 'En prueba gratuita',
-  cancelled: 'Cancelada',
+  active: 'plans.status.active',
+  trialing: 'plans.status.trialing',
+  cancelled: 'plans.status.cancelled',
 }
 
 const addDaysISO = (iso: string, days: number) => {

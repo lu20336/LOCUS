@@ -51,7 +51,7 @@ describe('catálogo de planes', () => {
   })
 
   it('el plan gratuito incluye las funciones esenciales y nunca limita reservas ni seguridad', () => {
-    const essential = GUEST_FEATURES.filter((r) => /Explorar|Comparador|Favoritos/.test(r.label))
+    const essential = GUEST_FEATURES.filter((r) => /plans.f.(explore|compare|favorites)/.test(r.label))
     expect(essential.length).toBeGreaterThanOrEqual(3)
     for (const row of essential) expect(row.values[0]).toBeTruthy()
     expect([...GUEST_FEATURES, ...HOST_FEATURES].some((r) => /reserva(?!s)\b.*límite|seguridad|privacidad/i.test(r.label))).toBe(false)

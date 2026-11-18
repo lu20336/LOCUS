@@ -15,6 +15,7 @@ import { useToast } from '../components/Toast'
 import { Alert, Badge, Button, Card, Container, PageHeader } from '../components/ui'
 import { useAuth } from '../lib/auth/authContext'
 import { formatCOP, formatDate } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { usePlans } from '../lib/plans/planContext'
 import {
   COUPONS,
@@ -30,14 +31,10 @@ import {
   type Plan,
 } from '../lib/plans/plans'
 
-const FAQ = [
-  { q: '¿Se cobra algo hoy?', a: 'No. Esta es una demostración: los planes y precios son de prueba, no se pide ninguna tarjeta y no se hace ningún cobro.' },
-  { q: '¿Qué pasará cuando haya pagos reales?', a: 'Te avisaremos antes y tendrás que aceptar el cambio. Tu plan demostrativo no generará deudas ni cobros automáticos.' },
-  { q: '¿Puedo cambiar o cancelar cuando quiera?', a: 'Sí. Puedes pasar a otro plan o volver a Free en cualquier momento desde esta página.' },
-  { q: '¿Se limitan las funciones esenciales en Free?', a: 'No. Explorar, comparar, guardar favoritos y gestionar tus reservas están siempre disponibles, con seguridad y privacidad iguales en todos los planes.' },
-]
+const FAQ = [1, 2, 3, 4]
 
 export default function PlansPage() {
+  const { t } = useI18n()
   const { user, profile } = useAuth()
   const { planFor, subscriptionFor, choose, cancel } = usePlans()
   const toast = useToast()
@@ -81,7 +78,7 @@ export default function PlansPage() {
     setBusy(true)
     try {
       await choose(selected, interval, { couponCode: appliedCoupon?.code, trial })
-      toast(selected.monthlyCOP === 0 ? 'Volviste al plan Free (demostración)' : `Ahora tienes ${selected.name} (demostración, sin cobro)`)
+      toast(selected.monthlyCOP === 0 ? t('plans.toast.downgraded') : t('plans.toast.chosen', { name: selected.name }))
       setSelected(null)
     } finally {
       setBusy(false)
@@ -91,9 +88,9 @@ export default function PlansPage() {
   async function copy(text: string) {
     try {
       await navigator.clipboard.writeText(text)
-      toast('Código copiado', { tone: 'info' })
+      toast(t('plans.toast.codeCopied'), { tone: 'info' })
     } catch {
-      toast(`Tu código: ${text}`, { tone: 'info' })
+      toast(t('plans.toast.yourCode', { code: text }), { tone: 'info' })
     }
   }
 
@@ -101,23 +98,23 @@ export default function PlansPage() {
 
   return (
     <Container className="max-w-6xl py-8 sm:py-12">
-      <PageHeader eyebrow="Planes" title="Elige cómo quieres viajar con LOCUS">
-        Empieza gratis y mejora cuando lo necesites. Hay un plan para quien viaja y otro para quien recibe viajeros.
+      <PageHeader eyebrow={t('plans.eyebrow')} title={t('plans.title')}>
+        {t('plans.intro')}
       </PageHeader>
 
       <Alert tone="info">
-        <strong>Demostración:</strong> los planes, precios y promociones son de prueba. No se cobra nada ni se pide ninguna tarjeta; sirven para validar la propuesta antes de activar pagos reales.
+        <strong>{t('plans.demoBold')}</strong> {t('plans.demoRest')}
       </Alert>
 
       <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-        <div role="group" aria-label="Tipo de plan" className="inline-flex rounded-full border border-line bg-surface p-1">
-          <button type="button" aria-pressed={audience === 'guest'} onClick={() => setAudience('guest')} className={tabClass(audience === 'guest')}>Para viajeros</button>
-          <button type="button" aria-pressed={audience === 'host'} onClick={() => setAudience('host')} className={tabClass(audience === 'host')}>Para anfitriones</button>
+        <div role="group" aria-label={t('plans.audienceLabel')} className="inline-flex rounded-full border border-line bg-surface p-1">
+          <button type="button" aria-pressed={audience === 'guest'} onClick={() => setAudience('guest')} className={tabClass(audience === 'guest')}>{t('plans.forTravelers')}</button>
+          <button type="button" aria-pressed={audience === 'host'} onClick={() => setAudience('host')} className={tabClass(audience === 'host')}>{t('plans.forHosts')}</button>
         </div>
-        <div role="group" aria-label="Periodo de cobro" className="inline-flex items-center rounded-full border border-line bg-surface p-1">
-          <button type="button" aria-pressed={interval === 'monthly'} onClick={() => setInterval('monthly')} className={tabClass(interval === 'monthly')}>Mensual</button>
+        <div role="group" aria-label={t('plans.intervalLabel')} className="inline-flex items-center rounded-full border border-line bg-surface p-1">
+          <button type="button" aria-pressed={interval === 'monthly'} onClick={() => setInterval('monthly')} className={tabClass(interval === 'monthly')}>{t('plans.monthly')}</button>
           <button type="button" aria-pressed={interval === 'annual'} onClick={() => setInterval('annual')} className={tabClass(interval === 'annual')}>
-            Anual <span className={`ml-1 text-xs font-bold ${interval === 'annual' ? 'text-surface' : 'text-teal-soft'}`}>−17 %</span>
+            {t('plans.annual')} <span className={`ml-1 text-xs font-bold ${interval === 'annual' ? 'text-surface' : 'text-teal-soft'}`}>−17 %</span>
           </button>
         </div>
       </div>
@@ -126,15 +123,15 @@ export default function PlansPage() {
         <Card className="anim-rise mt-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-teal-soft">Tu suscripción</p>
-              <p className="font-serif text-xl font-semibold text-navy">{current.name} <Badge tone={sub.status === 'trialing' ? 'warn' : 'teal'}>{STATUS_LABEL[sub.status]}</Badge></p>
+              <p className="text-xs font-semibold uppercase tracking-wider text-teal-soft">{t('plans.yourSubscription')}</p>
+              <p className="font-serif text-xl font-semibold text-navy">{current.name} <Badge tone={sub.status === 'trialing' ? 'warn' : 'teal'}>{t(STATUS_LABEL[sub.status])}</Badge></p>
               <p className="text-sm text-muted">
-                {sub.status === 'trialing' && sub.trialEndsAt ? `Tu prueba gratuita termina el ${formatDate(sub.trialEndsAt)}. ` : ''}
-                Facturación {sub.interval === 'annual' ? 'anual' : 'mensual'} · desde {formatDate(sub.startedAt)}
-                {sub.couponCode ? ` · cupón ${sub.couponCode}` : ''} · demostración
+                {sub.status === 'trialing' && sub.trialEndsAt ? t('plans.trialEnds', { date: formatDate(sub.trialEndsAt) }) : ''}
+                {t('plans.billing', { interval: sub.interval === 'annual' ? t('plans.billingAnnual') : t('plans.billingMonthly'), date: formatDate(sub.startedAt) })}
+                {sub.couponCode ? t('plans.couponApplied', { code: sub.couponCode }) : ''}{t('plans.demoWord')}
               </p>
             </div>
-            <Button variant="danger" className="!py-2" onClick={() => setConfirmCancel(true)}>Cancelar suscripción</Button>
+            <Button variant="danger" className="!py-2" onClick={() => setConfirmCancel(true)}>{t('plans.cancel')}</Button>
           </div>
         </Card>
       )}
@@ -147,51 +144,51 @@ export default function PlansPage() {
         ))}
       </ul>
 
-      <section aria-label="Promociones" className="mt-12">
-        <h2 className="text-2xl font-semibold text-navy">Promociones de lanzamiento</h2>
-        <p className="mt-1 text-sm text-muted">Valores demostrativos: úsalos al elegir un plan.</p>
+      <section aria-label={t('plans.promos.title')} className="mt-12">
+        <h2 className="text-2xl font-semibold text-navy">{t('plans.promos.title')}</h2>
+        <p className="mt-1 text-sm text-muted">{t('plans.promos.subtitle')}</p>
         <ul className="mt-4 grid gap-4 md:grid-cols-3">
           <li className="rounded-3xl border border-line bg-surface p-5">
             <Rocket aria-hidden="true" className="size-6 text-teal-soft" />
-            <p className="mt-2 font-semibold text-ink">Lanzamiento · 30 % menos</p>
-            <p className="text-sm text-muted">Los primeros 3 meses de cualquier plan de pago.</p>
+            <p className="mt-2 font-semibold text-ink">{t('plans.promo.launchTitle')}</p>
+            <p className="text-sm text-muted">{t('plans.promo.launchText')}</p>
             <button type="button" onClick={() => void copy('LANZAMIENTO30')} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-teal px-3 py-1.5 font-mono text-sm font-bold text-ink hover:bg-teal/10"><Copy aria-hidden="true" className="size-4" />LANZAMIENTO30</button>
           </li>
           <li className="rounded-3xl border border-line bg-surface p-5">
             <Gift aria-hidden="true" className="size-6 text-teal-soft" />
-            <p className="mt-2 font-semibold text-ink">Invita a un amigo</p>
-            <p className="text-sm text-muted">Tu amigo recibe 20 % el primer mes (código AMIGO20) y tú sumas beneficios cuando existan.</p>
+            <p className="mt-2 font-semibold text-ink">{t('plans.promo.friendTitle')}</p>
+            <p className="text-sm text-muted">{t('plans.promo.friendText')}</p>
             {code ? (
               <button type="button" onClick={() => void copy(code)} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-teal px-3 py-1.5 font-mono text-sm font-bold text-ink hover:bg-teal/10"><Copy aria-hidden="true" className="size-4" />{code}</button>
             ) : (
-              <Link to="/ingresar?next=/planes" className="mt-3 inline-block text-sm font-semibold text-teal-soft underline">Ingresa para obtener tu código</Link>
+              <Link to="/ingresar?next=/planes" className="mt-3 inline-block text-sm font-semibold text-teal-soft underline">{t('plans.promo.signInCode')}</Link>
             )}
           </li>
           <li className="rounded-3xl border border-line bg-surface p-5">
             <Tag aria-hidden="true" className="size-6 text-teal-soft" />
-            <p className="mt-2 font-semibold text-ink">Anfitriones Fundadores</p>
-            <p className="text-sm text-muted">Host Pro gratis los primeros 3 meses para quienes publican primero.</p>
+            <p className="mt-2 font-semibold text-ink">{t('plans.promo.founderTitle')}</p>
+            <p className="text-sm text-muted">{t('plans.promo.founderText')}</p>
             <button type="button" onClick={() => void copy('FUNDADOR')} className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-dashed border-teal px-3 py-1.5 font-mono text-sm font-bold text-ink hover:bg-teal/10"><Copy aria-hidden="true" className="size-4" />FUNDADOR</button>
           </li>
         </ul>
       </section>
 
-      <section aria-label="Comparación de planes" className="mt-12">
-        <h2 className="mb-4 text-2xl font-semibold text-navy">Compara los planes</h2>
+      <section aria-label={t('plans.compare.title')} className="mt-12">
+        <h2 className="mb-4 text-2xl font-semibold text-navy">{t('plans.compare.title')}</h2>
         <ComparisonTable audience={audience} currentPlanId={current.id} />
         <p className="mt-3 text-xs text-muted">
-          Las funciones marcadas «Próximamente» todavía no existen en LOCUS. Los límites son de referencia y hoy no restringen reservas, seguridad ni privacidad.
-          {audience === 'host' && ' Modelo para anfitriones: suscripción + comisión por reserva que baja a mayor plan (ver docs/NEGOCIO.md).'}
+          {t('plans.compare.note')}
+          {audience === 'host' && t('plans.compare.hostNote')}
         </p>
       </section>
 
-      <section aria-label="Preguntas frecuentes" className="mt-12 max-w-3xl">
-        <h2 className="mb-3 text-2xl font-semibold text-navy">Preguntas frecuentes</h2>
+      <section aria-label={t('plans.faq.title')} className="mt-12 max-w-3xl">
+        <h2 className="mb-3 text-2xl font-semibold text-navy">{t('plans.faq.title')}</h2>
         <div className="flex flex-col gap-2">
-          {FAQ.map((f) => (
-            <details key={f.q} className="group rounded-2xl border border-line bg-surface px-4 py-3">
-              <summary className="cursor-pointer list-none font-semibold text-ink marker:hidden">{f.q}</summary>
-              <p className="mt-2 text-sm text-muted">{f.a}</p>
+          {FAQ.map((n) => (
+            <details key={n} className="group rounded-2xl border border-line bg-surface px-4 py-3">
+              <summary className="cursor-pointer list-none font-semibold text-ink marker:hidden">{t(`plans.faq.q${n}`)}</summary>
+              <p className="mt-2 text-sm text-muted">{t(`plans.faq.a${n}`)}</p>
             </details>
           ))}
         </div>
@@ -199,8 +196,8 @@ export default function PlansPage() {
 
       <ConfirmDialog
         open={Boolean(selected)}
-        title={selected?.monthlyCOP === 0 ? 'Volver al plan Free' : `Elegir ${selected?.name ?? ''}`}
-        confirmLabel={selected?.monthlyCOP === 0 ? 'Volver a Free' : trial ? `Empezar prueba de ${selected?.trialDays} días` : 'Confirmar (simulado)'}
+        title={selected?.monthlyCOP === 0 ? t('plans.dialog.downgradeTitle') : t('plans.dialog.chooseTitle', { name: selected?.name ?? '' })}
+        confirmLabel={selected?.monthlyCOP === 0 ? t('plans.dialog.confirmDowngrade') : trial ? t('plans.dialog.confirmTrial', { days: selected?.trialDays ?? 0 }) : t('plans.dialog.confirmSimulated')}
         busy={busy}
         onConfirm={() => void confirm()}
         onCancel={() => setSelected(null)}
@@ -210,40 +207,40 @@ export default function PlansPage() {
             {selected.monthlyCOP > 0 ? (
               <>
                 <dl className="grid grid-cols-2 gap-y-1">
-                  <dt className="text-muted">Plan</dt><dd className="text-right font-semibold text-ink">{selected.name}</dd>
-                  <dt className="text-muted">Periodo</dt><dd className="text-right font-semibold text-ink">{interval === 'annual' ? 'Anual' : 'Mensual'}</dd>
-                  <dt className="text-muted">Precio</dt><dd className="text-right font-semibold text-ink">{formatCOP(periodPrice.periodCOP)} / {interval === 'annual' ? 'año' : 'mes'}</dd>
-                  {trial && <><dt className="text-muted">Prueba gratuita</dt><dd className="text-right font-semibold text-ink">{selected.trialDays} días</dd></>}
-                  <dt className="text-muted">Se cobraría hoy</dt><dd className="text-right text-lg font-bold text-navy">{formatCOP(firstCharge)}</dd>
+                  <dt className="text-muted">{t('plans.dialog.plan')}</dt><dd className="text-right font-semibold text-ink">{selected.name}</dd>
+                  <dt className="text-muted">{t('plans.dialog.period')}</dt><dd className="text-right font-semibold text-ink">{interval === 'annual' ? t('plans.annual') : t('plans.monthly')}</dd>
+                  <dt className="text-muted">{t('plans.dialog.price')}</dt><dd className="text-right font-semibold text-ink">{formatCOP(periodPrice.periodCOP)} / {interval === 'annual' ? t('plans.dialog.perYear') : t('plans.dialog.perMonth')}</dd>
+                  {trial && <><dt className="text-muted">{t('plans.dialog.trial')}</dt><dd className="text-right font-semibold text-ink">{t('plans.dialog.days', { days: selected.trialDays })}</dd></>}
+                  <dt className="text-muted">{t('plans.dialog.chargeToday')}</dt><dd className="text-right text-lg font-bold text-navy">{formatCOP(firstCharge)}</dd>
                 </dl>
                 <div>
-                  <label htmlFor="plan-coupon" className="font-semibold text-ink">¿Tienes un código?</label>
+                  <label htmlFor="plan-coupon" className="font-semibold text-ink">{t('plans.dialog.haveCode')}</label>
                   <input
                     id="plan-coupon"
                     value={coupon}
                     onChange={(e) => setCoupon(e.target.value)}
-                    placeholder="Ej. LANZAMIENTO30"
+                    placeholder={t('plans.dialog.codePlaceholder')}
                     autoComplete="off"
                     className="mt-1 w-full rounded-xl border border-line bg-surface px-4 py-2.5 font-mono text-base uppercase text-ink focus:border-teal focus:outline-none focus:ring-2 focus:ring-teal/30"
                   />
                   <p aria-live="polite" className={`mt-1 min-h-5 text-sm ${couponCheck && !couponCheck.ok ? 'text-danger' : 'text-teal-soft'}`}>
-                    {couponCheck ? (couponCheck.ok ? couponCheck.coupon.label : COUPON_ERRORS[couponCheck.reason]) : ''}
+                    {couponCheck ? t(couponCheck.ok ? couponCheck.coupon.label : COUPON_ERRORS[couponCheck.reason]) : ''}
                   </p>
-                  {!coupon && <p className="text-xs text-muted">Códigos de ejemplo: {COUPONS.map((c) => c.code).join(', ')}.</p>}
+                  {!coupon && <p className="text-xs text-muted">{t('plans.dialog.exampleCodes', { codes: COUPONS.map((c) => c.code).join(', ') })}</p>}
                 </div>
               </>
             ) : (
-              <p>Perderás las funciones de pago de tu plan actual al terminar el periodo demostrativo.</p>
+              <p>{t('plans.dialog.loseFeatures')}</p>
             )}
-            <p className="rounded-xl bg-surface-2 p-3 text-xs text-muted">Demostración: no se realizará ningún cobro ni se guardarán datos de pago.</p>
+            <p className="rounded-xl bg-surface-2 p-3 text-xs text-muted">{t('plans.dialog.noCharge')}</p>
           </div>
         )}
       </ConfirmDialog>
 
       <ConfirmDialog
         open={confirmCancel}
-        title="¿Cancelar tu suscripción?"
-        confirmLabel="Cancelar suscripción"
+        title={t('plans.cancelDialog.title')}
+        confirmLabel={t('plans.cancel')}
         danger
         busy={busy}
         onConfirm={async () => {
@@ -251,11 +248,11 @@ export default function PlansPage() {
           await cancel(audience)
           setBusy(false)
           setConfirmCancel(false)
-          toast('Suscripción cancelada (demostración)', { tone: 'info' })
+          toast(t('plans.toast.cancelled'), { tone: 'info' })
         }}
         onCancel={() => setConfirmCancel(false)}
       >
-        <p>Volverás al plan Free. Tus viajes, favoritos y reservas no se tocan.</p>
+        <p>{t('plans.cancelDialog.body')}</p>
       </ConfirmDialog>
     </Container>
   )

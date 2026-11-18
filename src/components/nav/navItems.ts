@@ -10,29 +10,31 @@ import { Compass, Heart, Hotel, House, Luggage, MapPinned, Scale, Sparkles, Tick
 
 export interface NavItem {
   to: string
-  label: string
-  description?: string
+  /** Clave de traducción del nombre. */
+  labelKey: string
+  /** Clave de traducción de la descripción (opcional). */
+  descKey?: string
   icon: LucideIcon
 }
 
 export const EXPLORE_ITEMS: NavItem[] = [
-  { to: '/explorar', label: 'Hospedajes', description: 'Cabañas, fincas y apartamentos', icon: Hotel },
-  { to: '/experiencias', label: 'Experiencias', description: 'Tours y actividades locales', icon: Ticket },
-  { to: '/comparar', label: 'Comparar precios', description: 'Booking, Airbnb, vuelos y más', icon: Scale },
-  { to: '/', label: 'Planear mi viaje', description: 'Tu itinerario día a día', icon: MapPinned },
+  { to: '/explorar', labelKey: 'nav.stays', descKey: 'nav.staysDesc', icon: Hotel },
+  { to: '/experiencias', labelKey: 'nav.experiences', descKey: 'nav.experiencesDesc', icon: Ticket },
+  { to: '/comparar', labelKey: 'nav.comparePrices', descKey: 'nav.comparePricesDesc', icon: Scale },
+  { to: '/', labelKey: 'nav.planTrip', descKey: 'nav.planTripDesc', icon: MapPinned },
 ]
 
 /** Lo personal del usuario con sesión. */
 export const SPACE_ITEMS: NavItem[] = [
-  { to: '/mis-viajes', label: 'Mis viajes', description: 'Itinerarios y planes', icon: Luggage },
-  { to: '/favoritos', label: 'Favoritos', description: 'Lo que guardaste', icon: Heart },
-  { to: '/reservas', label: 'Mis reservas', description: 'Hospedajes y experiencias', icon: Wallet },
+  { to: '/mis-viajes', labelKey: 'nav.myTrips', descKey: 'nav.myTripsDesc', icon: Luggage },
+  { to: '/favoritos', labelKey: 'nav.favorites', descKey: 'nav.favoritesDesc', icon: Heart },
+  { to: '/reservas', labelKey: 'nav.myBookings', descKey: 'nav.myBookingsDesc', icon: Wallet },
 ]
 
 export const ACCOUNT_ITEMS: NavItem[] = [
-  { to: '/perfil', label: 'Perfil y preferencias', description: 'Tus datos y gustos de viaje', icon: User },
-  { to: '/planes', label: 'Planes y suscripción', description: 'Free, Plus y Premium (demo)', icon: Sparkles },
+  { to: '/perfil', labelKey: 'nav.profile', descKey: 'nav.profileDesc', icon: User },
+  { to: '/planes', labelKey: 'nav.plansSub', descKey: 'nav.plansDesc', icon: Sparkles },
 ]
 
-export const HOME_ITEM: NavItem = { to: '/', label: 'Inicio', icon: House }
-export const EXPLORE_ITEM: NavItem = { to: '/explorar', label: 'Explorar', icon: Compass }
+export const HOME_ITEM: NavItem = { to: '/', labelKey: 'nav.home', icon: House }
+export const EXPLORE_ITEM: NavItem = { to: '/explorar', labelKey: 'nav.explore', icon: Compass }

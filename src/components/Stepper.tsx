@@ -1,16 +1,18 @@
+import { useI18n } from '../lib/i18n/I18nProvider'
 import type { FlowStep } from '../types/flow'
 
 const STEPS: { step: FlowStep; label: string }[] = [
-  { step: 1, label: 'Tu viaje' },
-  { step: 2, label: 'Actividades' },
-  { step: 3, label: 'Itinerario' },
-  { step: 4, label: 'Confirmación' },
+  { step: 1, label: 'stepper.step1' },
+  { step: 2, label: 'stepper.step2' },
+  { step: 3, label: 'stepper.step3' },
+  { step: 4, label: 'stepper.step4' },
 ]
 
 /** Indicador de progreso del flujo de 4 pasos. */
 export function Stepper({ current }: { current: FlowStep }) {
+  const { t } = useI18n()
   return (
-    <nav aria-label="Progreso de tu plan">
+    <nav aria-label={t('stepper.label')}>
       <ol className="flex items-center gap-2">
         {STEPS.map(({ step, label }) => {
           const isCurrent = step === current
@@ -22,10 +24,10 @@ export function Stepper({ current }: { current: FlowStep }) {
                 aria-hidden="true"
               />
               <span className={`text-xs ${isCurrent ? 'font-semibold text-ink' : 'text-muted'}`}>
-                <span className="sr-only">Paso {step} de 4: </span>
+                <span className="sr-only">{t('stepper.stepOf', { step })}</span>
                 <span className="hidden sm:inline">{step}. </span>
-                {label}
-                {isDone && <span className="sr-only"> (completado)</span>}
+                {t(label)}
+                {isDone && <span className="sr-only">{t('stepper.done')}</span>}
               </span>
             </li>
           )

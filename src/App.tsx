@@ -7,6 +7,7 @@ import { ToastProvider } from './components/Toast'
 import { Spinner } from './components/ui'
 import { AuthProvider } from './lib/auth/AuthProvider'
 import { useAuth } from './lib/auth/authContext'
+import { I18nProvider, useI18n } from './lib/i18n/I18nProvider'
 import { TripFlowProvider } from './lib/flow/TripFlowProvider'
 import { usesGeoapify } from './lib/itinerary/browserClient'
 import { PlanProvider } from './lib/plans/planContext'
@@ -41,19 +42,19 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage'))
 
 /** Al cambiar de pantalla: subir al inicio y llevar el foco al título (teclado y lectores de pantalla). */
 const TITLES: Record<string, string> = {
-  '/planear': 'Planea tu viaje',
-  '/comparar': 'Compara hospedaje, vuelos y experiencias',
-  '/explorar': 'Explora hospedajes en Colombia',
-  '/experiencias': 'Experiencias en Colombia',
-  '/mis-viajes': 'Mis viajes',
-  '/favoritos': 'Favoritos',
-  '/reservas': 'Mis reservas',
-  '/perfil': 'Perfil y preferencias',
-  '/planes': 'Planes y suscripción',
-  '/como-ganamos-dinero': 'Cómo ganamos dinero',
-  '/privacidad': 'Privacidad',
-  '/terminos': 'Términos de uso',
-  '/anfitrion': 'Publica tu alojamiento',
+  '/planear': 'title.plan',
+  '/comparar': 'title.compare',
+  '/explorar': 'title.explore',
+  '/experiencias': 'title.experiences',
+  '/mis-viajes': 'title.myTrips',
+  '/favoritos': 'title.favorites',
+  '/reservas': 'title.bookings',
+  '/perfil': 'title.profile',
+  '/planes': 'title.plans',
+  '/como-ganamos-dinero': 'title.howWeEarn',
+  '/privacidad': 'title.privacy',
+  '/terminos': 'title.terms',
+  '/anfitrion': 'title.host',
 }
 
 /** /itinerarios/:id (enlace anterior) → /mis-viajes/:id */
@@ -74,13 +75,16 @@ function PageTransition() {
 
 function RouteEffects() {
   const { pathname } = useLocation()
+  const { t, locale } = useI18n()
   useEffect(() => {
-    const label = TITLES[pathname]
-    document.title = label ? `${label} · LOCUS` : 'LOCUS · Planea, compara y reserva tu viaje por Colombia'
+    const key = TITLES[pathname]
+    document.title = key ? t('title.suffix', { page: t(key) }) : t('title.default')
     window.scrollTo({ top: 0 })
     const title = document.getElementById('page-title') ?? document.getElementById('step-title')
     title?.focus({ preventScroll: true })
-  }, [pathname])
+    // El título depende del idioma: se actualiza también al cambiarlo (sin volver a mover el foco).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname, locale])
   return null
 }
 
@@ -98,8 +102,9 @@ function FlightsRedirect() {
 /** Exige sesión: si no la hay, manda a /ingresar y vuelve después. */
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth()
+  const { t } = useI18n()
   const location = useLocation()
-  if (loading) return <Spinner label="Revisando tu sesión…" />
+  if (loading) return <Spinner label={t('app.checkingSession')} />
   if (!user) return <Navigate to={`/ingresar?next=${encodeURIComponent(location.pathname + location.search)}`} replace />
   return <>{children}</>
 }
@@ -115,14 +120,15 @@ function OnboardingGate() {
 }
 
 function Footer() {
+  const { t } = useI18n()
   return (
     <footer className="mx-auto mt-16 max-w-6xl px-4 pb-24 text-xs text-muted">
       <p>
-        Datos de mapas © {' '}
+        {t('footer.mapsCredit')} {' '}
         <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
           OpenStreetMap contributors
         </a>
-        {' · '}Teselas por{' '}
+        {' · '}{t('footer.tilesBy')}{' '}
         <a href="https://openfreemap.org" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
           OpenFreeMap
         </a>
@@ -131,28 +137,40 @@ function Footer() {
           <>
             {' · '}
             <a href="https://www.geoapify.com/" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
-              Powered by Geoapify
+              {t('app.poweredBy')}
             </a>
           </>
         )}
-        {' · '}Clima por{' '}
+        {' · '}{t('footer.weatherBy')}{' '}
         <a href="https://open-meteo.com" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
           Open-Meteo
         </a>
         .
       </p>
-      <nav aria-label="Información" className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-semibold">
-        <Link to="/comparar" className="underline-offset-2 hover:text-ink hover:underline">Comparador</Link>
-        <Link to="/planes" className="underline-offset-2 hover:text-ink hover:underline">Planes</Link>
-        <Link to="/como-ganamos-dinero" className="underline-offset-2 hover:text-ink hover:underline">Cómo ganamos dinero</Link>
-        <Link to="/privacidad" className="underline-offset-2 hover:text-ink hover:underline">Privacidad</Link>
-        <Link to="/terminos" className="underline-offset-2 hover:text-ink hover:underline">Términos</Link>
-        <Link to="/anfitrion" className="underline-offset-2 hover:text-ink hover:underline">Publica tu alojamiento</Link>
+      <nav aria-label={t('footer.info')} className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-semibold">
+        <Link to="/comparar" className="underline-offset-2 hover:text-ink hover:underline">{t('footer.compare')}</Link>
+        <Link to="/planes" className="underline-offset-2 hover:text-ink hover:underline">{t('footer.plans')}</Link>
+        <Link to="/como-ganamos-dinero" className="underline-offset-2 hover:text-ink hover:underline">{t('footer.howWeEarn')}</Link>
+        <Link to="/privacidad" className="underline-offset-2 hover:text-ink hover:underline">{t('footer.privacy')}</Link>
+        <Link to="/terminos" className="underline-offset-2 hover:text-ink hover:underline">{t('footer.terms')}</Link>
+        <Link to="/anfitrion" className="underline-offset-2 hover:text-ink hover:underline">{t('footer.publish')}</Link>
       </nav>
       <p className="mt-3">
-        LOCUS es un proyecto académico en desarrollo: por ahora los pagos son simulados y no se cobra ningún dinero.
+        {t('footer.academic')}
       </p>
     </footer>
+  )
+}
+
+function SkipLink() {
+  const { t } = useI18n()
+  return (
+    <a
+      href="#contenido"
+      className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-40 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-ink focus:shadow"
+    >
+      {t('common.skipToContent')}
+    </a>
   )
 }
 
@@ -160,16 +178,12 @@ export default function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <I18nProvider>
         <FavoritesProvider>
         <PlanProvider>
         <ToastProvider>
         <TripFlowProvider>
-          <a
-            href="#contenido"
-            className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-40 focus:rounded-lg focus:bg-surface focus:px-4 focus:py-2 focus:text-ink focus:shadow"
-          >
-            Saltar al contenido
-          </a>
+          <SkipLink />
           <RouteEffects />
           <OnboardingGate />
           <Header />
@@ -225,6 +239,7 @@ export default function App() {
         </ToastProvider>
         </PlanProvider>
         </FavoritesProvider>
+        </I18nProvider>
       </AuthProvider>
     </BrowserRouter>
   )

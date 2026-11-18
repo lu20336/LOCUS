@@ -6,6 +6,7 @@
  */
 import { Link } from 'react-router'
 import { useAuth } from '../lib/auth/authContext'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { fetchPublished } from '../lib/catalog/repo'
 import type { Experience, Listing } from '../lib/domain/types'
 import { FEATURED_DESTINATIONS } from '../lib/featuredDestinations'
@@ -30,6 +31,7 @@ function Band({ title, children, action }: { title: string; children: React.Reac
 }
 
 export function HomeDiscovery() {
+  const { t } = useI18n()
   const { user, profile } = useAuth()
   const listings = useAsync(() => fetchPublished<Listing>(db, 'listings'), [])
   const experiences = useAsync(() => fetchPublished<Experience>(db, 'experiences'), [])
@@ -43,50 +45,50 @@ export function HomeDiscovery() {
   return (
     <>
       {user && (
-        <Band title="Para ti" action={<Link to="/perfil" className="text-sm font-semibold underline">Cambiar mis preferencias</Link>}>
+        <Band title={t('home.forYou')} action={<Link to="/perfil" className="text-sm font-semibold underline">{t('home.changePrefs')}</Link>}>
           {hasProfile ? (
             <Recommendations answers={declared} />
           ) : (
             <div className="rounded-3xl border border-dashed border-line bg-surface p-6">
-              <p className="text-ink">{profile?.onboardingSkipped ? 'Aún no nos cuentas cómo te gusta viajar.' : 'Cuéntanos cómo te gusta viajar y te sugerimos destinos.'}</p>
-              <div className="mt-3"><ButtonLink to="/bienvenida?editar=1" variant="secondary">Responder la encuesta (2 min)</ButtonLink></div>
+              <p className="text-ink">{profile?.onboardingSkipped ? t('home.tellUsSkipped') : t('home.tellUs')}</p>
+              <div className="mt-3"><ButtonLink to="/bienvenida?editar=1" variant="secondary">{t('home.takeSurvey')}</ButtonLink></div>
             </div>
           )}
         </Band>
       )}
 
-      <Band title="Conoce cada destino">
+      <Band title={t('home.knowEach')}>
         <ul className="flex flex-wrap gap-2">
           {FEATURED_DESTINATIONS.map((d) => (
             <li key={d.id}><Link to={`/destinos/${d.id}`} className="inline-block rounded-full border border-line bg-surface px-4 py-2 text-sm font-semibold text-ink hover:bg-surface-2">{d.name}</Link></li>
           ))}
         </ul>
-        <p className="mt-2 text-sm text-muted">Cada ficha reúne clima, mapa, lugares para visitar, experiencias y alojamientos cercanos.</p>
+        <p className="mt-2 text-sm text-muted">{t('home.knowEachDesc')}</p>
       </Band>
 
-      <Band title="Hospedajes en LOCUS" action={<Link to="/explorar" className="text-sm font-semibold underline">Ver todos</Link>}>
+      <Band title={t('home.listings')} action={<Link to="/explorar" className="text-sm font-semibold underline">{t('home.seeAll')}</Link>}>
         {recentListings.length > 0 ? (
           <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{recentListings.map((l) => <li key={l.id}><ListingCard listing={l} /></li>)}</ul>
         ) : (
           <div className="rounded-3xl border border-dashed border-line bg-surface p-6">
-            <p className="font-semibold text-navy">LOCUS está empezando y sus anfitriones se están sumando.</p>
-            <p className="mt-1 text-muted">Mientras tanto puedes explorar alojamientos de referencia en el mapa, o ser de los primeros en publicar el tuyo.</p>
-            <div className="mt-4 flex flex-wrap gap-3"><ButtonLink to="/explorar" variant="secondary">Explorar en el mapa</ButtonLink><ButtonLink to="/anfitrion" variant="ghost" className="border border-line">Publicar mi alojamiento</ButtonLink></div>
+            <p className="font-semibold text-navy">{t('home.startingTitle')}</p>
+            <p className="mt-1 text-muted">{t('home.startingDesc')}</p>
+            <div className="mt-4 flex flex-wrap gap-3"><ButtonLink to="/explorar" variant="secondary">{t('home.exploreMap')}</ButtonLink><ButtonLink to="/anfitrion" variant="ghost" className="border border-line">{t('home.publishMine')}</ButtonLink></div>
           </div>
         )}
       </Band>
 
       {recentExperiences.length > 0 && (
-        <Band title="Experiencias para vivir" action={<Link to="/experiencias" className="text-sm font-semibold underline">Ver todas</Link>}>
+        <Band title={t('home.experiencesTitle')} action={<Link to="/experiencias" className="text-sm font-semibold underline">{t('home.seeAllF')}</Link>}>
           <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">{recentExperiences.map((e) => <li key={e.id}><ExperienceCard experience={e} /></li>)}</ul>
         </Band>
       )}
 
       <section className="grid gap-5 md:grid-cols-3">
         {[
-          { title: 'Comparador', text: 'Hoteles, vuelos y tours de varias plataformas, con tu búsqueda ya lista.', to: '/comparar', cta: 'Comparar ahora' },
-          { title: 'Mis viajes', text: 'Tus itinerarios, viajes próximos e ideas guardadas en un solo lugar.', to: '/mis-viajes', cta: 'Abrir Mis viajes' },
-          { title: 'Hospeda con LOCUS', text: 'Publica tu casa, finca o experiencia y recibe viajeros de toda Colombia.', to: '/anfitrion', cta: 'Quiero ser anfitrión' },
+          { title: t('home.card.compare'), text: t('home.card.compareText'), to: '/comparar', cta: t('home.card.compareCta') },
+          { title: t('home.card.trips'), text: t('home.card.tripsText'), to: '/mis-viajes', cta: t('home.card.tripsCta') },
+          { title: t('home.card.host'), text: t('home.card.hostText'), to: '/anfitrion', cta: t('home.card.hostCta') },
         ].map((c) => (
           <div key={c.title} className="rounded-3xl border border-line bg-surface p-6 shadow-sm">
             <h3 className="font-serif text-2xl font-semibold text-navy">{c.title}</h3>

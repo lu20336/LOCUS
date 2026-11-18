@@ -24,6 +24,7 @@ import { PromoBand } from '../components/home/PromoBand'
 import { YourSpace } from '../components/home/YourSpace'
 import { Reveal } from '../components/Reveal'
 import { useAuth } from '../lib/auth/authContext'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { SearchBar } from '../components/SearchBar'
 import { TripDetailsPanel } from '../components/TripDetailsPanel'
 import { FEATURED_DESTINATIONS, type FeaturedDestination } from '../lib/featuredDestinations'
@@ -39,6 +40,7 @@ const prefersReducedMotion = () => window.matchMedia('(prefers-reduced-motion: r
 export function HomePage() {
   const { trip, step } = useTripFlow()
   const { user } = useAuth()
+  const { t } = useI18n()
   const form = useTripDetailsForm()
   const { mode, setMode } = form
 
@@ -150,12 +152,12 @@ export function HomePage() {
           }`}
         >
           <div ref={searchAreaRef} className="mx-auto max-w-3xl scroll-mt-20 text-center [text-shadow:0_2px_16px_rgb(0_0_0/0.35)]">
-            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">Planea · Compara · Reserva</p>
+            <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">{t('home.eyebrow')}</p>
             <h1 id="step-title" tabIndex={-1} className="mt-3 text-5xl leading-tight font-semibold text-white focus:outline-none sm:text-6xl lg:text-7xl">
-              Planea tu viaje por <em className="text-teal-light">Colombia</em>
+              {t('home.title.before')} <em className="text-teal-light">{t('home.title.highlight')}</em>
             </h1>
             <p className="mx-auto mt-4 max-w-xl text-lg text-white/90 sm:text-xl">
-              Hospedajes, vuelos, experiencias e itinerarios de todas las plataformas en un solo lugar, con la ayuda de tu compañero LOCUS.
+              {t('home.subtitle')}
             </p>
           </div>
 
@@ -210,9 +212,9 @@ export function HomePage() {
         <HomeDiscovery />
         <Reveal><PromoBand /></Reveal>
         <p className="-mt-12 text-xs text-muted sm:-mt-16">
-          Fotos: Unsplash y Wikimedia Commons (licencias libres) ·{' '}
+          {t('home.photos')}{' '}
           <a href="/images/CREDITOS.md" target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
-            ver créditos y autores
+            {t('home.photosCredits')}
           </a>
         </p>
       </div>

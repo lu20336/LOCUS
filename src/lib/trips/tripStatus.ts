@@ -6,6 +6,8 @@
  * (así no hay datos duplicados que se desactualicen ni cambios en las reglas).
  */
 import { addDays, nightsBetween } from '../domain/dates'
+import { spanishT } from '../i18n/store'
+import type { Translator } from '../i18n/translate'
 
 export type TripStatus = 'upcoming' | 'ongoing' | 'past'
 
@@ -16,12 +18,6 @@ export interface TripLike {
   destination: { displayName: string }
   days: { places: unknown[] }[]
   updatedAt: number | null
-}
-
-export const TRIP_STATUS_LABEL: Record<TripStatus, string> = {
-  upcoming: 'Próximo',
-  ongoing: 'En curso',
-  past: 'Realizado',
 }
 
 /** 'upcoming' antes de la salida, 'ongoing' entre salida y regreso (ambos incluidos), 'past' después. */
@@ -83,12 +79,10 @@ export function shiftedDates(startDate: string, endDate: string, startFrom: stri
 }
 
 /** Texto para compartir el viaje por WhatsApp, correo o el menú de compartir del sistema. */
-export function shareSummary(trip: TripLike & { travelers: number }, formatRange: (a: string, b: string) => string): string {
-  const days = tripDays(trip)
-  const stops = tripPlaces(trip)
+export function shareSummary(trip: TripLike & { travelers: number }, formatRange: (a: string, b: string) => string, t: Translator = spanishT()): string {
   return [
     `${trip.title} · ${formatRange(trip.startDate, trip.endDate)}`,
-    `${days} ${days === 1 ? 'día' : 'días'} · ${trip.travelers} ${trip.travelers === 1 ? 'viajero' : 'viajeros'} · ${stops} ${stops === 1 ? 'lugar' : 'lugares'}`,
-    'Planeado con LOCUS',
+    `${t('common.days', { count: tripDays(trip) })} · ${t('common.travelers', { count: trip.travelers })} · ${t('common.places', { count: tripPlaces(trip) })}`,
+    t('trips.share.planned'),
   ].join('\n')
 }

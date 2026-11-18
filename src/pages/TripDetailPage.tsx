@@ -9,13 +9,15 @@ import { useToast } from '../components/Toast'
 import { tripImage } from '../components/trips/TripCard'
 import { Alert, Badge, Button, ButtonLink, Container, EmptyState, Skeleton } from '../components/ui'
 import { useAuth } from '../lib/auth/authContext'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { db } from '../lib/firebase/client'
 import { formatDateRange, todayISO } from '../lib/format'
 import { duplicateItinerary, getItinerary, removeItinerary, updateItinerary, type SavedItinerary } from '../lib/itinerary/itineraryStore'
-import { TRIP_STATUS_LABEL, shareSummary, tripDays, tripPlace, tripPlaces, tripStatus } from '../lib/trips/tripStatus'
+import { shareSummary, tripDays, tripPlace, tripPlaces, tripStatus } from '../lib/trips/tripStatus'
 import { useAsync } from '../lib/useAsync'
 
 export default function TripDetailPage() {
+  const { t } = useI18n()
   const { id = '' } = useParams()
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -56,8 +58,8 @@ export default function TripDetailPage() {
   if (!draft) {
     return (
       <Container className="py-10">
-        <EmptyState title="No encontramos este viaje" action={<ButtonLink to="/mis-viajes">Ir a Mis viajes</ButtonLink>}>
-          Puede que lo hayas eliminado o que pertenezca a otra cuenta.
+        <EmptyState title={t('trips.detail.notFound')} action={<ButtonLink to="/mis-viajes">{t('trips.detail.goTrips')}</ButtonLink>}>
+          {t('trips.detail.notFoundText')}
         </EmptyState>
       </Container>
     )
@@ -77,9 +79,9 @@ export default function TripDetailPage() {
     try {
       await updateItinerary(db, user.uid, draft)
       setDirty(false)
-      toast('Cambios guardados')
+      toast(t('trips.toast.saved'))
     } catch {
-      setError('No pudimos guardar los cambios. Revisa tu conexión e inténtalo de nuevo.')
+      setError(t('trips.detail.saveError'))
     } finally {
       setBusy(false)
     }
@@ -89,20 +91,20 @@ export default function TripDetailPage() {
     if (!draft || !user) return
     try {
       const copyId = await duplicateItinerary(db, user.uid, draft)
-      toast('Viaje duplicado', { action: { label: 'Abrir copia', to: `/mis-viajes/${copyId}` } })
+      toast(t('trips.toast.duplicated'), { action: { label: t('trips.toast.openCopy'), to: `/mis-viajes/${copyId}` } })
     } catch {
-      toast('No pudimos duplicar el viaje.', { tone: 'error' })
+      toast(t('trips.toast.duplicateError'), { tone: 'error' })
     }
   }
 
   async function share() {
     if (!draft) return
-    const text = shareSummary(draft, formatDateRange)
+    const text = shareSummary(draft, formatDateRange, t)
     try {
       if (navigator.share) await navigator.share({ title: draft.title, text })
       else {
         await navigator.clipboard.writeText(text)
-        toast('Copiamos el resumen del viaje para que lo pegues donde quieras', { tone: 'info' })
+        toast(t('trips.toast.copiedSummary'), { tone: 'info' })
       }
     } catch {
       // Compartir cancelado.
@@ -114,12 +116,12 @@ export default function TripDetailPage() {
     setBusy(true)
     try {
       await removeItinerary(db, user.uid, draft.id)
-      toast('Viaje eliminado', { tone: 'info' })
+      toast(t('trips.toast.deleted'), { tone: 'info' })
       navigate('/mis-viajes', { replace: true })
     } catch {
       setBusy(false)
       setConfirmDelete(false)
-      setError('No pudimos eliminar el viaje.')
+      setError(t('trips.toast.deleteError'))
     }
   }
 
@@ -127,7 +129,7 @@ export default function TripDetailPage() {
     <Container className="py-6 sm:py-8">
       <Link to="/mis-viajes" className="mb-4 inline-flex items-center gap-1.5 text-sm font-semibold text-ink hover:text-teal-soft">
         <ArrowLeft aria-hidden="true" className="size-4" />
-        Mis viajes
+        {t('trips.detail.back')}
       </Link>
 
       <header className="card-photo relative isolate mb-6 overflow-hidden rounded-3xl bg-gradient-to-br from-navy to-teal-soft">
@@ -135,10 +137,10 @@ export default function TripDetailPage() {
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-t from-black/75 via-black/35 to-black/10" />
         <div className="flex min-h-48 flex-col justify-end gap-2 p-5 sm:min-h-60 sm:p-8">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge tone={status === 'past' ? 'neutral' : 'teal'}>{TRIP_STATUS_LABEL[status]}</Badge>
+            <Badge tone={status === 'past' ? 'neutral' : 'teal'}>{t(`trips.status.${status}`)}</Badge>
             <span className="text-sm text-white/90">{place}</span>
           </div>
-          <label htmlFor="trip-title" className="sr-only">Nombre del viaje</label>
+          <label htmlFor="trip-title" className="sr-only">{t('trips.detail.name')}</label>
           <input
             id="trip-title"
             value={draft.title}
@@ -151,16 +153,16 @@ export default function TripDetailPage() {
           />
           <h1 id="page-title" tabIndex={-1} className="sr-only focus:outline-none">{draft.title}</h1>
           <p className="text-sm text-white/90">
-            {formatDateRange(draft.startDate, draft.endDate)} · {days} {days === 1 ? 'día' : 'días'} · {draft.travelers} {draft.travelers === 1 ? 'persona' : 'personas'} · {stops} {stops === 1 ? 'lugar' : 'lugares'}
+            {formatDateRange(draft.startDate, draft.endDate)} · {t('common.days', { count: days })} · {t('common.persons', { count: draft.travelers })} · {t('common.places', { count: stops })}
           </p>
         </div>
       </header>
 
       <div className="sticky top-16 z-10 -mx-1 mb-6 flex flex-wrap items-center gap-2 rounded-2xl border border-line bg-header px-3 py-2 backdrop-blur">
-        <Button onClick={save} disabled={!dirty || busy} className="!py-2">{busy ? 'Guardando…' : dirty ? 'Guardar cambios' : 'Guardado'}</Button>
-        <Button variant="ghost" className="border border-line !py-2" onClick={() => void duplicate()}><Copy aria-hidden="true" className="size-4" />Duplicar</Button>
-        <Button variant="ghost" className="border border-line !py-2" onClick={() => void share()}><Share2 aria-hidden="true" className="size-4" />Compartir</Button>
-        <Button variant="danger" className="ml-auto !py-2" onClick={() => setConfirmDelete(true)}><Trash2 aria-hidden="true" className="size-4" />Eliminar</Button>
+        <Button onClick={save} disabled={!dirty || busy} className="!py-2">{busy ? t('trips.detail.saving') : dirty ? t('trips.detail.saveChanges') : t('trips.detail.saved')}</Button>
+        <Button variant="ghost" className="border border-line !py-2" onClick={() => void duplicate()}><Copy aria-hidden="true" className="size-4" />{t('trips.card.duplicate')}</Button>
+        <Button variant="ghost" className="border border-line !py-2" onClick={() => void share()}><Share2 aria-hidden="true" className="size-4" />{t('trips.card.share')}</Button>
+        <Button variant="danger" className="ml-auto !py-2" onClick={() => setConfirmDelete(true)}><Trash2 aria-hidden="true" className="size-4" />{t('trips.card.delete')}</Button>
       </div>
 
       {error && <div className="mb-4"><Alert>{error}</Alert></div>}
@@ -176,8 +178,8 @@ export default function TripDetailPage() {
         <StaysSection lat={draft.destination.lat} lon={draft.destination.lon} placeName={place} checkIn={draft.startDate} checkOut={draft.endDate} guests={draft.travelers} />
       </div>
 
-      <ConfirmDialog open={confirmDelete} title="¿Eliminar este viaje?" confirmLabel="Eliminar" danger busy={busy} onConfirm={() => void remove()} onCancel={() => setConfirmDelete(false)}>
-        <p>Se eliminará <strong>{draft.title}</strong> de tu cuenta. Esta acción no se puede deshacer.</p>
+      <ConfirmDialog open={confirmDelete} title={t('trips.deleteTitle')} confirmLabel={t('common.delete')} danger busy={busy} onConfirm={() => void remove()} onCancel={() => setConfirmDelete(false)}>
+        <p>{t('trips.deleteBody', { title: draft.title })}</p>
       </ConfirmDialog>
     </Container>
   )

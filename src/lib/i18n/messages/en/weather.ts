@@ -1,0 +1,21 @@
+/** Weather descriptions (Open-Meteo WMO codes). */
+export const weather = {
+  'weather.clear': 'Clear',
+  'weather.mostlyClear': 'Mostly clear',
+  'weather.partlyCloudy': 'Partly cloudy',
+  'weather.overcast': 'Overcast',
+  'weather.fog': 'Fog',
+  'weather.drizzle': 'Drizzle',
+  'weather.rain': 'Rain',
+  'weather.snow': 'Snow',
+  'weather.showers': 'Showers',
+  'weather.snowShowers': 'Snow showers',
+  'weather.thunderstorm': 'Thunderstorm',
+  'weather.thunderHail': 'Thunderstorm with hail',
+  'weather.unknown': 'No data',
+  'weather.forecastLabel': 'Forecast: {description}, {min}–{max} °C',
+  'weather.rainRisk': 'Rain {risk} ({probability}%)',
+  'weather.risk.bajo': 'low',
+  'weather.risk.medio': 'moderate',
+  'weather.risk.alto': 'high',
+} as const

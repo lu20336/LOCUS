@@ -4,6 +4,7 @@
  * marca y coral SOLO para la llamada a la acción principal de cada pantalla.
  */
 import type { LucideIcon } from 'lucide-react'
+import { useI18n } from '../../lib/i18n/I18nProvider'
 import { createContext, useContext, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { Link, type LinkProps } from 'react-router'
 
@@ -69,14 +70,15 @@ export function Badge({ children, tone = 'neutral' }: { children: ReactNode; ton
   )
 }
 
-export function Spinner({ label = 'Cargando…' }: { label?: string }) {
+export function Spinner({ label }: { label?: string }) {
+  const { t } = useI18n()
   return (
     <div role="status" className="flex items-center gap-3 py-8 text-muted">
       <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5 animate-spin" fill="none">
         <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.3" strokeWidth="3" />
         <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
       </svg>
-      {label}
+      {label ?? t('common.loading')}
     </div>
   )
 }

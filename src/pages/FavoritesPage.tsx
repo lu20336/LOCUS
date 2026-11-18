@@ -13,23 +13,11 @@ import type { Experience, Listing } from '../lib/domain/types'
 import { FEATURED_DESTINATIONS } from '../lib/featuredDestinations'
 import { db } from '../lib/firebase/client'
 import { formatCOP } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { useFavorites, type Favorite, type FavoriteKind } from '../lib/profile/favorites'
 import { useAsync } from '../lib/useAsync'
 
-const KIND_LABEL: Record<FavoriteKind, string> = {
-  listing: 'Alojamiento',
-  experience: 'Experiencia',
-  destination: 'Destino',
-  place: 'Lugar de referencia',
-}
-
-const FILTERS: { id: 'all' | FavoriteKind; label: string }[] = [
-  { id: 'all', label: 'Todo' },
-  { id: 'listing', label: 'Hospedajes' },
-  { id: 'experience', label: 'Experiencias' },
-  { id: 'destination', label: 'Destinos' },
-  { id: 'place', label: 'Lugares' },
-]
+const FILTERS: ('all' | FavoriteKind)[] = ['all', 'listing', 'experience', 'destination', 'place']
 
 function href(f: Favorite): string | null {
   if (f.kind === 'listing') return `/hospedajes/${f.refId}`
@@ -41,6 +29,7 @@ function href(f: Favorite): string | null {
 const ICON = { listing: Hotel, experience: Ticket, destination: Compass, place: MapPin } as const
 
 export default function FavoritesPage() {
+  const { t } = useI18n()
   const { favorites } = useFavorites()
   const [filter, setFilter] = useState<'all' | FavoriteKind>('all')
   const listings = useAsync(() => fetchPublished<Listing>(db, 'listings'), [])
@@ -48,11 +37,11 @@ export default function FavoritesPage() {
 
   const media = useMemo(() => {
     const map = new Map<string, { cover?: string; price?: string }>()
-    for (const l of listings.data ?? []) map.set(`listing:${l.id}`, { cover: l.cover, price: `${formatCOP(l.pricePerNight)} por noche` })
-    for (const e of experiences.data ?? []) map.set(`experience:${e.id}`, { cover: e.cover, price: `${formatCOP(e.pricePerPerson)} por persona` })
+    for (const l of listings.data ?? []) map.set(`listing:${l.id}`, { cover: l.cover, price: t('fav.priceNight', { price: formatCOP(l.pricePerNight) }) })
+    for (const e of experiences.data ?? []) map.set(`experience:${e.id}`, { cover: e.cover, price: t('fav.pricePerson', { price: formatCOP(e.pricePerPerson) }) })
     for (const d of FEATURED_DESTINATIONS) map.set(`destination:${d.id}`, { cover: d.image })
     return map
-  }, [listings.data, experiences.data])
+  }, [listings.data, experiences.data, t])
 
   const counts = useMemo(() => {
     const c: Record<string, number> = { all: favorites.length }
@@ -64,39 +53,39 @@ export default function FavoritesPage() {
 
   return (
     <Container className="max-w-5xl">
-      <PageHeader eyebrow="Tu espacio" title="Favoritos">Hospedajes, experiencias, destinos y lugares que guardaste para decidir después.</PageHeader>
+      <PageHeader eyebrow={t('nav.yourSpace')} title={t('nav.favorites')}>{t('fav.intro')}</PageHeader>
 
       {favorites.length === 0 ? (
         <EmptyState
           icon={Heart}
-          title="Todavía no guardas nada"
+          title={t('fav.emptyTitle')}
           action={
             <div className="flex flex-wrap justify-center gap-3">
-              <ButtonLink to="/explorar">Explorar hospedajes</ButtonLink>
-              <ButtonLink to="/experiencias" variant="secondary">Ver experiencias</ButtonLink>
+              <ButtonLink to="/explorar">{t('fav.exploreStays')}</ButtonLink>
+              <ButtonLink to="/experiencias" variant="secondary">{t('fav.seeExperiences')}</ButtonLink>
             </div>
           }
         >
-          Toca el corazón en cualquier tarjeta y quedará aquí, listo para comparar o convertir en un viaje.
+          {t('fav.emptyText')}
         </EmptyState>
       ) : (
         <>
-          <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Filtrar favoritos">
-            {FILTERS.filter((f) => f.id === 'all' || counts[f.id]).map((f) => (
+          <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label={t('fav.filtersLabel')}>
+            {FILTERS.filter((f) => f === 'all' || counts[f]).map((f) => (
               <button
-                key={f.id}
+                key={f}
                 type="button"
-                aria-pressed={filter === f.id}
-                onClick={() => setFilter(f.id)}
-                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${filter === f.id ? 'border-navy bg-navy text-surface' : 'border-line bg-surface text-ink hover:bg-surface-2'}`}
+                aria-pressed={filter === f}
+                onClick={() => setFilter(f)}
+                className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition-colors ${filter === f ? 'border-navy bg-navy text-surface' : 'border-line bg-surface text-ink hover:bg-surface-2'}`}
               >
-                {f.label}
-                <span className={`rounded-full px-1.5 text-xs ${filter === f.id ? 'bg-surface/25' : 'bg-surface-2 text-muted'}`}>{counts[f.id] ?? 0}</span>
+                {t(`fav.filter.${f}`)}
+                <span className={`rounded-full px-1.5 text-xs ${filter === f ? 'bg-surface/25' : 'bg-surface-2 text-muted'}`}>{counts[f] ?? 0}</span>
               </button>
             ))}
           </div>
 
-          {loadingMedia && visible.length > 0 && <div className="mb-4"><CardGridSkeleton count={Math.min(visible.length, 3)} label="Cargando tus favoritos" /></div>}
+          {loadingMedia && visible.length > 0 && <div className="mb-4"><CardGridSkeleton count={Math.min(visible.length, 3)} label={t('fav.loading')} /></div>}
           <ul className="anim-stagger grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {visible.map((f, i) => {
               const link = href(f)
@@ -124,12 +113,12 @@ export default function FavoritesPage() {
                       <FavoriteButton className="absolute right-3 top-3" item={{ kind: f.kind, refId: f.refId, title: f.title, subtitle: f.subtitle }} />
                     </div>
                     <div className="p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wider text-teal-soft">{KIND_LABEL[f.kind]}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wider text-teal-soft">{t(`fav.kind.${f.kind}`)}</p>
                       <h3 className="mt-1 line-clamp-2 font-serif text-lg font-semibold text-navy">{title}</h3>
                       {f.subtitle && <p className="mt-0.5 truncate text-sm text-muted">{f.subtitle}</p>}
                       {m?.price && <p className="mt-2 text-sm font-semibold text-ink">{m.price}</p>}
                       {f.kind === 'destination' && (
-                        <Link to={`/?destino=${f.refId}`} className="relative z-10 mt-3 inline-flex rounded-xl bg-coral px-3.5 py-2 text-sm font-bold text-on-coral transition hover:brightness-105">Planear este viaje</Link>
+                        <Link to={`/?destino=${f.refId}`} className="relative z-10 mt-3 inline-flex rounded-xl bg-coral px-3.5 py-2 text-sm font-bold text-on-coral transition hover:brightness-105">{t('trips.ideas.planThis')}</Link>
                       )}
                     </div>
                   </article>

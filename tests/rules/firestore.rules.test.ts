@@ -71,6 +71,25 @@ async function rawStay(uid: string, checkIn: string, checkOut: string, bookedAft
   })
 }
 
+describe('idioma preferido del usuario', () => {
+  const profile = (language: unknown) => ({ displayName: 'Gabi', phone: '', onboardingCompleted: false, onboardingSkipped: false, aiPersonalization: false, isHost: false, language, createdAt: serverTimestamp(), updatedAt: serverTimestamp() })
+
+  it('el dueño puede guardar un idioma soportado', async () => {
+    for (const lang of ['es', 'en', 'pt', 'fr', 'de']) await assertSucceeds(setDoc(doc(guestDb(), 'users', GUEST), profile(lang)))
+  })
+
+  it('rechaza idiomas no soportados o con otro tipo de dato', async () => {
+    await assertFails(setDoc(doc(guestDb(), 'users', GUEST), profile('xx')))
+    await assertFails(setDoc(doc(guestDb(), 'users', GUEST), profile(5)))
+    await assertFails(setDoc(doc(guestDb(), 'users', GUEST), profile('EN')))
+  })
+
+  it('nadie más puede cambiar el idioma de otro usuario', async () => {
+    await assertFails(setDoc(doc(guestDb(GUEST2), 'users', GUEST), profile('en')))
+    await assertFails(setDoc(doc(anonDb(), 'users', GUEST), profile('en')))
+  })
+})
+
 describe('lectura pública y privacidad', () => {
   it('cualquiera lee un alojamiento publicado, pero no un borrador ajeno', async () => {
     await env.withSecurityRulesDisabled(async (ctx) => {

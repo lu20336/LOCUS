@@ -3,7 +3,9 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../lib/auth/authContext'
 import { usePlans } from '../lib/plans/planContext'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { useFavorites } from '../lib/profile/favorites'
+import { LanguageSelector } from './LanguageSelector'
 import { ACCOUNT_ITEMS, EXPLORE_ITEMS, SPACE_ITEMS } from './nav/navItems'
 import { useDismiss } from './nav/useDismiss'
 import { ThemeToggle } from './ThemeToggle'
@@ -18,6 +20,7 @@ export function initials(name: string | null | undefined, email: string | null |
 
 /** "Explorar ▾": descubrir hospedajes, experiencias, comparador y planificador. */
 function ExploreMenu() {
+  const { t } = useI18n()
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
   const { pathname } = useLocation()
@@ -34,7 +37,7 @@ function ExploreMenu() {
         aria-haspopup="menu"
         className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-2"
       >
-        Explorar
+        {t('nav.explore')}
         <ChevronDown aria-hidden="true" className={`size-4 transition-transform ${open ? 'rotate-180' : ''}`} />
       </button>
       {open && (
@@ -45,8 +48,8 @@ function ExploreMenu() {
                 <item.icon className="size-5" />
               </span>
               <span>
-                <span className="block text-sm font-semibold text-ink">{item.label}</span>
-                <span className="block text-xs text-muted">{item.description}</span>
+                <span className="block text-sm font-semibold text-ink">{t(item.labelKey)}</span>
+                <span className="block text-xs text-muted">{item.descKey && t(item.descKey)}</span>
               </span>
             </Link>
           ))}
@@ -58,6 +61,7 @@ function ExploreMenu() {
 
 /** Menú de la cuenta: atajos a lo personal, perfil, planes y modo anfitrión. */
 function AccountMenu() {
+  const { t } = useI18n()
   const { user, profile, isAdmin, signOutUser } = useAuth()
   const { planFor } = usePlans()
   const navigate = useNavigate()
@@ -71,7 +75,7 @@ function AccountMenu() {
   if (!user) {
     return (
       <Link to="/ingresar" className="rounded-xl bg-navy px-4 py-2 text-sm font-bold text-surface transition hover:brightness-110">
-        Ingresar
+        {t('nav.signIn')}
       </Link>
     )
   }
@@ -86,7 +90,7 @@ function AccountMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Menú de tu cuenta"
+        aria-label={t('nav.accountMenu')}
         className="grid size-10 place-items-center rounded-full bg-navy text-sm font-bold text-surface ring-2 ring-transparent transition hover:ring-teal/50"
       >
         {initials(name, user.email)}
@@ -94,7 +98,7 @@ function AccountMenu() {
       {open && (
         <div role="menu" className="anim-menu absolute right-0 top-12 z-30 w-72 rounded-2xl border border-line bg-surface p-2 shadow-xl">
           <div className="px-3 py-2">
-            <p className="truncate font-semibold text-ink">{name || 'Tu cuenta'}</p>
+            <p className="truncate font-semibold text-ink">{name || t('nav.yourAccount')}</p>
             <p className="truncate text-xs text-muted">{user.email}</p>
             <Link to="/planes" role="menuitem" className="mt-2 inline-flex items-center gap-1 rounded-full border border-teal/40 bg-teal/10 px-2.5 py-0.5 text-xs font-bold text-ink">
               {plan.name}
@@ -104,18 +108,18 @@ function AccountMenu() {
           {[...SPACE_ITEMS, ...ACCOUNT_ITEMS].map((n) => (
             <Link key={n.to} role="menuitem" to={n.to} className={item}>
               <n.icon aria-hidden="true" className="size-4 text-teal-soft" />
-              {n.label}
+              {t(n.labelKey)}
             </Link>
           ))}
           <div className="my-1 border-t border-line" />
           <Link role="menuitem" className={item} to="/anfitrion">
             <Store aria-hidden="true" className="size-4 text-teal-soft" />
-            {profile?.isHost ? 'Modo anfitrión' : 'Publica tu alojamiento'}
+            {profile?.isHost ? t('nav.hostMode') : t('nav.publishStay')}
           </Link>
           {isAdmin && (
             <Link role="menuitem" className={item} to="/admin">
               <ShieldCheck aria-hidden="true" className="size-4 text-teal-soft" />
-              Moderación
+              {t('nav.moderation')}
             </Link>
           )}
           <div className="my-1 border-t border-line" />
@@ -129,7 +133,7 @@ function AccountMenu() {
             }}
           >
             <LogOut aria-hidden="true" className="size-4 text-muted" />
-            Cerrar sesión
+            {t('nav.signOut')}
           </button>
         </div>
       )}
@@ -138,6 +142,7 @@ function AccountMenu() {
 }
 
 export function Header() {
+  const { t } = useI18n()
   const { user, profile } = useAuth()
   const { favorites } = useFavorites()
 
@@ -145,19 +150,19 @@ export function Header() {
     <header className="sticky top-0 z-20 border-b border-line bg-header backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
         <div className="flex items-center gap-6">
-          <Link to="/" className="font-serif text-2xl font-semibold text-navy" aria-label="Locus, ir al inicio">
+          <Link to="/" className="font-serif text-2xl font-semibold text-navy" aria-label={t('nav.logoLabel')}>
             Locus<span className="text-teal" aria-hidden="true">.</span>
           </Link>
 
-          <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
+          <nav aria-label={t('nav.main')} className="hidden items-center gap-1 lg:flex">
             <ExploreMenu />
-            <NavLink to="/comparar" className={linkClass}>Comparar</NavLink>
+            <NavLink to="/comparar" className={linkClass}>{t('nav.compare')}</NavLink>
             {user ? (
               <>
                 <span aria-hidden="true" className="mx-2 h-5 w-px bg-line" />
                 {SPACE_ITEMS.map((n) => (
                   <NavLink key={n.to} to={n.to} className={linkClass}>
-                    {n.label}
+                    {t(n.labelKey)}
                     {n.to === '/favoritos' && favorites.length > 0 && (
                       <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-[0.65rem] font-bold text-on-coral">{favorites.length}</span>
                     )}
@@ -165,15 +170,16 @@ export function Header() {
                 ))}
               </>
             ) : (
-              <NavLink to="/planes" className={linkClass}>Planes</NavLink>
+              <NavLink to="/planes" className={linkClass}>{t('nav.plans')}</NavLink>
             )}
           </nav>
         </div>
 
         <div className="flex items-center gap-2">
           <Link to="/anfitrion" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-2 lg:block">
-            {profile?.isHost ? 'Modo anfitrión' : 'Ofrecer'}
+            {profile?.isHost ? t('nav.hostMode') : t('nav.offer')}
           </Link>
+          <LanguageSelector />
           <ThemeToggle />
           <AccountMenu />
         </div>

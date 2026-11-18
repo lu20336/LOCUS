@@ -9,6 +9,7 @@ import { CATEGORIES } from '../lib/itinerary/categories'
 import { movePlace, removePlace, setDayNote } from '../lib/itinerary/itineraryStore'
 import { LocusMap, type MapMarker } from '../lib/maps/MapLazy'
 import { formatDate } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { fetchForecast, rainRisk, type DailyForecast } from '../lib/weather/openMeteo'
 import { useAsync } from '../lib/useAsync'
 import type { DayPlan, Destination } from '../types/itinerary'
@@ -28,13 +29,14 @@ interface Props<T extends ViewableItinerary> {
 const riskTone = { bajo: 'teal', medio: 'warn', alto: 'danger' } as const
 
 export function WeatherChip({ forecast }: { forecast: DailyForecast }) {
+  const { t } = useI18n()
   const risk = rainRisk(forecast)
   return (
     <span className="flex flex-wrap items-center gap-1.5 text-xs text-muted">
       <span>
-        Pronóstico: {forecast.description}, {Math.round(forecast.tMin)}–{Math.round(forecast.tMax)} °C
+        {t('weather.forecastLabel', { description: forecast.description, min: Math.round(forecast.tMin), max: Math.round(forecast.tMax) })}
       </span>
-      <Badge tone={riskTone[risk]}>Lluvia {risk} ({forecast.precipitationProbability}%)</Badge>
+      <Badge tone={riskTone[risk]}>{t('weather.rainRisk', { risk: t(`weather.risk.${risk}`), probability: forecast.precipitationProbability })}</Badge>
     </span>
   )
 }

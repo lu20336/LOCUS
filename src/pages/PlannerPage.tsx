@@ -15,6 +15,7 @@ import { ActivitiesStep } from './ActivitiesStep'
 import { ItineraryStep } from './ItineraryStep'
 import { Alert, Button, Card } from '../components/ui'
 import { useAuth } from '../lib/auth/authContext'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { db } from '../lib/firebase/client'
 import { formatCOP, formatDate } from '../lib/format'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
@@ -22,6 +23,7 @@ import { estimateTripBudget } from '../lib/flow/tripBudget'
 import { saveNewItinerary, toPayload } from '../lib/itinerary/itineraryStore'
 
 function ConfirmStep() {
+  const { t } = useI18n()
   const { trip, itinerary, goToStep } = useTripFlow()
   const { user } = useAuth()
   const toast = useToast()
@@ -37,9 +39,9 @@ function ConfirmStep() {
     try {
       const id = await saveNewItinerary(db, user.uid, toPayload(itinerary, trip.travelers, 'planner'))
       setSavedId(id)
-      toast('Guardado en Mis viajes', { action: { label: 'Ver viaje', to: `/mis-viajes/${id}` } })
+      toast(t('trips.toast.savedInTrips'), { action: { label: t('trips.toast.viewTrip'), to: `/mis-viajes/${id}` } })
     } catch {
-      setError('No pudimos guardar tu itinerario. Revisa tu conexión e inténtalo de nuevo.')
+      setError(t('planner.saveError'))
     } finally {
       setSaving(false)
     }
@@ -49,31 +51,31 @@ function ConfirmStep() {
   return (
     <div className="flex flex-col gap-8">
       <Card>
-        <p className="text-sm font-semibold uppercase tracking-wider text-teal-soft">Paso 4 de 4</p>
+        <p className="text-sm font-semibold uppercase tracking-wider text-teal-soft">{t('planner.step4')}</p>
         <h1 id="step-title" tabIndex={-1} className="mt-1 text-3xl font-semibold text-navy focus:outline-none sm:text-4xl">
-          Confirma tu plan
+          {t('planner.confirmTitle')}
         </h1>
         <dl className="mt-5 grid gap-4 rounded-2xl bg-surface-2 p-5 sm:grid-cols-3">
-          <div><dt className="text-sm text-muted">Destino</dt><dd className="font-semibold text-ink">{name}</dd></div>
-          <div><dt className="text-sm text-muted">Fechas</dt><dd className="font-semibold text-ink">{formatDate(trip.startDate)} – {formatDate(trip.endDate)}</dd></div>
-          <div><dt className="text-sm text-muted">Viajeros</dt><dd className="font-semibold text-ink">{trip.travelers} · presupuesto {formatCOP(trip.budgetCOP)}</dd></div>
+          <div><dt className="text-sm text-muted">{t('planner.destination')}</dt><dd className="font-semibold text-ink">{name}</dd></div>
+          <div><dt className="text-sm text-muted">{t('planner.dates')}</dt><dd className="font-semibold text-ink">{formatDate(trip.startDate)} – {formatDate(trip.endDate)}</dd></div>
+          <div><dt className="text-sm text-muted">{t('planner.travelers')}</dt><dd className="font-semibold text-ink">{t('planner.travelersBudget', { travelers: trip.travelers, budget: formatCOP(trip.budgetCOP) })}</dd></div>
         </dl>
 
         <div className="mt-6 flex flex-col gap-3">
           {savedId ? (
             <Alert tone="success">
-              ¡Listo! Guardamos tu itinerario. Puedes <Link className="font-semibold underline" to={`/mis-viajes/${savedId}`}>verlo y editarlo</Link> cuando quieras, o encontrarlo siempre en <Link className="font-semibold underline" to="/mis-viajes">Mis viajes</Link>.
+              {t('planner.savedA')} <Link className="font-semibold underline" to={`/mis-viajes/${savedId}`}>{t('planner.savedLinkEdit')}</Link> {t('planner.savedB')} <Link className="font-semibold underline" to="/mis-viajes">{t('nav.myTrips')}</Link>.
             </Alert>
           ) : user ? (
-            <Button onClick={save} disabled={saving} className="self-start">{saving ? 'Guardando…' : 'Guardar en mi cuenta'}</Button>
+            <Button onClick={save} disabled={saving} className="self-start">{saving ? t('planner.saving') : t('planner.save')}</Button>
           ) : (
             <Alert tone="info">
-              Para guardar tu itinerario necesitas una cuenta (gratis).{' '}
-              <Link className="font-semibold underline" to="/ingresar?next=/planear">Ingresa o regístrate</Link>; tu plan se conserva mientras no cierres la pestaña.
+              {t('planner.needAccount')}{' '}
+              <Link className="font-semibold underline" to="/ingresar?next=/planear">{t('planner.signUpLink')}</Link>{t('planner.needAccountTail')}
             </Alert>
           )}
           {error && <Alert>{error}</Alert>}
-          <Button variant="ghost" className="self-start border border-line" onClick={() => goToStep(3)}>← Volver al itinerario</Button>
+          <Button variant="ghost" className="self-start border border-line" onClick={() => goToStep(3)}>{t('planner.backToItinerary')}</Button>
         </div>
       </Card>
 

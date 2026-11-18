@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { useFavorites, type Favorite } from '../lib/profile/favorites'
 import { useToast } from './Toast'
 
@@ -8,6 +9,7 @@ export function FavoriteButton({ item, className = '' }: { item: Omit<Favorite, 
   const { isFavorite, toggle, available } = useFavorites()
   const navigate = useNavigate()
   const toast = useToast()
+  const { t } = useI18n()
   const active = isFavorite(item.kind, item.refId)
   const [pop, setPop] = useState(0)
 
@@ -20,10 +22,10 @@ export function FavoriteButton({ item, className = '' }: { item: Omit<Favorite, 
       await toggle(item)
       if (!active) {
         setPop((n) => n + 1)
-        toast('Guardado en Favoritos', { action: { label: 'Ver favoritos', to: '/favoritos' } })
+        toast(t('fav.toast.saved'), { action: { label: t('fav.toast.view'), to: '/favoritos' } })
       }
     } catch {
-      toast('No pudimos actualizar tus favoritos. Inténtalo de nuevo.', { tone: 'error' })
+      toast(t('fav.toast.error'), { tone: 'error' })
     }
   }
 
@@ -31,7 +33,7 @@ export function FavoriteButton({ item, className = '' }: { item: Omit<Favorite, 
     <button
       type="button"
       aria-pressed={active}
-      aria-label={active ? `Quitar ${item.title} de favoritos` : `Guardar ${item.title} en favoritos`}
+      aria-label={active ? t('fav.remove', { title: item.title }) : t('fav.add', { title: item.title })}
       onClick={(e) => {
         e.preventDefault()
         e.stopPropagation()

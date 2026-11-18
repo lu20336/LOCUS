@@ -1,0 +1,21 @@
+/** Wetterbeschreibungen (WMO-Codes von Open-Meteo). */
+export const weather = {
+  'weather.clear': 'Klar',
+  'weather.mostlyClear': 'Überwiegend klar',
+  'weather.partlyCloudy': 'Teilweise bewölkt',
+  'weather.overcast': 'Bedeckt',
+  'weather.fog': 'Nebel',
+  'weather.drizzle': 'Nieselregen',
+  'weather.rain': 'Regen',
+  'weather.snow': 'Schnee',
+  'weather.showers': 'Schauer',
+  'weather.snowShowers': 'Schneeschauer',
+  'weather.thunderstorm': 'Gewitter',
+  'weather.thunderHail': 'Gewitter mit Hagel',
+  'weather.unknown': 'Keine Daten',
+  'weather.forecastLabel': 'Vorhersage: {description}, {min}–{max} °C',
+  'weather.rainRisk': 'Regenrisiko {risk} ({probability} %)',
+  'weather.risk.bajo': 'gering',
+  'weather.risk.medio': 'mittel',
+  'weather.risk.alto': 'hoch',
+} as const

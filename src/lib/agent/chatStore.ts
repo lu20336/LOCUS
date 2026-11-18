@@ -6,6 +6,7 @@
 import {
   addDoc, collection, deleteDoc, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc, updateDoc, type Firestore, type Timestamp,
 } from 'firebase/firestore'
+import { getT } from '../i18n/store'
 import type { AgentCard, ChatMessage } from './types'
 
 export const DAILY_MESSAGE_LIMIT = 60
@@ -19,7 +20,7 @@ export async function countMessage(db: Firestore, uid: string | null, today: str
     let used = 0
     try {
       used = Number(sessionStorage.getItem('locus:agent:anon') ?? '0')
-      if (used >= ANON_SESSION_LIMIT) throw new UsageLimitError('Para seguir conversando, crea una cuenta gratuita o ingresa.')
+      if (used >= ANON_SESSION_LIMIT) throw new UsageLimitError(getT()('agent.limit.anon'))
       sessionStorage.setItem('locus:agent:anon', String(used + 1))
     } catch (e) {
       if (e instanceof UsageLimitError) throw e
@@ -29,7 +30,7 @@ export async function countMessage(db: Firestore, uid: string | null, today: str
   const ref = doc(db, 'users', uid, 'agentUsage', today)
   const snap = await getDoc(ref)
   const count = (snap.data()?.count as number | undefined) ?? 0
-  if (count >= DAILY_MESSAGE_LIMIT) throw new UsageLimitError(`Llegaste al límite de ${DAILY_MESSAGE_LIMIT} mensajes de hoy. Vuelve mañana.`)
+  if (count >= DAILY_MESSAGE_LIMIT) throw new UsageLimitError(getT()('agent.limit.daily', { limit: DAILY_MESSAGE_LIMIT }))
   await setDoc(ref, { count: count + 1 })
 }
 

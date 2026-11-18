@@ -1,4 +1,5 @@
 import { useEffect, useRef, type ReactNode } from 'react'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { Button } from './ui'
 
 /**
@@ -24,6 +25,7 @@ export function ConfirmDialog({
   onConfirm: () => void
   onCancel: () => void
 }) {
+  const { t } = useI18n()
   const ref = useRef<HTMLDialogElement | null>(null)
 
   useEffect(() => {
@@ -47,7 +49,7 @@ export function ConfirmDialog({
         <h2 id="confirm-title" className="text-2xl font-semibold text-navy">{title}</h2>
         <div className="mt-3 text-sm">{children}</div>
         <div className="mt-6 flex flex-wrap justify-end gap-3">
-          <Button variant="ghost" className="border border-line" onClick={onCancel} disabled={busy}>Volver</Button>
+          <Button variant="ghost" className="border border-line" onClick={onCancel} disabled={busy}>{t('common.back')}</Button>
           <Button variant={danger ? 'danger' : 'primary'} onClick={onConfirm} disabled={busy}>
             {busy ? 'Procesando…' : confirmLabel}
           </Button>

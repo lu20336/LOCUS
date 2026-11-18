@@ -1,0 +1,20 @@
+/** Seitentitel (Browser-Tab) und globale App-Meldungen. */
+export const app = {
+  'title.default': 'LOCUS · Plane, vergleiche und buche deine Reise durch Kolumbien',
+  'title.suffix': '{page} · LOCUS',
+  'title.plan': 'Plane deine Reise',
+  'title.compare': 'Unterkünfte, Flüge und Erlebnisse vergleichen',
+  'title.explore': 'Unterkünfte in Kolumbien entdecken',
+  'title.experiences': 'Erlebnisse in Kolumbien',
+  'title.myTrips': 'Meine Reisen',
+  'title.favorites': 'Favoriten',
+  'title.bookings': 'Meine Buchungen',
+  'title.profile': 'Profil und Einstellungen',
+  'title.plans': 'Tarife und Abo',
+  'title.howWeEarn': 'So verdienen wir Geld',
+  'title.privacy': 'Datenschutz',
+  'title.terms': 'Nutzungsbedingungen',
+  'title.host': 'Biete deine Unterkunft an',
+  'app.checkingSession': 'Deine Sitzung wird geprüft…',
+  'app.poweredBy': 'Powered by Geoapify',
+} as const

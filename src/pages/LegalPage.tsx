@@ -8,6 +8,7 @@
  */
 import { useLocation } from 'react-router'
 import { Alert, Container, PageHeader } from '../components/ui'
+import { useI18n } from '../lib/i18n/I18nProvider'
 
 interface Doc {
   eyebrow: string
@@ -102,6 +103,7 @@ const DOCS: Record<string, Doc> = {
 }
 
 export default function LegalPage() {
+  const { t, locale } = useI18n()
   const { pathname } = useLocation()
   const doc = DOCS[pathname] ?? DOCS['/como-ganamos-dinero']
   return (
@@ -109,6 +111,7 @@ export default function LegalPage() {
       <PageHeader eyebrow={doc.eyebrow} title={doc.title}>
         {doc.intro}
       </PageHeader>
+      {locale !== 'es' && <div className="mb-3"><Alert tone="info">{t('legal.onlySpanish')}</Alert></div>}
       {pathname !== '/como-ganamos-dinero' && (
         <Alert tone="info">Documento en borrador: será revisado por un abogado antes del lanzamiento comercial.</Alert>
       )}
