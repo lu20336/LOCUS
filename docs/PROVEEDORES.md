@@ -182,18 +182,47 @@ Ninguno es "gratis": cobran comisión por transacción. **Requisito técnico com
 ## Comparador (enlaces profundos de plataformas)
 
 Implementado en `src/lib/compare/providers.ts` (alojamiento, vuelos, experiencias, transporte, seguro). **No consulta
-precios de terceros**: arma el enlace de búsqueda de cada plataforma con destino, fechas y viajeros. Formatos usados:
+precios de terceros**: arma el enlace de búsqueda de cada plataforma con destino, fechas y viajeros.
+
+### Verificación (17-nov-2026, navegador real)
+
+Cada enlace se abrió en un navegador real y se comprobó a dónde llega. Hallazgos que ya están corregidos:
+
+| Problema encontrado | Corrección |
+|---|---|
+| `expedia.com.co` **no existe** (el DNS no resuelve; cualquiera podría registrarlo). | Se usa `www.expedia.com` (precios en USD). |
+| `tripadvisor.com.co` **no es Tripadvisor**: es una página parqueada ("Coming Soon") que redirige a redes de publicidad. | Se usa `www.tripadvisor.co`, el sitio colombiano real. |
+| KAYAK hoteles/autos: con "Ciudad, Colombia" redirigía a su portada (se perdía la búsqueda). Solo entiende `Ciudad,Departamento,Colombia` y únicamente ciudades que conoce (no Salento, Guatapé ni Villa de Leyva). | Lista de ciudades comprobadas (`KAYAK_CITIES`); el resto abre su buscador y se marca "repite tu búsqueda". |
+| Civitatis: `/es/buscar/?q=` ignora la búsqueda y manda a la portada. `/es/cartagena/` es la Cartagena de **España**. | Páginas por ciudad colombiana (`CIVITATIS_CITIES`) o la página de Colombia. |
+| Wingo: `/es-co` da 404. | `https://www.wingo.com/es`. |
+| Enlaces a OpenStreetMap con ids que no son de OSM (`geoapify/…`, `imperdible/…`) daban 404. | `osmPlaceUrl()` cae a un enlace por coordenadas. |
+
+Resultado verificado en navegador (abren con la búsqueda lista): Booking, Airbnb, Vrbo, Google Hoteles, Expedia, KAYAK
+(hoteles, vuelos y autos en las ciudades listadas), Skyscanner, Aviasales, Google Vuelos, GetYourGuide, Viator, Civitatis,
+Tripadvisor, Google Maps (rutas). Solo página principal (se avisa al usuario): Despegar, trivago, Busbud, Discover Cars,
+Assist Card, Avianca, LATAM, Wingo, JetSMART, SATENA.
+
+La prueba `dominios oficiales` (`compare.test.ts`) falla si un enlace apunta a un dominio que no esté en la lista de verificados.
+
+### Formatos usados
 
 | Plataforma | Formato (resumen) | Pre-llenado |
 |---|---|---|
 | Booking.com | `searchresults.es.html?ss=&checkin=&checkout=&group_adults=&no_rooms=` | completo |
 | Airbnb | `/s/{Ciudad}--Colombia/homes?adults=&checkin=&checkout=` | completo |
-| Expedia / Vrbo | `Hotel-Search?destination=&startDate=&endDate=&adults=` / `search?destination=…` | completo |
-| KAYAK | `/hotels/{lugar}/{ida}/{vuelta}/{n}adults`, `/flights/{O}-{D}/{ida}/{vuelta}/{n}adults` | completo |
+| Expedia / Vrbo | `expedia.com/Hotel-Search?destination=&startDate=&endDate=&adults=` / `vrbo.com/search?…` | completo |
+| KAYAK | `/hotels/{Ciudad,Depto,Colombia}/{ida}/{vuelta}/{n}adults`, `/cars/…`, `/flights/{O}-{D}/{ida}/{vuelta}/{n}adults` | completo (ciudades listadas) |
 | Google Hoteles / Vuelos | `travel/search?q=` / `travel/flights?q=` | destino / ruta+fechas |
 | Skyscanner | `/transporte/vuelos/{o}/{d}/{aammdd}/{aammdd}/?adultsv2=` | completo |
 | Aviasales | `/search/{O}{ddmm}{D}{ddmm}{pasajeros}` | completo |
-| Despegar, trivago, Busbud, aerolíneas | solo página principal | ninguno (se avisa al usuario) |
+| GetYourGuide / Viator | `s/?q=` / `searchResults/all?text=` | destino |
+| Civitatis | `/es/{ciudad}/` | destino (ciudades listadas) |
+| Despegar, trivago, Busbud, aerolíneas, seguro | solo página principal | ninguno (se avisa) |
 
-Los formatos son los públicos de cada buscador; **revísalos periódicamente** (si uno cambia, el peor caso es que abra el
+Los formatos son los públicos de cada buscador; **vuelve a verificarlos cada cierto tiempo** (si uno cambia, el peor caso es que abra el
 buscador sin datos). Prohibido: extraer precios con scraping. Los afiliados se configuran con `VITE_AFF_*` (ver `.env.example`).
+
+## Precios de referencia de vuelos (Travelpayouts · Aviasales Data API)
+
+Vía el Worker `workers/prices` (token como secreto, caché 6 h). Datos en caché de búsquedas recientes de viajeros: **referencia, no tarifa reservable**.
+Plan gratis para socios (límite por minuto) y Workers gratis (100 000 solicitudes/día). Guía: `docs/PRECIOS_EN_VIVO.md`.

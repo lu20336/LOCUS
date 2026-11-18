@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { withAffiliate } from '../affiliates'
 import { notebookKey, summarizeQuotes } from '../priceNotebook'
-import { airlineLinks, experienceLinks, flightSearchLinks, propertyLinks, stayLinks } from '../providers'
+import { airlineLinks, experienceLinks, flightSearchLinks, insuranceLinks, propertyLinks, stayLinks, transportLinks } from '../providers'
 
 const NO_AFF = {}
 
@@ -15,8 +15,9 @@ describe('stayLinks', () => {
     expect(links.booking.url).toContain('group_adults=3')
     expect(links.airbnb.url).toContain('/s/Cartagena-de-Indias--Colombia/homes')
     expect(links.airbnb.url).toContain('checkin=2026-12-05')
+    expect(links.expedia.url).toContain('https://www.expedia.com/Hotel-Search')
     expect(links.expedia.url).toContain('startDate=2026-12-05')
-    expect(links.kayak.url).toContain('/2026-12-05/2026-12-08/3adults')
+    expect(links.kayak.url).toContain('/hotels/Cartagena%20de%20Indias%2CBolivar%2CColombia/2026-12-05/2026-12-08/3adults')
     expect(links.vrbo.url).toContain('adults=3')
     expect(links.booking.prefill).toBe('full')
   })
@@ -76,10 +77,71 @@ describe('flightSearchLinks', () => {
   })
 })
 
-describe('listas fijas', () => {
-  it('experiencias y aerolíneas devuelven enlaces https', () => {
-    for (const l of [...experienceLinks('Salento', NO_AFF), ...airlineLinks(NO_AFF)]) expect(l.url.startsWith('https://')).toBe(true)
-    expect(airlineLinks(NO_AFF).every((l) => l.prefill === 'none')).toBe(true)
+describe('lugares que KAYAK y Civitatis no conocen', () => {
+  const kayak = (place: string) => stayLinks({ place, checkIn: '2026-12-05', checkOut: '2026-12-08', adults: 2 }, NO_AFF).find((l) => l.provider.id === 'kayak')!
+
+  it('KAYAK: ciudades comprobadas llevan Ciudad,Departamento,Colombia sin tildes', () => {
+    expect(kayak('Medellín, Antioquia, Colombia').url).toContain('/hotels/Medellin%2CAntioquia%2CColombia/')
+    expect(kayak('San Andrés').url).toContain('San%20Andres%2CSan%20Andres%20y%20Providencia%2CColombia')
+    expect(kayak('Cartagena').prefill).toBe('full')
+  })
+
+  it('KAYAK: un pueblo desconocido abre su buscador y lo declara (no promete búsqueda lista)', () => {
+    for (const town of ['Salento', 'Villa de Leyva', 'Guatapé']) {
+      expect(kayak(town)).toMatchObject({ url: 'https://www.kayak.com.co/stays', prefill: 'none' })
+    }
+  })
+
+  it('KAYAK autos sigue la misma regla', () => {
+    const cars = (place: string) => transportLinks(place, { checkIn: '2026-12-05', checkOut: '2026-12-08' }, NO_AFF).find((l) => l.provider.id === 'kayak-cars')!
+    expect(cars('Cali').url).toBe('https://www.kayak.com.co/cars/Cali%2CValle%20del%20Cauca%2CColombia/2026-12-05/2026-12-08')
+    expect(cars('Salento')).toMatchObject({ url: 'https://www.kayak.com.co/cars', prefill: 'none' })
+  })
+
+  it('Civitatis: usa la página de la ciudad colombiana (no la de Cartagena de España) o la de Colombia', () => {
+    const civ = (place: string) => experienceLinks(place, NO_AFF).find((l) => l.provider.id === 'civitatis')!
+    expect(civ('Cartagena de Indias').url).toBe('https://www.civitatis.com/es/cartagena-de-indias/')
+    expect(civ('Cartagena').url).toBe('https://www.civitatis.com/es/cartagena-de-indias/')
+    expect(civ('Medellín').url).toBe('https://www.civitatis.com/es/medellin/')
+    expect(civ('Salento')).toMatchObject({ url: 'https://www.civitatis.com/es/colombia/', prefill: 'none' })
+  })
+})
+
+/**
+ * Dominios oficiales comprobados a mano en un navegador real. Un dominio que no esté aquí
+ * rompe la prueba: así no se cuela un sitio ajeno (p. ej. tripadvisor.com.co NO es Tripadvisor:
+ * es una página parqueada que redirige a publicidad; el sitio colombiano es tripadvisor.co,
+ * y expedia.com.co no existe).
+ */
+const OFFICIAL_HOSTS = new Set([
+  'www.booking.com', 'www.airbnb.com.co', 'www.google.com', 'www.expedia.com', 'www.kayak.com.co', 'www.vrbo.com',
+  'www.despegar.com.co', 'www.trivago.com.co', 'www.tripadvisor.co', 'www.skyscanner.com.co', 'www.aviasales.com',
+  'www.avianca.com', 'www.latamairlines.com', 'www.wingo.com', 'jetsmart.com', 'www.satena.com',
+  'www.getyourguide.com', 'www.viator.com', 'www.civitatis.com', 'www.busbud.com', 'www.discovercars.com', 'www.assistcard.com',
+])
+
+describe('dominios oficiales', () => {
+  const all = [
+    ...stayLinks({ place: 'Cartagena', checkIn: '2026-12-05', checkOut: '2026-12-08', adults: 2 }, NO_AFF),
+    ...stayLinks({ place: 'Salento', adults: 1 }, NO_AFF),
+    ...propertyLinks('Hotel X', 'Salento', { adults: 2 }, NO_AFF),
+    ...flightSearchLinks({ origin: 'BOG', destination: 'CTG', date: '2026-12-05', adults: 1 }, NO_AFF),
+    ...airlineLinks(NO_AFF),
+    ...experienceLinks('Salento', NO_AFF),
+    ...transportLinks('Salento', {}, NO_AFF),
+    ...insuranceLinks(NO_AFF),
+  ]
+
+  it('todos los enlaces apuntan a un dominio oficial verificado y usan https', () => {
+    for (const l of all) {
+      const url = new URL(l.url)
+      expect(url.protocol, l.provider.id).toBe('https:')
+      expect(OFFICIAL_HOSTS.has(url.hostname), `${l.provider.id} → ${url.hostname}`).toBe(true)
+    }
+  })
+
+  it('declara honestamente lo que no se puede pre-llenar', () => {
+    for (const l of all.filter((x) => x.prefill === 'none')) expect(new URL(l.url).search, l.provider.id).toBe('')
   })
 })
 

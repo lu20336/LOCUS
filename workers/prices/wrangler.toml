@@ -1,0 +1,13 @@
+# Worker de precios de LOCUS (plan GRATIS de Cloudflare: 100 000 solicitudes/día).
+# Despliegue: ver docs/PRECIOS_EN_VIVO.md
+name = "locus-prices"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+
+[vars]
+# Orígenes web que pueden llamar al servicio (sin barra final). Añade tu dominio propio si lo compras.
+ALLOWED_ORIGINS = "https://locus-bb57e.firebaseapp.com,https://locus-bb57e.web.app,http://localhost:5173"
+# Marker de afiliado de Travelpayouts (público; va en el enlace a Aviasales). Déjalo vacío hasta tenerlo.
+TRAVELPAYOUTS_MARKER = ""
+
+# SECRETO (no va aquí): npx wrangler secret put TRAVELPAYOUTS_TOKEN

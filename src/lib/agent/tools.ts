@@ -17,6 +17,7 @@ import { averageRating, fetchReviews } from '../catalog/reviews'
 import { availableListings, filterExperiences, filterListings } from '../catalog/search'
 import { EXPERIENCE_CATEGORIES, LISTING_TYPES, CANCELLATION_POLICIES, type Experience, type ExperienceCategory, type Listing, type ListingType } from '../domain/types'
 import { FEATURED_DESTINATIONS, climateOf } from '../featuredDestinations'
+import { osmPlaceUrl } from '../flow/itineraryView'
 import { resolveDestination, findFeaturedDestination } from '../flow/resolveDestination'
 import { AIRLINE_SITES, findAirport, flightLinks, nearestAirports } from '../flights/airports'
 import { formatCOP } from '../format'
@@ -339,7 +340,7 @@ async function findPlaces(a: Record<string, unknown>): Promise<ToolOutcome> {
       places: best.map((p) => ({ name: p.name, category: CATEGORIES[p.category].label, kind: p.kind })),
       note: best.length === 0 ? 'OpenStreetMap no devolvió lugares para esas categorías.' : 'No tienes horarios de apertura ni precios: no los inventes.',
     },
-    cards: best.length > 0 ? [{ kind: 'places', title: `Lugares cerca de ${place.displayName.split(',')[0]}`, items: best.slice(0, 10).map((p) => ({ name: p.name, kind: p.kind, href: `https://www.openstreetmap.org/${p.id}` })) }] : [],
+    cards: best.length > 0 ? [{ kind: 'places', title: `Lugares cerca de ${place.displayName.split(',')[0]}`, items: best.slice(0, 10).map((p) => ({ name: p.name, kind: p.kind, href: osmPlaceUrl(p) })) }] : [],
   }
 }
 

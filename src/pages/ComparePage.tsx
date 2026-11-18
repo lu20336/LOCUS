@@ -19,6 +19,7 @@ import { Counter } from '../components/Counter'
 import { inputClassName } from '../components/FormField'
 import { ListingCard } from '../components/ListingCard'
 import { Alert, Badge, ButtonLink, Card, Container, PageHeader, selectClassName, Spinner } from '../components/ui'
+import { fetchFlightReference, livePricesEnabled, referenceToQuote, type FlightReference } from '../lib/compare/livePrices'
 import { notebookKey } from '../lib/compare/priceNotebook'
 import {
   airlineLinks,
@@ -335,6 +336,12 @@ function FlightsTab({ ctx }: { ctx: Ctx }) {
     () => (ready ? flightSearchLinks({ origin, destination: to, date: checkIn, returnDate: datesOk ? checkOut : undefined, adults: travelers }) : []),
     [ready, origin, to, checkIn, checkOut, datesOk, travelers],
   )
+  // Precio de referencia (Worker gratis + datos de Aviasales). Apagado si no hay VITE_PRICES_API_URL.
+  const liveOn = livePricesEnabled()
+  const reference = useAsync(
+    () => (liveOn && ready ? fetchFlightReference({ origin, destination: to, date: checkIn, returnDate: datesOk ? checkOut : undefined }) : Promise.resolve(null)),
+    [liveOn, ready, origin, to, checkIn, checkOut, datesOk],
+  )
   const options = AIRPORTS.map((a) => (
     <option key={a.iata} value={a.iata}>
       {a.city} · {a.name} ({a.iata})
@@ -362,6 +369,11 @@ function FlightsTab({ ctx }: { ctx: Ctx }) {
 
       {flights.length > 0 && (
         <>
+          {liveOn && (
+            <Block title="Precio de referencia" subtitle="Lo más barato que viajeros encontraron hace poco. No es una tarifa reservable: confírmala en el buscador.">
+              {reference.loading ? <Spinner label="Consultando precios recientes…" /> : reference.data ? <ReferenceCard reference={reference.data} travelers={travelers} /> : <Alert tone="info">No hay precios recientes para esta ruta y fecha. Compara en los buscadores de abajo.</Alert>}
+            </Block>
+          )}
           <Block title="Compara en buscadores de vuelos" subtitle="Cada uno revisa decenas de aerolíneas y agencias; abre dos o tres y compara.">
             <ProviderList links={flights} cta="Ver vuelos en" />
           </Block>
@@ -370,6 +382,7 @@ function FlightsTab({ ctx }: { ctx: Ctx }) {
               <PriceNotebook
                 storageKey={notebookKey('flight', `${origin}-${to}`, checkIn, checkOut, travelers)}
                 rows={[...flights, ...airlineLinks().slice(0, 3)].map((l) => ({ providerId: l.provider.id, label: l.provider.name }))}
+                fixedQuotes={reference.data ? [referenceToQuote(reference.data, travelers)] : []}
                 unit={`total para ${travelers} ${travelers === 1 ? 'pasajero' : 'pasajeros'}`}
               />
             </Card>
@@ -381,6 +394,33 @@ function FlightsTab({ ctx }: { ctx: Ctx }) {
         <ProviderList links={airlineLinks()} cta="Ir a" />
       </Block>
     </>
+  )
+}
+
+/** Códigos IATA de aerolíneas que operan en Colombia (si no está, se muestra el código). */
+const AIRLINE_NAMES: Record<string, string> = { AV: 'Avianca', LA: 'LATAM', P5: 'Wingo', JA: 'JetSMART', '9R': 'SATENA', CM: 'Copa Airlines' }
+
+function ReferenceCard({ reference, travelers }: { reference: FlightReference; travelers: number }) {
+  const hours = Math.max(0, Math.round((Date.now() - Date.parse(reference.fetchedAt)) / 3_600_000))
+  return (
+    <Card>
+      <div className="flex flex-wrap items-center justify-between gap-4">
+        <div>
+          <p className="text-sm text-muted">{reference.matched === 'date' ? 'Desde, por persona' : 'Lo más barato del mes, por persona'}</p>
+          <p className="text-3xl font-semibold text-navy">{formatCOP(reference.priceCOP)}</p>
+          <p className="mt-1 text-sm text-muted">
+            {reference.airline ? `${AIRLINE_NAMES[reference.airline] ?? `Aerolínea ${reference.airline}`} · ` : ''}
+            {reference.transfers === 0 ? 'directo · ' : reference.transfers ? `${reference.transfers} escala(s) · ` : ''}
+            para {travelers} {travelers === 1 ? 'pasajero' : 'pasajeros'}: <strong className="text-ink">{formatCOP(reference.priceCOP * travelers)}</strong>
+          </p>
+          <p className="mt-1 text-xs text-muted">Dato en caché de Aviasales{hours > 0 ? ` (consultado hace ~${hours} h)` : ''}. Puede haber cambiado.</p>
+        </div>
+        <a href={reference.link} target="_blank" rel="noopener noreferrer sponsored" className="inline-flex items-center rounded-xl bg-coral px-4 py-2.5 font-bold text-on-coral hover:brightness-105">
+          Ver este vuelo en Aviasales
+          <span className="sr-only"> (se abre en otra pestaña)</span>
+        </a>
+      </div>
+    </Card>
   )
 }
 
