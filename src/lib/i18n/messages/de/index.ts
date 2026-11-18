@@ -11,6 +11,7 @@ import { itinerary } from './itinerary'
 import { catalog } from './catalog'
 import { places } from './places'
 import { profile } from './profile'
+import { survey } from './survey'
 import { home } from './home'
 import { host } from './host'
 import { nav } from './nav'
@@ -20,4 +21,4 @@ import { trips } from './trips'
 import { weather } from './weather'
 
 /** Catálogo de: debe tener EXACTAMENTE las mismas claves que es (lo exige el compilador y translations.test.ts). */
-export const de: Record<MessageKey, string> = { ...agent, ...app, ...auth, ...bookings, ...common, ...compare, ...compareProviders, ...flow, ...itinerary, ...catalog, ...places, ...profile, ...home, ...host, ...nav, ...planner, ...plans, ...trips, ...weather }
+export const de: Record<MessageKey, string> = { ...agent, ...app, ...auth, ...bookings, ...common, ...compare, ...compareProviders, ...flow, ...itinerary, ...catalog, ...places, ...profile, ...survey, ...home, ...host, ...nav, ...planner, ...plans, ...trips, ...weather }
