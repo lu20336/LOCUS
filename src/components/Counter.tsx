@@ -19,6 +19,7 @@ interface CounterProps {
 /** Contador con botones − / +. El valor se anuncia a lectores de pantalla al cambiar. */
 export function Counter({ label, icon: Icon, value, min, max, onChange, unit, hint, disabled }: CounterProps) {
   const id = useId()
+  const { t } = useI18n()
   const buttonClass =
     'grid size-11 place-items-center rounded-full border border-line text-xl font-semibold text-ink transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40'
 
