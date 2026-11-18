@@ -131,14 +131,22 @@ export interface BudgetExtra {
   replaced?: Place[]
   /** Lugar real donde se hace (ej. el restaurante de la cena), si se encontró uno en el mapa. */
   venue?: ExtraVenue
+  /**
+   * Parada del plan que ya era ese mismo lugar (ej. la finca de café): el plan
+   * extra la reemplaza para no repetirla, y vuelve a su día si se quita el plan.
+   */
+  covers?: { dayIndex: number; place: Place }
 }
 
-export interface ExtraVenue extends GeoPoint {
+export interface ExtraVenue {
   id: string
   name: string
   kind: string
   /** Cómo se presenta: "Lugar", "Punto de encuentro" o "Sale de". */
   role: string
+  /** Ubicación, si el lugar está en los datos del mapa (si no, se enlaza a una búsqueda). */
+  lat?: number
+  lon?: number
 }
 
 export type ExtraPart = 'mañana' | 'tarde' | 'noche' | 'todo el día'

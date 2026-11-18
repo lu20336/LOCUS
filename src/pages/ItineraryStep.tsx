@@ -51,6 +51,7 @@ import {
   moveExtra,
   removeExtra,
   spareSuggestions,
+  venueMapUrl,
 } from '../lib/flow/tripBudget'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
@@ -608,7 +609,7 @@ function DayExtras({
                   <span className="text-muted"> · {extra.venue.kind}</span>
                 </span>
                 <a
-                  href={osmPlaceUrl(extra.venue)}
+                  href={venueMapUrl(extra.venue, itinerary.destination.displayName.split(',')[0])}
                   target="_blank"
                   rel="noreferrer"
                   className="font-semibold text-teal-soft underline-offset-2 hover:underline"
@@ -622,6 +623,7 @@ function DayExtras({
               {extra.replaced?.length
                 ? ` · ocupa el día: apartamos ${extra.replaced.length} ${extra.replaced.length === 1 ? 'parada' : 'paradas'} (vuelven si lo cambias de día o lo quitas)`
                 : ''}
+              {extra.covers ? ` · reemplaza la parada ${extra.covers.place.name} (vuelve si lo quitas)` : ''}
             </p>
             <div className="mt-3 flex flex-wrap items-center gap-3">
               <label className="flex items-center gap-2 text-sm text-ink">

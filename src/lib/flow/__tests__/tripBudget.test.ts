@@ -15,6 +15,7 @@ import {
   pickVenue,
   removeExtra,
   spareSuggestions,
+  venueMapUrl,
   PRICES,
   stayFit,
 } from '../tripBudget'
@@ -264,7 +265,9 @@ describe('"Sugerir planes con lo que me sobra"', () => {
     expect(titles).not.toContain('Parque Explora') // $240.000: no cabe en $100.000
     expect(titles).not.toContain('Una cena especial') // $300.000 para dos
     // Lugares reales antes que los planes típicos.
-    expect(titles[0]).toBe('Museo de Antioquia')
+    // Primero los planes propios de Medellín que caben, luego los lugares reales.
+    expect(titles[0]).toBe('Metrocable y Parque Arví')
+    expect(titles.indexOf('Museo de Antioquia')).toBe(1)
     expect(spareSuggestions(it0, trip(base))).toEqual([])
   })
 
@@ -289,11 +292,21 @@ describe('planes típicos con lo que sobra', () => {
   })
   const trip = { travelers: 2, rooms: 1, budgetCOP: 5_000_000 }
 
-  it('ofrece planes según el destino: lancha en la costa, finca cafetera en el Eje', () => {
-    const titles = (it: Itinerary) => spareSuggestions(it, trip).map((o) => o.title)
-    expect(titles(it0('Cartagena de Indias, Bolívar, Colombia', 10.42, -75.55))).toContain('Paseo en lancha a las islas o playas cercanas')
-    expect(titles(it0('Medellín, Antioquia, Colombia'))).not.toContain('Paseo en lancha a las islas o playas cercanas')
+  it('ofrece planes según el destino: los propios de cada ciudad y, si no tiene, los de su región', () => {
+    const titles = (it: Itinerary) => spareSuggestions(it, trip, 50).map((o) => o.title)
+    const cartagena = titles(it0('Cartagena de Indias, Bolívar, Colombia', 10.42, -75.55))
+    expect(cartagena).toContain('Islas del Rosario en lancha')
+    expect(cartagena).toContain('Chiva rumbera')
+    // Con planes propios no se repite el genérico de la costa.
+    expect(cartagena).not.toContain('Paseo en lancha a las islas o playas cercanas')
+    const medellin = titles(it0('Medellín, Antioquia, Colombia'))
+    expect(medellin).toContain('Graffiti tour por la Comuna 13')
+    expect(medellin).not.toContain('Islas del Rosario en lancha')
+    expect(titles(it0('Manizales, Caldas, Colombia', 5.07, -75.52))).toContain('Tarde en los Termales del Otoño')
+    expect(titles(it0('Salento, Quindío, Colombia', 4.64, -75.57))).toContain('Cabalgata en el Valle de Cocora')
     expect(titles(it0('Salento, Quindío, Colombia', 4.64, -75.57))).toContain('Tour en una finca cafetera')
+    // Un pueblo de la costa sin planes propios recibe los de la región.
+    expect(titles(it0('Tolú, Sucre, Colombia', 9.52, -75.58))).toContain('Paseo en lancha a las islas o playas cercanas')
   })
 
   it('al agregarlo suma una línea "Planes extra" y se puede quitar', () => {
@@ -339,12 +352,12 @@ describe('los planes extra van dentro del itinerario', () => {
 
   it('un plan de todo el día aparta las paradas de ese día y las devuelve al quitarlo o moverlo', () => {
     const it0 = cartagena()
-    const lancha = add(it0, 'Paseo en lancha a las islas o playas cercanas').result
+    const lancha = add(it0, 'Islas del Rosario en lancha').result
     const extra = lancha.budgetPlan!.extras![0]
     expect(extra).toMatchObject({ dayIndex: 2, part: 'todo el día' })
     expect(lancha.days[2].places).toEqual([])
     expect(extra.replaced?.map((p) => p.name)).toEqual(['Plaza 4'])
-    expect(extrasForDay(lancha, 2).map((e) => e.title)).toEqual(['Paseo en lancha a las islas o playas cercanas'])
+    expect(extrasForDay(lancha, 2).map((e) => e.title)).toEqual(['Islas del Rosario en lancha'])
     // Otro plan de mañana ya no puede ir en ese día, ni un museo.
     expect(daysForExtra(lancha, 'mañana')).toEqual([0])
     const withMuseum: Itinerary = {
@@ -364,7 +377,7 @@ describe('los planes extra van dentro del itinerario', () => {
   })
 
   it('"Ajustar a mi presupuesto" quita los planes extra y devuelve las paradas', () => {
-    const lancha = add(cartagena(), 'Paseo en lancha a las islas o playas cercanas').result
+    const lancha = add(cartagena(), 'Islas del Rosario en lancha').result
     const fitted = fitItineraryToBudget(lancha, trip)
     expect(fitted.budgetPlan?.extras ?? []).toEqual([])
     expect(fitted.days[2].places.map((p) => p.name)).toEqual(['Plaza 4'])
@@ -419,5 +432,68 @@ describe('cada plan extra con su lugar real', () => {
     const cena = spareSuggestions(it0(), trip, 50, pool).find((o) => o.title === 'Una cena especial')!
     expect(cena.detail).toContain('Lugar: Carmen')
     expect(cena.result.budgetPlan?.extras?.[0].venue?.name).toBe('Carmen')
+  })
+})
+
+describe('planes propios de cada destino', () => {
+  const trip = { travelers: 2, rooms: 1, budgetCOP: 9_000_000 }
+  const city = (displayName: string, lat: number, lon: number): Itinerary => ({
+    destination: { query: displayName, displayName, lat, lon, radiusMeters: 8000 },
+    days: [day(1, [place('Plaza')]), day(2, [place('Plaza', 1)])],
+    input: { destination: displayName, startDate: '2026-12-10', endDate: '2026-12-11', budgetCOP: 0, categories: ['cultura'] },
+    missingCategories: [],
+    stats: { optimizedKm: 1, unoptimizedKm: 1, savingPercent: 0 },
+    generatedAt: '2026-11-17T00:00:00.000Z',
+  })
+
+  it('cada plan trae su lugar: con ubicación si está en el mapa, si no con enlace de búsqueda', () => {
+    const cartagena = city('Cartagena de Indias, Bolívar, Colombia', 10.42, -75.55)
+    const muelle: Place = { ...place('Muelle', 9), id: 'node/77', name: 'Muelle Turístico de La Bodeguita', lat: 10.421, lon: -75.548 }
+    const islas = spareSuggestions(cartagena, trip, 50, [muelle]).find((o) => o.title === 'Islas del Rosario en lancha')!
+    const venue = islas.result.budgetPlan!.extras![0].venue!
+    expect(venue).toMatchObject({ role: 'Sale de', name: 'Muelle Turístico de La Bodeguita', id: 'node/77' })
+    expect(venueMapUrl(venue, 'Cartagena')).toBe('https://www.openstreetmap.org/node/77')
+
+    const chiva = spareSuggestions(cartagena, trip, 50).find((o) => o.title === 'Chiva rumbera')!
+    const torre = chiva.result.budgetPlan!.extras![0].venue!
+    expect(torre).toMatchObject({ role: 'Punto de encuentro', name: 'Torre del Reloj' })
+    expect(venueMapUrl(torre, 'Cartagena')).toBe(
+      'https://www.google.com/maps/search/?api=1&query=Torre%20del%20Reloj%2C%20Cartagena%2C%20Colombia',
+    )
+    expect(chiva.detail).toContain('Punto de encuentro: Torre del Reloj')
+  })
+
+  it('usa el precio del plan (no lo ajusta por nivel de costo) y su momento del día', () => {
+    const medellin = city('Medellín, Antioquia, Colombia', 6.25, -75.57)
+    const comuna = spareSuggestions(medellin, trip, 50).find((o) => o.title === 'Graffiti tour por la Comuna 13')!
+    expect(comuna.cost).toBe(2 * 60_000)
+    expect(comuna.result.budgetPlan!.extras![0].part).toBe('mañana')
+    const guatape = spareSuggestions(medellin, trip, 50).find((o) => o.title === 'Día en Guatapé y la Piedra del Peñol')!
+    expect(guatape.result.budgetPlan!.extras![0].part).toBe('todo el día')
+  })
+})
+
+describe('si el lugar del plan ya es una parada, no se repite', () => {
+  it('el plan reemplaza esa parada en su mismo día y la devuelve al quitarlo', () => {
+    const finca: Place = { ...place('Finca', 5), id: 'node/55', name: 'Hacienda Venecia Coffee Farm', category: 'gastronomia' }
+    const manizales: Itinerary = {
+      destination: { query: 'm', displayName: 'Manizales, Caldas, Colombia', lat: 5.07, lon: -75.52, radiusMeters: 8000 },
+      days: [day(1, [place('Plaza'), place('Museo', 1)]), day(2, [place('Plaza', 2)]), day(3, [place('Plaza', 3), finca])],
+      input: { destination: 'm', startDate: '2026-12-10', endDate: '2026-12-12', budgetCOP: 0, categories: ['cultura'] },
+      missingCategories: [],
+      stats: { optimizedKm: 1, unoptimizedKm: 1, savingPercent: 0 },
+      generatedAt: '2026-11-17T00:00:00.000Z',
+    }
+    const trip = { travelers: 2, rooms: 1, budgetCOP: 9_000_000 }
+    const tour = spareSuggestions(manizales, trip, 50).find((o) => o.title === 'Tour de café en la Hacienda Venecia')!
+    const extra = tour.result.budgetPlan!.extras![0]
+    expect(extra.venue?.id).toBe('node/55')
+    // Va en el día 3 (donde estaba la finca) y la finca ya no es una parada aparte.
+    expect(extra.dayIndex).toBe(2)
+    expect(extra.covers?.place.name).toBe('Hacienda Venecia Coffee Farm')
+    expect(tour.result.days.flatMap((d) => d.places.map((p) => p.id))).not.toContain('node/55')
+    // Al quitar el plan, la finca vuelve a su día.
+    const back = removeExtra(tour.result, extra.id)
+    expect(back.days[2].places.map((p) => p.id)).toContain('node/55')
   })
 })

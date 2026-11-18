@@ -16,8 +16,8 @@ import { formatCOP, formatDateRange, formatDuration } from '../format'
 import { CATEGORIES } from '../itinerary/categories'
 import { dayParts, DAY_PART_LABELS } from './editItinerary'
 import { APP_URL, icsFileName } from './exportItinerary'
-import { estimateTripBudget, extrasForDay } from './tripBudget'
-import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm, osmPlaceUrl } from './itineraryView'
+import { estimateTripBudget, extrasForDay, venueMapUrl } from './tripBudget'
+import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm } from './itineraryView'
 
 type RGB = [number, number, number]
 const NAVY: RGB = [0, 51, 102]
@@ -205,7 +205,7 @@ export async function buildItineraryPdf(it: Itinerary, trip: TripDetails, now: D
         font(8.5, 'bold')
         color(TEAL)
         doc.textWithLink(pdfSafe(extra.venue.name), MARGIN + 8 + doc.getTextWidth(label), y + 11.4, {
-          url: osmPlaceUrl(extra.venue),
+          url: venueMapUrl(extra.venue, city),
         })
       }
       y += height + 2
