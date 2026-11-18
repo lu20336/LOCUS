@@ -11,6 +11,7 @@ import { home } from './home'
 import { hostforms } from './hostforms'
 import { itinerary } from './itinerary'
 import { host } from './host'
+import { misc } from './misc'
 import { nav } from './nav'
 import { planner } from './planner'
 import { places } from './places'
@@ -21,5 +22,5 @@ import { trips } from './trips'
 import { weather } from './weather'
 
 /** Diccionario base. El resto de idiomas deben tener EXACTAMENTE estas claves (lo verifica el compilador y una prueba). */
-export const es = { ...agent, ...app, ...auth, ...bookings, ...catalog, ...common, ...compare, ...compareProviders, ...flow, ...home, ...hostforms, ...itinerary, ...host, ...nav, ...planner, ...places, ...profile, ...plans, ...survey, ...trips, ...weather }
+export const es = { ...agent, ...app, ...auth, ...bookings, ...catalog, ...common, ...compare, ...compareProviders, ...flow, ...home, ...hostforms, ...itinerary, ...host, ...misc, ...nav, ...planner, ...places, ...profile, ...plans, ...survey, ...trips, ...weather }
 export type MessageKey = keyof typeof es

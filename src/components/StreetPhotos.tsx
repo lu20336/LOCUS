@@ -6,6 +6,7 @@
  * (lat, lng, radius ≤ 50 m, limit ≤ 100).
  */
 import { useAsync } from '../lib/useAsync'
+import { useI18n } from '../lib/i18n/I18nProvider'
 
 const TOKEN = import.meta.env.VITE_MAPILLARY_TOKEN as string | undefined
 
@@ -30,11 +31,12 @@ async function fetchImages(lat: number, lon: number): Promise<StreetImage[]> {
 }
 
 export function StreetPhotos({ lat, lon }: { lat: number; lon: number }) {
+  const { t } = useI18n()
   const { data } = useAsync(() => (TOKEN ? fetchImages(lat, lon) : Promise.resolve([])), [lat, lon])
   if (!TOKEN || !data || data.length === 0) return null
   return (
     <section aria-labelledby="street-title" className="rounded-3xl border border-line bg-surface p-5">
-      <h2 id="street-title" className="text-xl font-semibold text-navy">Cómo se ve el entorno</h2>
+      <h2 id="street-title" className="text-xl font-semibold text-navy">{t('sp.title')}</h2>
       <p className="mt-1 text-sm text-muted">Fotos de calle aportadas por la comunidad de Mapillary cerca de este punto.</p>
       <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
         {data.map((img) => (
@@ -45,7 +47,7 @@ export function StreetPhotos({ lat, lon }: { lat: number; lon: number }) {
           </li>
         ))}
       </ul>
-      <p className="mt-2 text-xs text-muted">Imágenes © Mapillary y sus colaboradores (licencia CC BY-SA).</p>
+      <p className="mt-2 text-xs text-muted">{t('sp.credit')}</p>
     </section>
   )
 }

@@ -61,7 +61,7 @@ export default function DestinationPage() {
         <img src={d.image} alt="" style={{ objectPosition: d.imagePosition }} className="absolute inset-0 -z-10 size-full object-cover" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-gradient-to-b from-[rgb(0_25_50/0.4)] to-[rgb(0_25_50/0.85)]" />
         <Container className="flex min-h-[22rem] flex-col justify-end pb-8 pt-20 text-white">
-          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">{t('dest.eyebrow', { region: meta?.region ?? 'Colombia' })}</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/85">{t('dest.eyebrow', { region: meta ? t(`rg.${meta.region}`) : 'Colombia' })}</p>
           <h1 id="page-title" tabIndex={-1} className="mt-2 text-5xl font-semibold focus:outline-none sm:text-6xl">{d.name}</h1>
           <p className="mt-2 text-lg text-white/90">{t('dest.climateLine', { tagline: d.tagline, climate: CLIMATES[climate].label.toLowerCase(), temperature: CLIMATES[climate].temperature, elevation: d.elevation.toLocaleString(localeMeta.bcp47) })}</p>
           <div className="mt-5 flex flex-wrap items-center gap-3">

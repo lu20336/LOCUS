@@ -4,6 +4,7 @@
  * (Tab, flechas, Espacio) y los lectores de pantalla funcionan sin código extra.
  */
 import type { LucideIcon } from 'lucide-react'
+import { useI18n } from '../lib/i18n/I18nProvider'
 
 export interface ChipOption<T extends string> {
   value: T
@@ -27,6 +28,7 @@ interface ChipGroupProps<T extends string> {
 }
 
 export function ChipGroup<T extends string>({ name, legend, type, options, value, onChange, error, disabled }: ChipGroupProps<T>) {
+  const { t } = useI18n()
   const errorId = error ? `${name}-error` : undefined
 
   function toggle(option: T, checked: boolean) {
@@ -38,7 +40,7 @@ export function ChipGroup<T extends string>({ name, legend, type, options, value
     <fieldset aria-describedby={errorId} aria-invalid={Boolean(error)} disabled={disabled}>
       <legend className="text-sm font-semibold text-ink">
         {legend}
-        {type === 'checkbox' && <span className="font-normal text-muted"> · puedes elegir varias</span>}
+        {type === 'checkbox' && <span className="font-normal text-muted"> {t('act.pickMany')}</span>}
       </legend>
       <div className="mt-2 flex flex-wrap gap-2">
         {options.map((option) => (
