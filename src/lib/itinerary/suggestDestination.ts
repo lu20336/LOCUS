@@ -185,6 +185,34 @@ export interface SuggestionResult {
   failedChecks: number
   /** No se alcanzó a confirmar ninguna actividad: resultados solo por clima. */
   activitiesUnverified: boolean
+  /**
+   * Todos los candidatos revisados, ya ordenados, para "Sugiéreme otros
+   * destinos" sin repetir la búsqueda (ver moreSuggestions). Si alguno tiene
+   * actividades confirmadas, solo esos.
+   */
+  pool?: DestinationSuggestion[]
+  /** Posición en `pool` de la primera sugerencia que se está mostrando. */
+  offset?: number
+  /** true cuando "otros destinos" ya recorrió todo y volvió al principio. */
+  restarted?: boolean
+}
+
+/**
+ * "Sugiéreme otros destinos": las siguientes SUGGESTIONS_TO_SHOW del ranking,
+ * sin repetir las que ya se mostraron. Al acabarse vuelve al principio
+ * (marcado con `restarted`). Función pura: no consulta nada.
+ */
+export function moreSuggestions(result: SuggestionResult): SuggestionResult {
+  const pool = result.pool ?? result.suggestions
+  const next = (result.offset ?? 0) + SUGGESTIONS_TO_SHOW
+  const restarted = next >= pool.length
+  const offset = restarted ? 0 : next
+  return { ...result, suggestions: pool.slice(offset, offset + SUGGESTIONS_TO_SHOW), offset, restarted }
+}
+
+/** ¿Hay destinos distintos a los que se están mostrando? */
+export function hasMoreSuggestions(result: SuggestionResult): boolean {
+  return (result.pool ?? result.suggestions).length > SUGGESTIONS_TO_SHOW
 }
 
 export type SuggestionProgress =
@@ -350,11 +378,16 @@ export async function suggestDestination(
 
   // Paso 5: ranking y las 3 mejores.
   const ranked = rankSuggestions(checked)
+  const climateOnly = ranked.every((s) => s.matchedCategories.length === 0)
+  // Para "otros destinos": si hay pueblos con actividades confirmadas, solo esos.
+  const pool = climateOnly ? ranked : ranked.filter((s) => s.matchedCategories.length > 0)
   return {
     climate,
     categories,
     suggestions: ranked.slice(0, SUGGESTIONS_TO_SHOW),
-    climateOnly: ranked.every((s) => s.matchedCategories.length === 0),
+    pool,
+    offset: 0,
+    climateOnly,
     failedChecks,
     // Ningún pueblo verificado: se muestran los 3 más populares del clima, con aviso.
     activitiesUnverified: failedChecks === inClimate.length,

@@ -8,10 +8,17 @@
  * búsqueda en curso (progreso, errores) es local.
  */
 import { forwardRef, useEffect, useRef, useState } from 'react'
+import { Shuffle } from 'lucide-react'
 import { CATEGORIES } from '../lib/itinerary/categories'
 import { ItineraryError } from '../lib/itinerary/errors'
 import { suggestionDeps } from '../lib/itinerary/browserClient'
-import { CLIMATES, suggestDestination, type SuggestionProgress } from '../lib/itinerary/suggestDestination'
+import {
+  CLIMATES,
+  hasMoreSuggestions,
+  moreSuggestions,
+  suggestDestination,
+  type SuggestionProgress,
+} from '../lib/itinerary/suggestDestination'
 import { formatThousands } from '../lib/format'
 import type { SuggestionSearch } from '../types/flow'
 import { ChipGroup } from './ChipGroup'
@@ -85,6 +92,21 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
     }
   }
 
+  const resultsRef = useRef<HTMLFieldSetElement>(null)
+
+  // "Sugiéreme otros destinos": los siguientes del ranking, al instante (sin volver a buscar).
+  function showOthers() {
+    if (!search.result) return
+    onChange({ ...search, result: moreSuggestions(search.result), selectedId: null })
+    // Las tarjetas nuevas quedan arriba del botón: llevamos la vista al inicio de la lista.
+    requestAnimationFrame(() => {
+      const el = resultsRef.current
+      if (!el) return
+      const reduce = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
+      el.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'start' })
+    })
+  }
+
   const result = search.result
   // Avance aproximado por fase (la búsqueda completa dura unos segundos).
   const percent = { towns: 15, elevation: 35, activities: 70 }[progress?.phase ?? 'towns'] ?? 0
@@ -110,7 +132,8 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
         error={filterErrors.categories}
       />
 
-      {!isSearching && (
+      {/* Con resultados, "Buscar de nuevo" daría lo mismo: solo sirve para reintentar si no se confirmaron actividades. */}
+      {!isSearching && (!result || result.activitiesUnverified) && (
         <button
           type="button"
           onClick={runSearch}
@@ -155,7 +178,7 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
       )}
 
       {result && !isSearching && (
-        <fieldset aria-describedby={error ? 'suggestion-error' : undefined}>
+        <fieldset ref={resultsRef} aria-describedby={error ? 'suggestion-error' : undefined} className="scroll-mt-24">
           <legend className="text-sm font-semibold text-ink">
             Destinos sugeridos · clima {CLIMATES[result.climate].label.toLowerCase()}
           </legend>
@@ -171,6 +194,13 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
                 Estos cumplen el clima que buscas, aunque no encontramos todas las actividades confirmadas cerca.
               </p>
             )
+          )}
+
+          {result.restarted && (
+            <p role="status" className="mt-2 rounded-xl border border-line bg-surface-2 px-4 py-3 text-sm text-ink">
+              Ya viste todos los destinos con estos filtros; volvimos a los primeros. Prueba otro clima u otras
+              actividades para ver lugares nuevos.
+            </p>
           )}
 
           <div className="mt-3 grid gap-3">
@@ -215,6 +245,19 @@ export const DestinationSuggester = forwardRef<HTMLDivElement, DestinationSugges
               )
             })}
           </div>
+
+          {hasMoreSuggestions(result) && (
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={showOthers}
+                className="inline-flex items-center gap-2 rounded-xl border-2 border-teal px-5 py-2.5 font-semibold text-ink transition-colors hover:bg-teal/10"
+              >
+                <Shuffle aria-hidden="true" className="size-4" />
+                Sugiéreme otros destinos
+              </button>
+            </div>
+          )}
         </fieldset>
       )}
 

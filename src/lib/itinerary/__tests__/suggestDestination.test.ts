@@ -8,12 +8,15 @@ import {
   buildColombiaTownsQuery,
   clearTownsCache,
   climateForElevation,
+  hasMoreSuggestions,
+  moreSuggestions,
   parseElevationTag,
   parseTownCandidates,
   popularityScore,
   suggestDestination,
   type SuggestionDeps,
   type SuggestionProgress,
+  type SuggestionResult,
 } from '../suggestDestination'
 
 // Pueblos de ejemplo (coordenadas y altitudes aproximadas).
@@ -247,5 +250,50 @@ describe('nunca deja esperando: primer servidor Overpass sin respuesta (timers f
     expect(elapsed).toBeLessThanOrEqual(5000)
     expect(result.activitiesUnverified).toBe(true)
     expect(result.suggestions).toHaveLength(3)
+  })
+})
+
+describe('"Sugiéreme otros destinos"', () => {
+  const pool = parseTownCandidates({ elements: TOWNS }).map((candidate) => ({
+    candidate,
+    destination: { query: candidate.name, displayName: candidate.name, lat: candidate.lat, lon: candidate.lon, radiusMeters: 7000 },
+    climate: 'frio' as const,
+    elevation: 2500,
+    matchedCategories: ['cultura'] as CategoryId[],
+    activitiesChecked: true,
+  }))
+  const first: SuggestionResult = {
+    climate: 'frio',
+    categories: ['cultura'],
+    suggestions: pool.slice(0, 3),
+    pool,
+    offset: 0,
+    climateOnly: false,
+    failedChecks: 0,
+    activitiesUnverified: false,
+  }
+  const names = (r: SuggestionResult) => r.suggestions.map((s) => s.candidate.name)
+  const poolNames = (from: number, to: number) => pool.slice(from, to).map((s) => s.candidate.name)
+
+  it('muestra los 3 siguientes sin repetir y, al acabarse, vuelve al principio con aviso', () => {
+    const second = moreSuggestions(first)
+    const third = moreSuggestions(second)
+    expect(names(second)).toEqual(poolNames(3, 6))
+    expect(names(third)).toEqual(poolNames(6, 8)) // 8 pueblos: la última tanda trae 2
+    expect(third.restarted).toBe(false)
+    const fourth = moreSuggestions(third)
+    expect(fourth.restarted).toBe(true)
+    expect(names(fourth)).toEqual(names(first))
+  })
+
+  it('solo ofrece el botón si hay más de 3 destinos', () => {
+    expect(hasMoreSuggestions(first)).toBe(true)
+    expect(hasMoreSuggestions({ ...first, pool: pool.slice(0, 3) })).toBe(false)
+  })
+
+  it('la búsqueda guarda los demás pueblos con actividades para no volver a consultar', async () => {
+    const result = await suggestDestination('frio', ['cultura'], makeDeps())
+    expect(result.pool?.slice(0, 3)).toEqual(result.suggestions)
+    expect(result.pool?.every((s) => s.matchedCategories.length > 0)).toBe(true)
   })
 })
