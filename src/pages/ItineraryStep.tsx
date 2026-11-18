@@ -33,6 +33,7 @@ import {
   Users,
 } from 'lucide-react'
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type KeyboardEvent } from 'react'
+import { BudgetCard } from '../components/BudgetCard'
 import { WeatherChip } from '../components/ItineraryView'
 import { Alert } from '../components/ui'
 import { CATEGORY_ICONS } from '../components/choiceOptions'
@@ -40,6 +41,7 @@ import { findFeaturedNear } from '../lib/featuredDestinations'
 import { alternativeFor, dayParts, DAY_PART_LABELS, removeStop, replaceStop, type DayPart } from '../lib/flow/editItinerary'
 import { formatDayTab, formatDistance, googleMapsRouteUrl, legDistancesKm, osmPlaceUrl } from '../lib/flow/itineraryView'
 import { PACES } from '../lib/flow/pace'
+import { estimateTripBudget } from '../lib/flow/tripBudget'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
 import { useDestinationPhotos } from '../lib/flow/useDestinationPhotos'
 import { useItinerary } from '../lib/flow/useItinerary'
@@ -48,6 +50,7 @@ import { CATEGORIES } from '../lib/itinerary/categories'
 import { placesSource } from '../lib/itinerary/fallbackClient'
 import { useAsync } from '../lib/useAsync'
 import { fetchForecast, type DailyForecast } from '../lib/weather/openMeteo'
+import type { TripDetails } from '../types/flow'
 import type { DayPlan, Itinerary } from '../types/itinerary'
 
 const DayMap = lazy(() => import('../components/DayMap'))
@@ -154,7 +157,7 @@ export function ItineraryStep() {
           {shown && (
             <PlanView
               itinerary={shown}
-              budgetCOP={trip.budgetCOP}
+              trip={trip}
               onEdit={applyEdit}
               onUndo={history.length > 0 ? undo : undefined}
               notice={notice}
@@ -217,14 +220,16 @@ function LoadingPlan({ placeName }: { placeName: string }) {
 
 interface PlanViewProps {
   itinerary: Itinerary
-  budgetCOP: number
+  trip: TripDetails
   onEdit: (next: Itinerary, message: string) => void
   onUndo?: () => void
   /** Mensaje del último cambio (se anuncia a lectores de pantalla). */
   notice: string
 }
 
-function PlanView({ itinerary, budgetCOP, onEdit, onUndo, notice }: PlanViewProps) {
+function PlanView({ itinerary, trip, onEdit, onUndo, notice }: PlanViewProps) {
+  // Se recalcula al quitar o cambiar paradas.
+  const budget = useMemo(() => estimateTripBudget(itinerary, trip), [itinerary, trip])
   const [selected, setSelected] = useState(0)
   const tabs = useRef<(HTMLButtonElement | null)[]>([])
   const totalPlaces = itinerary.days.reduce((sum, d) => sum + d.places.length, 0)
@@ -271,7 +276,11 @@ function PlanView({ itinerary, budgetCOP, onEdit, onUndo, notice }: PlanViewProp
             hint={`${formatDistance(savedKm)} menos que sin optimizar`}
           />
         )}
-        <Stat label="Presupuesto por día" value={formatCOP(Math.round(budgetCOP / itinerary.days.length))} />
+        <Stat
+          label="Costo estimado"
+          value={formatCOP(budget.total)}
+          hint={`${budget.status === 'falta' ? 'se pasa de' : 'dentro de'} tu presupuesto de ${formatCOP(budget.budget)}`}
+        />
       </dl>
 
       {placesSource.last !== 'live' && (
@@ -350,6 +359,8 @@ function PlanView({ itinerary, budgetCOP, onEdit, onUndo, notice }: PlanViewProp
           onEdit={onEdit}
         />
       </div>
+
+      <BudgetCard estimate={budget} travelers={trip.travelers} />
 
       <p className="text-xs text-muted">
         Lugares de OpenStreetMap. Las distancias son en línea recta; los horarios y precios de cada lugar pueden

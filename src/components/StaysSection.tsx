@@ -9,6 +9,8 @@ import { Link } from 'react-router'
 import { LocusMap, type MapMarker } from '../lib/maps/MapLazy'
 import { fetchPublished } from '../lib/catalog/repo'
 import { getReferenceLodging } from '../lib/catalog/referenceLodging'
+import { stayFit } from '../lib/flow/tripBudget'
+import { formatCOP } from '../lib/format'
 import { db } from '../lib/firebase/client'
 import { haversineKm } from '../lib/itinerary/geo'
 import { useAsync } from '../lib/useAsync'
@@ -30,6 +32,7 @@ export function StaysSection({
   checkOut = '',
   guests = 1,
   showLocus = true,
+  lodgingAllowance,
 }: {
   lat: number
   lon: number
@@ -39,15 +42,28 @@ export function StaysSection({
   guests?: number
   /** false cuando la pantalla ya lista los alojamientos de LOCUS (ej. Explorar). */
   showLocus?: boolean
+  /**
+   * Lo que queda del presupuesto para hospedarse en todo el viaje (Paso 4).
+   * Con fechas, los alojamientos que caben salen primero y marcados.
+   */
+  lodgingAllowance?: number
 }) {
   const listings = useAsync(() => fetchPublished<Listing>(db, 'listings'), [])
-  const near = useMemo(
-    () =>
-      (listings.data ?? [])
-        .filter((l) => l.capacity >= guests && haversineKm({ lat, lon }, l) <= NEAR_KM)
-        .sort((a, b) => haversineKm({ lat, lon }, a) - haversineKm({ lat, lon }, b)),
-    [listings.data, lat, lon, guests],
-  )
+  const withBudget = lodgingAllowance !== undefined && Boolean(checkIn && checkOut)
+  const near = useMemo(() => {
+    const distance = (l: Listing) => haversineKm({ lat, lon }, l)
+    return (listings.data ?? [])
+      .filter((l) => l.capacity >= guests && distance(l) <= NEAR_KM)
+      .map((l) => ({
+        listing: l,
+        fit: withBudget ? stayFit(l, { checkIn, checkOut, guests }, lodgingAllowance!) : null,
+      }))
+      .sort(
+        (a, b) =>
+          // Primero los que caben en el presupuesto; luego, los más cercanos.
+          Number(b.fit?.fits ?? 0) - Number(a.fit?.fits ?? 0) || distance(a.listing) - distance(b.listing),
+      )
+  }, [listings.data, lat, lon, guests, withBudget, checkIn, checkOut, lodgingAllowance])
   const search = checkIn && checkOut ? `?llegada=${checkIn}&salida=${checkOut}&huespedes=${guests}` : ''
 
   // Alojamientos de referencia (solo para ver): catálogo precalculado o Nominatim en vivo.
@@ -64,6 +80,19 @@ export function StaysSection({
       <div>
         <h2 className="text-2xl font-semibold text-navy">Dónde hospedarte en {placeName}</h2>
         <p className="mt-1 text-sm text-muted">Reservables en LOCUS, publicados por anfitriones.</p>
+        {withBudget && (
+          <p className="mt-2 text-sm text-ink">
+            {lodgingAllowance! > 0 ? (
+              <>
+                Según tu presupuesto te quedan unos <strong>{formatCOP(lodgingAllowance!)}</strong> para hospedarte todo
+                el viaje (después de comida, transporte y entradas).
+                {near.length > 0 && ' Primero te mostramos los que caben.'}
+              </>
+            ) : (
+              <>Con tu presupuesto no queda dinero para hospedarte después de comida, transporte y entradas.</>
+            )}
+          </p>
+        )}
       </div>
 
       {listings.loading ? (
@@ -72,8 +101,19 @@ export function StaysSection({
         <Alert>{listings.error}</Alert>
       ) : near.length > 0 ? (
         <ul className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {near.slice(0, 6).map((l) => (
-            <li key={l.id}><ListingCard listing={l} search={search} /></li>
+          {near.slice(0, 6).map(({ listing: l, fit }) => (
+            <li key={l.id} className="flex flex-col gap-2">
+              {fit && (
+                <span className="self-start">
+                  {fit.fits ? (
+                    <Badge tone="teal">Dentro de tu presupuesto · {formatCOP(fit.total)} en total</Badge>
+                  ) : (
+                    <Badge tone="warn">Se pasa por {formatCOP(fit.over)} · {formatCOP(fit.total)} en total</Badge>
+                  )}
+                </span>
+              )}
+              <ListingCard listing={l} search={search} />
+            </li>
           ))}
         </ul>
       ) : (

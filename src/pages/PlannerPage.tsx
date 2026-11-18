@@ -17,6 +17,7 @@ import { useAuth } from '../lib/auth/authContext'
 import { db } from '../lib/firebase/client'
 import { formatCOP, formatDate } from '../lib/format'
 import { useTripFlow } from '../lib/flow/tripFlowContext'
+import { estimateTripBudget } from '../lib/flow/tripBudget'
 import { saveNewItinerary, toPayload } from '../lib/itinerary/itineraryStore'
 
 function ConfirmStep() {
@@ -74,7 +75,15 @@ function ConfirmStep() {
 
       <PlanSummary itinerary={itinerary} trip={trip} />
 
-      <StaysSection lat={itinerary.destination.lat} lon={itinerary.destination.lon} placeName={name} checkIn={trip.startDate} checkOut={trip.endDate} guests={trip.travelers} />
+      <StaysSection
+        lat={itinerary.destination.lat}
+        lon={itinerary.destination.lon}
+        placeName={name}
+        checkIn={trip.startDate}
+        checkOut={trip.endDate}
+        guests={trip.travelers}
+        lodgingAllowance={estimateTripBudget(itinerary, trip).lodgingAllowance}
+      />
 
       <CompleteTrip
         place={name}
