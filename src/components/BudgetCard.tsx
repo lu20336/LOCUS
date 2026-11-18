@@ -98,7 +98,8 @@ export function BudgetCard({
               key={extra.id}
               className="inline-flex items-center gap-1.5 rounded-full border border-teal/40 bg-teal/10 py-1 pl-3 pr-1 text-sm text-ink"
             >
-              {extra.title} · {formatCOP(extra.amount)}
+              {extra.title}
+              {extra.dayIndex !== undefined && ` · Día ${extra.dayIndex + 1}`} · {formatCOP(extra.amount)}
               <button
                 type="button"
                 onClick={() => onRemoveExtra(extra)}

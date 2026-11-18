@@ -123,4 +123,12 @@ export interface BudgetExtra {
   title: string
   /** Costo para todos los viajeros (COP). */
   amount: number
+  /** Día del viaje donde va (índice en `days`). */
+  dayIndex?: number
+  /** Momento del día; 'todo el día' ocupa el día entero (ej. paseo en lancha). */
+  part?: ExtraPart
+  /** Paradas que se apartaron del día para un plan de todo el día (vuelven si se mueve o se quita). */
+  replaced?: Place[]
 }
+
+export type ExtraPart = 'mañana' | 'tarde' | 'noche' | 'todo el día'

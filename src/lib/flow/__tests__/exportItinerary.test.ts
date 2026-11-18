@@ -62,3 +62,29 @@ describe('exportar el itinerario', () => {
     expect(icsFileName(plan)).toBe('viaje-cartagena-de-indias-2026-12-10.ics')
   })
 })
+
+describe('planes extra en el texto y el calendario', () => {
+  it('salen dentro de su día, con el momento', async () => {
+    const { itineraryToText, extraLines } = await import('../exportItinerary')
+    const it = {
+      input: { destination: 'x', startDate: '2026-12-10', endDate: '2026-12-11', budgetCOP: 1, categories: [] },
+      destination: { query: 'x', displayName: 'Cartagena de Indias, Bolívar, Colombia', lat: 10.42, lon: -75.55, radiusMeters: 1 },
+      days: [
+        { day: 1, date: '2026-12-10', distanceKm: 0, places: [] },
+        { day: 2, date: '2026-12-11', distanceKm: 0, places: [] },
+      ],
+      missingCategories: [],
+      stats: { optimizedKm: 0, unoptimizedKm: 0, savingPercent: 0 },
+      generatedAt: 'x',
+      budgetPlan: {
+        lodging: 'estandar', food: 'estandar', transport: 'estandar', adjustments: [], fits: true,
+        extras: [{ id: 'cena', title: 'Una cena especial', amount: 1, dayIndex: 1, part: 'noche' }],
+      },
+    } as const
+    expect(extraLines(it as never, 1)).toEqual(['Plan extra (noche): Una cena especial'])
+    const text = itineraryToText(it as never)
+    const day2 = text.slice(text.indexOf('Día 2'))
+    expect(day2).toContain('Plan extra (noche): Una cena especial')
+    expect(day2).not.toContain('Día libre')
+  })
+})
