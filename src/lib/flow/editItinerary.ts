@@ -30,16 +30,29 @@ export function dayParts(places: readonly Pick<Place, 'category'>[]): DayPart[] 
 
 const round1 = (n: number) => Math.round(n * 10) / 10
 
-/** Recalcula la distancia del día y del viaje, y marca el plan como editado. */
-function withDay(itinerary: Itinerary, dayIndex: number, places: Place[]): Itinerary {
+/**
+ * Cambia un día (sus paradas y, si se pasa, el día completo) y recalcula las
+ * distancias. Con `edited` (cambios del usuario) el "ahorro de ruta" deja de aplicar.
+ */
+export function withDayPlaces(
+  itinerary: Itinerary,
+  dayIndex: number,
+  places: Place[],
+  { edited = true, day: patch }: { edited?: boolean; day?: Partial<DayPlan> } = {},
+): Itinerary {
   const days = itinerary.days.map((day, i): DayPlan => {
     if (i !== dayIndex) return day
-    const start = day.excursion ?? itinerary.destination
-    return { ...day, places, distanceKm: round1(routeDistanceKm(start, places)) }
+    const next = { ...day, ...patch }
+    const start = next.excursion ?? itinerary.destination
+    return { ...next, places, distanceKm: round1(routeDistanceKm(start, places)) }
   })
   const optimizedKm = round1(days.filter((d) => !d.excursion).reduce((sum, d) => sum + d.distanceKm, 0))
-  return { ...itinerary, days, edited: true, stats: { ...itinerary.stats, optimizedKm, savingPercent: 0 } }
+  return edited
+    ? { ...itinerary, days, edited: true, stats: { ...itinerary.stats, optimizedKm, savingPercent: 0 } }
+    : { ...itinerary, days, stats: { ...itinerary.stats, optimizedKm } }
 }
+
+const withDay = (itinerary: Itinerary, dayIndex: number, places: Place[]) => withDayPlaces(itinerary, dayIndex, places)
 
 export function removeStop(itinerary: Itinerary, dayIndex: number, placeIndex: number): Itinerary {
   const places = itinerary.days[dayIndex].places.filter((_, i) => i !== placeIndex)

@@ -23,6 +23,7 @@ import { osmClient, suggestionDeps } from '../itinerary/browserClient'
 import { ItineraryError } from '../itinerary/errors'
 import { geocodeDestination } from '../itinerary/generateItinerary'
 import { resolveDestination } from './resolveDestination'
+import { minimumBudget } from './tripBudget'
 import { prefetchDestinationPhotos } from './useDestinationPhotos'
 import { prefetchPlaces } from '../itinerary/fallbackClient'
 import { useTripFlow } from './tripFlowContext'
@@ -121,6 +122,26 @@ export function useTripDetailsForm() {
       ? 'Elige uno de los destinos sugeridos.'
       : 'Elige clima y actividades, y pulsa "Buscar destinos".'
   }
+  // El plan se ajusta siempre al presupuesto (Paso 3), pero hay un mínimo:
+  // hospedaje económico, comida sencilla y planes gratis. Si no llega, no se puede seguir.
+  const tripDays =
+    !validation.startDate && !validation.endDate ? countTripDays(draft.startDate, draft.endDate) : null
+  const placeForCost =
+    mode === 'known'
+      ? knownDestination?.query === draft.destination
+        ? knownDestination.displayName
+        : draft.destination
+      : (selectedSuggestion?.destination.displayName ?? '')
+  const minimum =
+    tripDays && placeForCost.trim() ? minimumBudget(placeForCost, { days: tripDays, travelers, rooms }) : null
+  const enteredBudget = parseBudget(draft.budget)
+  if (!validation.budget && minimum && enteredBudget !== null && enteredBudget < minimum) {
+    validation.budget =
+      `Para ${tripDays} ${tripDays === 1 ? 'día' : 'días'} con ${travelers} ${travelers === 1 ? 'persona' : 'personas'} ` +
+      `necesitas al menos unos ${formatCOP(minimum)} (hospedaje económico, comida sencilla y planes gratis). ` +
+      'Sube el presupuesto o acorta el viaje.'
+  }
+
   const errors: TripDetailsErrors = submitted
     ? { ...validation, destination: validation.destination ?? (mode === 'known' ? destinationNotFound : null) ?? undefined }
     : {}
@@ -147,9 +168,12 @@ export function useTripDetailsForm() {
   const budget = parseBudget(draft.budget)
   const days = !validation.startDate && !validation.endDate ? countTripDays(draft.startDate, draft.endDate) : null
   const perDay = budget && days && !validation.budget ? Math.round(budget / days) : null
+  // Con destino y fechas ya se sabe el mínimo: lo mostramos antes de que escriba el presupuesto.
+  const minimumHint = minimum ? `Mínimo para este viaje: unos ${formatCOP(minimum)}` : null
   const budgetHint = perDay
-    ? `≈ ${formatCOP(perDay)} por día${travelers > 1 ? ` (${formatCOP(Math.round(perDay / travelers))} por persona)` : ''} · ${days} ${days === 1 ? 'día' : 'días'} de viaje`
-    : 'Incluye alojamiento, comida y actividades.'
+    ? `≈ ${formatCOP(perDay)} por día${travelers > 1 ? ` (${formatCOP(Math.round(perDay / travelers))} por persona)` : ''} · ${days} ${days === 1 ? 'día' : 'días'} de viaje` +
+      (minimumHint ? ` · ${minimumHint.toLowerCase()}` : '')
+    : (minimumHint ?? 'Incluye alojamiento, comida y actividades.')
 
   async function submit() {
     if (isGeocoding) return

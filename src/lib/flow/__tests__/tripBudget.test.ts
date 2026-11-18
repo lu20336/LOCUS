@@ -1,7 +1,17 @@
 import { describe, expect, it } from 'vitest'
 import type { DayPlan, Itinerary, Place } from '../../../types/itinerary'
 import { formatCOP } from '../../format'
-import { costLevelFor, dayEntries, estimateTripBudget, excursionFare, PRICES, stayFit } from '../tripBudget'
+import {
+  costLevelFor,
+  dayEntries,
+  ECONOMY_PRICES,
+  estimateTripBudget,
+  excursionFare,
+  fitItineraryToBudget,
+  minimumBudget,
+  PRICES,
+  stayFit,
+} from '../tripBudget'
 
 const place = (kind: string, i = 0): Place => ({
   id: `${kind}-${i}`,
@@ -127,5 +137,73 @@ describe('alojamientos dentro del presupuesto', () => {
     const total = 3 * 150_000 + 30_000 + 3 * 20_000
     expect(stayFit(listing, stay, total)).toEqual({ total, fits: true, over: 0 })
     expect(stayFit(listing, stay, total - 50_000)).toEqual({ total, fits: false, over: 50_000 })
+  })
+})
+
+describe('el plan siempre cumple el presupuesto', () => {
+  const free = (name: string, category: Place['category'] = 'cultura'): Place => ({ ...place('Plaza'), id: name, name, category })
+  const full = (days: DayPlan[]): Itinerary => ({
+    ...plan('Cartagena de Indias, Bolívar, Colombia', days),
+    input: { destination: 'Cartagena', startDate: '2026-12-10', endDate: '2026-12-13', budgetCOP: 0, categories: ['cultura'] },
+    missingCategories: [],
+    stats: { optimizedKm: 5, unoptimizedKm: 6, savingPercent: 10 },
+    generatedAt: '2026-11-17T00:00:00.000Z',
+  })
+  const trip = (budgetCOP: number) => ({ travelers: 2, rooms: 1, budgetCOP })
+  const cost = (it: Itinerary, budgetCOP: number) => estimateTripBudget(it, trip(budgetCOP))
+
+  const sample = () =>
+    full([
+      { ...day(1, [place('Castillo'), place('Museo', 1), { ...place('Bar', 2), category: 'vidaNocturna' }]), alternatives: [free('Plaza de Bolívar'), free('Muelle'), free('Parque del Centenario'), free('Camellón de los Mártires')] },
+      { ...day(2, [place('Imperdible', 3), place('Playa', 4)], turbaco) },
+      { ...day(3, [place('Museo', 5), free('Parque')]), alternatives: [free('Plaza Fernández de Madrid')] },
+    ])
+
+  it('si ya alcanza no cambia nada', () => {
+    const result = fitItineraryToBudget(sample(), trip(20_000_000))
+    expect(result.budgetPlan).toMatchObject({ lodging: 'estandar', food: 'estandar', adjustments: [], fits: true })
+    expect(result.days).toEqual(sample().days)
+  })
+
+  it('primero baja el hospedaje, luego la comida y el transporte, y dice qué cambió', () => {
+    const it0 = sample()
+    const standard = cost(it0, 0).total
+    const lodgingSaves = 2 * (PRICES.alto.roomNight - ECONOMY_PRICES.alto.roomNight)
+    const result = fitItineraryToBudget(it0, trip(standard - lodgingSaves))
+    expect(result.budgetPlan).toMatchObject({ lodging: 'economico', food: 'estandar', fits: true })
+    expect(result.budgetPlan?.adjustments[0]).toContain('Hospedaje económico')
+    expect(cost(result, standard - lodgingSaves).difference).toBeGreaterThanOrEqual(0)
+  })
+
+  it('después cambia paradas pagas por gratis (o las quita) y al final la excursión', () => {
+    const it0 = sample()
+    const economy = fitItineraryToBudget(it0, trip(1)) // lo más barato posible
+    expect(economy.budgetPlan).toMatchObject({ lodging: 'economico', food: 'economico', transport: 'economico' })
+    const texts = economy.budgetPlan!.adjustments.join(' | ')
+    expect(texts).toContain('Cambiamos 3 paradas pagas por otras gratis: Castillo 0 por Plaza de Bolívar')
+    expect(texts).not.toContain('Quitamos Castillo')
+    expect(texts).toContain('Cambiamos la excursión a Turbaco')
+    // Ningún día queda vacío y el día de excursión pasa a la ciudad.
+    expect(economy.days.every((d) => d.places.length > 0)).toBe(true)
+    expect(economy.days[1].excursion).toBeUndefined()
+    // Con un presupuesto en el medio, se detiene apenas alcanza.
+    const middle = fitItineraryToBudget(it0, trip(cost({ ...it0, budgetPlan: economy.budgetPlan }, 0).total + 60_000))
+    expect(middle.budgetPlan?.fits).toBe(true)
+    expect(middle.budgetPlan!.adjustments.length).toBeLessThan(economy.budgetPlan!.adjustments.length)
+  })
+
+  it('si ni así alcanza, lo marca para avisar', () => {
+    expect(fitItineraryToBudget(sample(), trip(1)).budgetPlan?.fits).toBe(false)
+  })
+
+  it('el mínimo del Paso 1 es hospedaje económico, comida sencilla, bus y planes gratis', () => {
+    const p = ECONOMY_PRICES.alto
+    expect(minimumBudget('Cartagena de Indias, Bolívar, Colombia', { days: 4, travelers: 2, rooms: 1 })).toBe(
+      3 * p.roomNight + 4 * 2 * (p.foodPerPersonDay + p.transportPerPersonDay),
+    )
+    // Con el mínimo el plan, sin entradas pagas, alcanza.
+    const minimum = minimumBudget('Cartagena de Indias, Bolívar, Colombia', { days: 1, travelers: 1, rooms: 1 })
+    const oneDay = full([{ ...day(1, [place('Museo')]), alternatives: [free('Plaza')] }])
+    expect(fitItineraryToBudget(oneDay, { travelers: 1, rooms: 1, budgetCOP: minimum }).budgetPlan?.fits).toBe(true)
   })
 })

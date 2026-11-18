@@ -13,7 +13,19 @@ const STATUS = {
   falta: { title: 'No te alcanza', tone: 'text-danger', bar: 'bg-danger', Icon: TriangleAlert },
 } as const
 
-export function BudgetCard({ estimate, travelers }: { estimate: TripBudget; travelers: number }) {
+export function BudgetCard({
+  estimate,
+  travelers,
+  adjustments = [],
+  onFit,
+}: {
+  estimate: TripBudget
+  travelers: number
+  /** Lo que se cambió para que el plan cumpla el presupuesto. */
+  adjustments?: string[]
+  /** Vuelve a ajustar el plan (cuando un cambio del usuario lo saca del presupuesto). */
+  onFit?: () => void
+}) {
   const { status, total, budget, difference, lines, tips, level } = estimate
   const s = STATUS[status]
   // Barra: qué parte del presupuesto se usa (llena y en rojo si se pasa).
@@ -65,6 +77,32 @@ export function BudgetCard({ estimate, travelers }: { estimate: TripBudget; trav
           </li>
         ))}
       </ul>
+
+      {adjustments.length > 0 && (
+        <div className="mt-3 rounded-2xl border border-teal/40 bg-teal/10 p-4">
+          <p className="text-sm font-semibold text-ink">Ajustamos tu plan para que cumpla tu presupuesto:</p>
+          <ul className="mt-1.5 flex list-disc flex-col gap-1 pl-5 text-sm text-ink">
+            {adjustments.map((text) => (
+              <li key={text}>{text}</li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {status === 'falta' && onFit && (
+        <div className="mt-3 flex flex-wrap items-center gap-3 rounded-2xl border border-danger/40 bg-danger/10 p-4">
+          <p className="min-w-0 flex-1 text-sm text-ink">
+            Con los cambios que hiciste el plan se pasa de tu presupuesto.
+          </p>
+          <button
+            type="button"
+            onClick={onFit}
+            className="rounded-xl bg-navy px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-navy/90"
+          >
+            Ajustar a mi presupuesto
+          </button>
+        </div>
+      )}
 
       {tips.length > 0 && (
         <div className="mt-3 rounded-2xl bg-surface-2 p-4">
