@@ -6,6 +6,9 @@
  * rápida, gratuita y predecible; la IA entra después, para recomendar.
  */
 
+import { localizedRecord } from '../i18n/localized'
+import { getT } from '../i18n/store'
+
 export interface Option {
   value: string
   label: string
@@ -54,115 +57,173 @@ export interface Question {
   when?: (answers: Answers) => boolean
 }
 
-const o = (value: string, label: string, emoji?: string, hint?: string): Option => ({ value, label, emoji, hint })
+/** Opción de una pregunta: el texto se lee del idioma activo (claves sv.o.* y sv.h.*). */
+const o = (questionId: string, value: string, emoji?: string, withHint = false): Option => ({
+  value,
+  get label() {
+    return getT()(`sv.o.${questionId}.${value}`)
+  },
+  emoji: emoji || undefined,
+  get hint() {
+    return withHint ? getT()(`sv.h.${questionId}.${value}`) : undefined
+  },
+})
 
 export const QUESTIONS: Question[] = [
   {
-    id: 'travelerTypes', section: 'Tipo de viajero', kind: 'multi', max: 4,
-    prompt: (n) => `¡Hola${n ? `, ${n}` : ''}! Soy tu compañero LOCUS. Para recomendarte bien, cuéntame: ¿qué tipo de viajero eres?`,
-    options: [o('aventura', 'Aventura', '🧗'), o('descanso', 'Descanso', '🧘'), o('cultura', 'Cultura', '🏛️'), o('gastronomia', 'Gastronomía', '🍽️'),
-      o('naturaleza', 'Naturaleza', '🌿'), o('playa', 'Playa', '🏖️'), o('vidaNocturna', 'Vida nocturna', '🌙'), o('mezcla', 'Un poco de todo', '✨')],
+    id: 'travelerTypes', get section() {
+      return getT()('sv.sec.type')
+    }, kind: 'multi', max: 4,
+    prompt: (n) => (n ? getT()('sv.q.travelerTypes.named', { name: n }) : getT()('sv.q.travelerTypes')),
+    options: [o('travelerTypes', 'aventura', '🧗'), o('travelerTypes', 'descanso', '🧘'), o('travelerTypes', 'cultura', '🏛️'), o('travelerTypes', 'gastronomia', '🍽️'),
+      o('travelerTypes', 'naturaleza', '🌿'), o('travelerTypes', 'playa', '🏖️'), o('travelerTypes', 'vidaNocturna', '🌙'), o('travelerTypes', 'mezcla', '✨')],
   },
   {
-    id: 'popularity', section: 'Tipo de viajero', kind: 'single',
-    prompt: () => '¿Prefieres los destinos conocidos o descubrir rincones poco turísticos?',
-    options: [o('populares', 'Los populares', '📍', 'Lo clásico, con más oferta'), o('poco_conocidos', 'Lugares poco conocidos', '🗺️', 'Menos gente, más sorpresa'), o('mezcla', 'Una mezcla', '🔀')],
+    id: 'popularity', get section() {
+      return getT()('sv.sec.type')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.popularity'),
+    options: [o('popularity', 'populares', '📍', true), o('popularity', 'poco_conocidos', '🗺️', true), o('popularity', 'mezcla', '🔀')],
   },
   {
-    id: 'environments', section: 'Destinos', kind: 'multi', max: 3,
-    prompt: () => '¿Qué paisajes te llaman más la atención?',
-    options: [o('playa', 'Playa', '🏝️'), o('montana', 'Montaña', '⛰️'), o('selva', 'Selva', '🌴'), o('ciudad', 'Ciudades', '🏙️'), o('pueblo', 'Pueblos', '🏘️'), o('rural', 'Campo y fincas', '🌾')],
+    id: 'environments', get section() {
+      return getT()('sv.sec.dest')
+    }, kind: 'multi', max: 3,
+    prompt: () => getT()('sv.q.environments'),
+    options: [o('environments', 'playa', '🏝️'), o('environments', 'montana', '⛰️'), o('environments', 'selva', '🌴'), o('environments', 'ciudad', '🏙️'), o('environments', 'pueblo', '🏘️'), o('environments', 'rural', '🌾')],
   },
   {
-    id: 'regions', section: 'Destinos', kind: 'multi', max: 3,
-    prompt: () => '¿Qué regiones de Colombia te gustaría conocer?',
-    options: [o('caribe', 'Caribe', '🌊'), o('andina', 'Andina (cafetera, Boyacá, Antioquia…)', '☕'), o('pacifica', 'Pacífica', '🐋'), o('orinoquia', 'Orinoquía (Llanos)', '🐎'), o('amazonia', 'Amazonía', '🦜'), o('insular', 'Isla (San Andrés, Providencia)', '🏝️')],
+    id: 'regions', get section() {
+      return getT()('sv.sec.dest')
+    }, kind: 'multi', max: 3,
+    prompt: () => getT()('sv.q.regions'),
+    options: [o('regions', 'caribe', '🌊'), o('regions', 'andina', '☕'), o('regions', 'pacifica', '🐋'), o('regions', 'orinoquia', '🐎'), o('regions', 'amazonia', '🦜'), o('regions', 'insular', '🏝️')],
   },
   {
-    id: 'pendingDestinations', section: 'Destinos', kind: 'text', placeholder: 'Ej. Caño Cristales, Barichara, Providencia…',
-    prompt: () => '¿Tienes algún destino pendiente en tu lista? Escríbelo (o sáltate esta).',
+    id: 'pendingDestinations', get section() {
+      return getT()('sv.sec.dest')
+    }, kind: 'text', get placeholder() {
+      return getT()('sv.ph.pendingDestinations')
+    },
+    prompt: () => getT()('sv.q.pendingDestinations'),
   },
   {
-    id: 'climate', section: 'Destinos', kind: 'single',
-    prompt: () => '¿Qué clima disfrutas más?',
-    options: [o('calido', 'Cálido', '☀️', 'Más de 24 °C'), o('templado', 'Templado', '🌤️', '17 a 24 °C'), o('frio', 'Frío', '🧥', '12 a 17 °C'), o('indiferente', 'Me da igual', '🤷')],
+    id: 'climate', get section() {
+      return getT()('sv.sec.dest')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.climate'),
+    options: [o('climate', 'calido', '☀️', true), o('climate', 'templado', '🌤️', true), o('climate', 'frio', '🧥', true), o('climate', 'indiferente', '🤷')],
   },
   {
-    id: 'activities', section: 'Actividades', kind: 'multi', max: 5,
-    prompt: () => '¿Qué actividades te encantaría hacer en un viaje?',
-    options: [o('gastronomia', 'Gastronomía', '🍲'), o('senderismo', 'Senderismo', '🥾'), o('deportes_extremos', 'Deportes extremos', '🪂'), o('acuaticas', 'Actividades acuáticas', '🤿'),
-      o('cultural', 'Turismo cultural', '🎭'), o('ecoturismo', 'Ecoturismo', '🌱'), o('fauna', 'Avistamiento de fauna', '🦅'), o('vida_nocturna', 'Vida nocturna', '🎶'),
-      o('locales', 'Experiencias locales', '🧶'), o('bienestar', 'Descanso y bienestar', '💆'), o('familiares', 'Actividades familiares', '👨‍👩‍👧')],
+    id: 'activities', get section() {
+      return getT()('sv.sec.act')
+    }, kind: 'multi', max: 5,
+    prompt: () => getT()('sv.q.activities'),
+    options: [o('activities', 'gastronomia', '🍲'), o('activities', 'senderismo', '🥾'), o('activities', 'deportes_extremos', '🪂'), o('activities', 'acuaticas', '🤿'),
+      o('activities', 'cultural', '🎭'), o('activities', 'ecoturismo', '🌱'), o('activities', 'fauna', '🦅'), o('activities', 'vida_nocturna', '🎶'),
+      o('activities', 'locales', '🧶'), o('activities', 'bienestar', '💆'), o('activities', 'familiares', '👨‍👩‍👧')],
   },
   {
-    id: 'extremeSports', section: 'Actividades', kind: 'multi', max: 4,
+    id: 'extremeSports', get section() {
+      return getT()('sv.sec.act')
+    }, kind: 'multi', max: 4,
     when: (a) => (a.activities ?? []).includes('deportes_extremos') || (a.travelerTypes ?? []).includes('aventura') && (a.activities ?? []).length === 0,
-    prompt: () => 'Veo que te gusta la adrenalina. ¿Cuál te llama más?',
-    options: [o('parapente', 'Parapente', '🪂'), o('rafting', 'Rafting', '🛶'), o('buceo', 'Buceo', '🤿'), o('canopy', 'Canopy', '🌲'), o('escalada', 'Escalada', '🧗'), o('canyoning', 'Cañonismo', '💦')],
+    prompt: () => getT()('sv.q.extremeSports'),
+    options: [o('extremeSports', 'parapente', '🪂'), o('extremeSports', 'rafting', '🛶'), o('extremeSports', 'buceo', '🤿'), o('extremeSports', 'canopy', '🌲'), o('extremeSports', 'escalada', '🧗'), o('extremeSports', 'canyoning', '💦')],
   },
   {
-    id: 'budgetPerPerson', section: 'Presupuesto', kind: 'single',
-    prompt: () => '¿Cuánto sueles gastar por persona en un viaje (sin tiquetes)? Es solo una idea aproximada.',
-    options: [o('hasta_300k', 'Hasta $300.000', '💸'), o('300k_800k', '$300.000 – $800.000', '💵'), o('800k_2m', '$800.000 – $2.000.000', '💰'), o('mas_2m', 'Más de $2.000.000', '💎')],
+    id: 'budgetPerPerson', get section() {
+      return getT()('sv.sec.budget')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.budgetPerPerson'),
+    options: [o('budgetPerPerson', 'hasta_300k', '💸'), o('budgetPerPerson', '300k_800k', '💵'), o('budgetPerPerson', '800k_2m', '💰'), o('budgetPerPerson', 'mas_2m', '💎')],
   },
   {
-    id: 'lodgingLevel', section: 'Presupuesto', kind: 'single',
-    prompt: () => '¿Qué tipo de hospedaje prefieres?',
-    options: [o('economico', 'Económico', '🛏️', 'Hostales, habitaciones'), o('intermedio', 'Intermedio', '🏡', 'Cómodo y buen precio'), o('premium', 'Premium', '🏨'), o('lujo', 'De lujo', '👑')],
+    id: 'lodgingLevel', get section() {
+      return getT()('sv.sec.budget')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.lodgingLevel'),
+    options: [o('lodgingLevel', 'economico', '🛏️', true), o('lodgingLevel', 'intermedio', '🏡', true), o('lodgingLevel', 'premium', '🏨'), o('lodgingLevel', 'lujo', '👑')],
   },
   {
-    id: 'comfortStyle', section: 'Presupuesto', kind: 'single',
-    prompt: () => '¿Cómo es tu estilo de viaje?',
-    options: [o('economico', 'Lo más económico posible', '🎒'), o('equilibrado', 'Equilibrado', '⚖️'), o('comodo', 'Prefiero comodidad', '🛋️')],
+    id: 'comfortStyle', get section() {
+      return getT()('sv.sec.budget')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.comfortStyle'),
+    options: [o('comfortStyle', 'economico', '🎒'), o('comfortStyle', 'equilibrado', '⚖️'), o('comfortStyle', 'comodo', '🛋️')],
   },
   {
-    id: 'extrasWillingness', section: 'Presupuesto', kind: 'single',
-    prompt: () => '¿Pagarías más por una experiencia especial (un tour exclusivo, una cena inolvidable)?',
-    options: [o('si', 'Sí, vale la pena', '🌟'), o('a_veces', 'A veces', '🙂'), o('no', 'Prefiero ahorrar', '🏷️')],
+    id: 'extrasWillingness', get section() {
+      return getT()('sv.sec.budget')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.extrasWillingness'),
+    options: [o('extrasWillingness', 'si', '🌟'), o('extrasWillingness', 'a_veces', '🙂'), o('extrasWillingness', 'no', '🏷️')],
   },
   {
-    id: 'companions', section: 'Compañía', kind: 'single',
-    prompt: () => '¿Con quién sueles viajar?',
-    options: [o('solo', 'Solo/a', '🚶'), o('pareja', 'En pareja', '💑'), o('amigos', 'Con amigos', '👯'), o('familia', 'En familia', '👪'), o('familia_ninos', 'Familia con niños', '🧒'), o('grupo', 'En grupo grande', '🚌')],
+    id: 'companions', get section() {
+      return getT()('sv.sec.comp')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.companions'),
+    options: [o('companions', 'solo', '🚶'), o('companions', 'pareja', '💑'), o('companions', 'amigos', '👯'), o('companions', 'familia', '👪'), o('companions', 'familia_ninos', '🧒'), o('companions', 'grupo', '🚌')],
   },
   {
-    id: 'kidsAges', section: 'Compañía', kind: 'single',
+    id: 'kidsAges', get section() {
+      return getT()('sv.sec.comp')
+    }, kind: 'single',
     when: (a) => a.companions === 'familia_ninos',
-    prompt: () => 'Para recomendarte planes aptos, ¿qué edades tienen los niños?',
-    options: [o('0_3', '0 a 3 años', '👶'), o('4_8', '4 a 8 años', '🧒'), o('9_12', '9 a 12 años', '🧑'), o('mixto', 'Varias edades', '👨‍👩‍👧‍👦')],
+    prompt: () => getT()('sv.q.kidsAges'),
+    options: [o('kidsAges', '0_3', '👶'), o('kidsAges', '4_8', '🧒'), o('kidsAges', '9_12', '🧑'), o('kidsAges', 'mixto', '👨‍👩‍👧‍👦')],
   },
   {
-    id: 'duration', section: 'Duración', kind: 'single',
-    prompt: () => '¿Qué duración tienen tus viajes normalmente?',
-    options: [o('finde', 'Escapadas de fin de semana', '🗓️'), o('3_5', 'De 3 a 5 días', '🧳'), o('semana', 'Una semana', '📅'), o('largo', 'Viajes largos', '🌎')],
+    id: 'duration', get section() {
+      return getT()('sv.sec.dur')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.duration'),
+    options: [o('duration', 'finde', '🗓️'), o('duration', '3_5', '🧳'), o('duration', 'semana', '📅'), o('duration', 'largo', '🌎')],
   },
   {
-    id: 'frequency', section: 'Duración', kind: 'single',
-    prompt: () => '¿Cada cuánto viajas?',
-    options: [o('mensual', 'Cada mes', '🔁'), o('trimestral', 'Cada 3 meses', '📆'), o('semestral', 'Cada 6 meses', '🌓'), o('anual', 'Una vez al año', '🎄'), o('rara_vez', 'Rara vez', '🐢')],
+    id: 'frequency', get section() {
+      return getT()('sv.sec.dur')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.frequency'),
+    options: [o('frequency', 'mensual', '🔁'), o('frequency', 'trimestral', '📆'), o('frequency', 'semestral', '🌓'), o('frequency', 'anual', '🎄'), o('frequency', 'rara_vez', '🐢')],
   },
   {
-    id: 'amenities', section: 'Detalles', kind: 'multi', max: 6,
-    prompt: () => '¿Qué comodidades no pueden faltar en tu alojamiento?',
-    options: [o('wifi', 'Wi-Fi', '📶'), o('cocina', 'Cocina', '🍳'), o('piscina', 'Piscina', '🏊'), o('estacionamiento', 'Estacionamiento', '🚗'), o('aire', 'Aire acondicionado', '❄️'), o('lavadora', 'Lavadora', '🧺'), o('desayuno', 'Desayuno', '🥐'), o('vistas', 'Buenas vistas', '🌄')],
+    id: 'amenities', get section() {
+      return getT()('sv.sec.det')
+    }, kind: 'multi', max: 6,
+    prompt: () => getT()('sv.q.amenities'),
+    options: [o('amenities', 'wifi', '📶'), o('amenities', 'cocina', '🍳'), o('amenities', 'piscina', '🏊'), o('amenities', 'estacionamiento', '🚗'), o('amenities', 'aire', '❄️'), o('amenities', 'lavadora', '🧺'), o('amenities', 'desayuno', '🥐'), o('amenities', 'vistas', '🌄')],
   },
   {
-    id: 'pets', section: 'Detalles', kind: 'single',
-    prompt: () => '¿Viajas con mascota?',
-    options: [o('si', 'Sí, siempre', '🐶'), o('a_veces', 'A veces', '🐱'), o('no', 'No', '🚫')],
+    id: 'pets', get section() {
+      return getT()('sv.sec.det')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.pets'),
+    options: [o('pets', 'si', '🐶'), o('pets', 'a_veces', '🐱'), o('pets', 'no', '🚫')],
   },
   {
-    id: 'accessibility', section: 'Detalles', kind: 'text', placeholder: 'Ej. movilidad reducida, dieta vegetariana, alergias…',
-    prompt: () => '¿Hay algo de accesibilidad o necesidades especiales que debamos tener en cuenta?',
+    id: 'accessibility', get section() {
+      return getT()('sv.sec.det')
+    }, kind: 'text', get placeholder() {
+      return getT()('sv.ph.accessibility')
+    },
+    prompt: () => getT()('sv.q.accessibility'),
   },
   {
-    id: 'transport', section: 'Detalles', kind: 'single',
-    prompt: () => '¿Cómo prefieres desplazarte?',
-    options: [o('avion', 'Avión', '✈️'), o('bus', 'Bus', '🚌'), o('carro', 'Carro propio o alquilado', '🚙'), o('indiferente', 'Me da igual', '🤷')],
+    id: 'transport', get section() {
+      return getT()('sv.sec.det')
+    }, kind: 'single',
+    prompt: () => getT()('sv.q.transport'),
+    options: [o('transport', 'avion', '✈️'), o('transport', 'bus', '🚌'), o('transport', 'carro', '🚙'), o('transport', 'indiferente', '🤷')],
   },
   {
-    id: 'notes', section: 'Detalles', kind: 'text', placeholder: 'Cualquier cosa que ayude a personalizar tus recomendaciones',
-    prompt: () => 'Última: ¿hay algo más que quieras contarme sobre cómo te gusta viajar?',
+    id: 'notes', get section() {
+      return getT()('sv.sec.det')
+    }, kind: 'text', get placeholder() {
+      return getT()('sv.ph.notes')
+    },
+    prompt: () => getT()('sv.q.notes'),
   },
 ]
 
@@ -208,12 +269,7 @@ export function describeAnswer(question: Question, value: unknown): string {
 }
 
 /** Etiqueta corta de cada respuesta (para resúmenes y para el agente). */
-export const ANSWER_LABELS: Record<QuestionId, string> = {
-  travelerTypes: 'Tipo de viajero', popularity: 'Destinos', environments: 'Paisajes favoritos', regions: 'Regiones de interés', pendingDestinations: 'Destinos pendientes',
-  climate: 'Clima preferido', activities: 'Actividades', extremeSports: 'Deportes extremos', budgetPerPerson: 'Presupuesto por persona', lodgingLevel: 'Hospedaje',
-  extrasWillingness: 'Experiencias especiales', comfortStyle: 'Estilo de viaje', companions: 'Compañía', kidsAges: 'Edades de los niños', duration: 'Duración de los viajes',
-  frequency: 'Frecuencia', amenities: 'Comodidades clave', pets: 'Mascotas', accessibility: 'Necesidades especiales', transport: 'Transporte', notes: 'Notas',
-}
+export const ANSWER_LABELS: Record<QuestionId, string> = localizedRecord('sl', ['travelerTypes', 'popularity', 'environments', 'regions', 'pendingDestinations', 'climate', 'activities', 'extremeSports', 'budgetPerPerson', 'lodgingLevel', 'extrasWillingness', 'comfortStyle', 'companions', 'kidsAges', 'duration', 'frequency', 'amenities', 'pets', 'accessibility', 'transport', 'notes'])
 
 export function summarize(answers: Answers): { id: QuestionId; question: string; answer: string; section: string; label: string }[] {
   return QUESTIONS.filter((q) => isAnswered(answers[q.id])).map((q) => ({

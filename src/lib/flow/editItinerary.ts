@@ -1,3 +1,4 @@
+import { getT } from '../i18n/store'
 /**
  * Ajustes del itinerario en el Paso 3, antes de guardarlo:
  *   - dayParts: en qué momento del día va cada parada (mañana, tarde, noche).
@@ -11,7 +12,17 @@ import { optimizeRoute, routeDistanceKm } from '../itinerary/generateItinerary'
 
 export type DayPart = 'mañana' | 'tarde' | 'noche'
 
-export const DAY_PART_LABELS: Record<DayPart, string> = { mañana: 'Mañana', tarde: 'Tarde', noche: 'Noche' }
+export const DAY_PART_LABELS = {
+  get mañana() {
+    return getT()('it.partCap.mañana')
+  },
+  get tarde() {
+    return getT()('it.partCap.tarde')
+  },
+  get noche() {
+    return getT()('it.partCap.noche')
+  },
+} as Record<DayPart, string>
 
 /**
  * Momento del día de cada parada: la vida nocturna en la noche y el resto

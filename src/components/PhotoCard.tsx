@@ -1,4 +1,5 @@
 import type { LucideIcon } from 'lucide-react'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { useEffect, useId, useState, type ReactNode } from 'react'
 import type { PlaceToVisit } from '../lib/featuredDestinations'
 
@@ -167,9 +168,10 @@ export function PhotoCard({
 
 /** Panel "Qué visitar": el nombre del lugar actual entra deslizándose desde la derecha. */
 function PlacesTicker({ places, index }: { places: PlaceToVisit[]; index: number }) {
+  const { t } = useI18n()
   return (
     <span className="mt-3 flex flex-col gap-2 border-t border-white/25 pt-3">
-      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-light">Qué visitar</span>
+      <span className="text-xs font-semibold uppercase tracking-[0.18em] text-teal-light">{t('pc.visit')}</span>
       <span className="flex h-7 items-center overflow-hidden">
         <span
           key={index}

@@ -1,5 +1,6 @@
 /** Formulario de publicación/edición de experiencias (anfitrión). */
 import { useEffect, useRef, useState, type ReactNode } from 'react'
+import { useI18n } from '../../lib/i18n/I18nProvider'
 import { useNavigate, useParams } from 'react-router'
 import { FormField, inputClassName } from '../../components/FormField'
 import { LocationPicker } from '../../components/host/LocationPicker'
@@ -18,14 +19,16 @@ const EMPTY: ExperienceDraft = {
   durationMinutes: 180, pricePerPerson: 60000, capacity: 8, minAge: 0, languages: ['es'], weekdays: [0, 6], startTimes: ['09:00'],
   requirements: '', cancellationPolicy: 'flexible', providerName: '', photoCount: 0,
 }
-const DAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb']
-const LANGS: Record<string, string> = { es: 'Español', en: 'Inglés', fr: 'Francés', pt: 'Portugués' }
+/** Idiomas en que se ofrece una experiencia: se muestran con su nombre propio. */
+const LANGS: Record<string, string> = { es: 'Español', en: 'English', fr: 'Français', pt: 'Português', de: 'Deutsch' }
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return <Card><h2 className="mb-4 text-xl font-semibold text-navy">{title}</h2><div className="flex flex-col gap-4">{children}</div></Card>
 }
 
 export default function ExperienceForm() {
+  const { t, meta } = useI18n()
+  const DAYS = Array.from({ length: 7 }, (_, d) => new Intl.DateTimeFormat(meta.bcp47, { weekday: 'short', timeZone: 'UTC' }).format(new Date(Date.UTC(2024, 0, 7 + d))))
   const { id } = useParams()
   const { user, profile } = useAuth()
   const navigate = useNavigate()
@@ -61,7 +64,7 @@ export default function ExperienceForm() {
   const toggle = <T,>(list: T[], v: T) => (list.includes(v) ? list.filter((x) => x !== v) : [...list, v])
 
   if (id && loaded.loading) return <Container><Spinner /></Container>
-  if (id && !loaded.loading && !loaded.data?.item) return <Container className="py-10"><Alert>No encontramos esta experiencia o no te pertenece.</Alert></Container>
+  if (id && !loaded.loading && !loaded.data?.item) return <Container className="py-10"><Alert>{t('hf.notFoundExp')}</Alert></Container>
 
   const keepsStatus = existing && (existing.status === 'pending' || existing.status === 'published')
   const canSubmitReview = !existing || existing.status === 'draft' || existing.status === 'rejected'
@@ -73,7 +76,7 @@ export default function ExperienceForm() {
     const found = validateExperienceDraft(next, status === 'pending')
     setErrors(found)
     if (hasFormErrors(found)) {
-      setMessage('Revisa los campos marcados en rojo.')
+      setMessage(t('hf.reviewFields'))
       topRef.current?.scrollIntoView({ behavior: 'smooth' })
       return
     }
@@ -86,7 +89,7 @@ export default function ExperienceForm() {
       await replacePhotos(db, 'experiences', savedId, photos.map((p) => ({ dataUrl: p.dataUrl, alt: p.alt })))
       navigate('/anfitrion', { replace: true })
     } catch {
-      setMessage('No pudimos guardar. Revisa tu conexión e inténtalo de nuevo.')
+      setMessage(t('hf.saveError'))
       topRef.current?.scrollIntoView({ behavior: 'smooth' })
     } finally {
       setSaving(false)
@@ -102,72 +105,72 @@ export default function ExperienceForm() {
   return (
     <Container className="max-w-3xl py-8 sm:py-10">
       <div ref={topRef} />
-      <PageHeader eyebrow="Modo anfitrión" title={existing ? 'Editar experiencia' : 'Publicar una experiencia'}>
-        Tours, caminatas, clases, avistamientos… Define horarios y cupos; LOCUS controla que nunca se reserve más gente de la que cabe.
+      <PageHeader eyebrow={t('hb.eyebrow')} title={existing ? t('hf.editExp') : t('hf.newExp')}>
+        {t('hf.expIntro')}
       </PageHeader>
       {message && <div className="mb-4"><Alert>{message}</Alert></div>}
 
       <form onSubmit={(e) => e.preventDefault()} noValidate className="flex flex-col gap-6">
-        <Section title="Información general">
-          <FormField id="title" label="Nombre" error={errors.title}>{(c) => <input {...c} value={draft.title} maxLength={100} onChange={(e) => set('title', e.target.value)} className={inputClassName} />}</FormField>
-          <FormField id="desc" label="Descripción" error={errors.description}>{(c) => <textarea {...c} rows={5} maxLength={4000} value={draft.description} onChange={(e) => set('description', e.target.value)} className={inputClassName} />}</FormField>
+        <Section title={t('hf.general')}>
+          <FormField id="title" label={t('hf.expName')} error={errors.title}>{(c) => <input {...c} value={draft.title} maxLength={100} onChange={(e) => set('title', e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="desc" label={t('hf.description')} error={errors.description}>{(c) => <textarea {...c} rows={5} maxLength={4000} value={draft.description} onChange={(e) => set('description', e.target.value)} className={inputClassName} />}</FormField>
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField id="cat" label="Categoría">{(c) => <select {...c} value={draft.category} onChange={(e) => set('category', e.target.value as ExperienceCategory)} className={selectClassName}>{Object.entries(EXPERIENCE_CATEGORIES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>}</FormField>
-            <FormField id="prov" label="Proveedor u operador" error={errors.providerName}>{(c) => <input {...c} value={draft.providerName} maxLength={100} onChange={(e) => set('providerName', e.target.value)} className={inputClassName} />}</FormField>
+            <FormField id="cat" label={t('hf.category')}>{(c) => <select {...c} value={draft.category} onChange={(e) => set('category', e.target.value as ExperienceCategory)} className={selectClassName}>{Object.entries(EXPERIENCE_CATEGORIES).map(([k, l]) => <option key={k} value={k}>{l}</option>)}</select>}</FormField>
+            <FormField id="prov" label={t('hf.provider')} error={errors.providerName}>{(c) => <input {...c} value={draft.providerName} maxLength={100} onChange={(e) => set('providerName', e.target.value)} className={inputClassName} />}</FormField>
           </div>
         </Section>
 
-        <Section title="Punto de encuentro">
+        <Section title={t('xp.meetingPoint')}>
           <div className="grid gap-4 sm:grid-cols-2">
-            <FormField id="dep" label="Departamento" error={errors.department}>{(c) => <select {...c} value={draft.department} onChange={(e) => set('department', e.target.value)} className={selectClassName}><option value="">Elige…</option>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select>}</FormField>
-            <FormField id="mun" label="Municipio" error={errors.municipality}>{(c) => <input {...c} value={draft.municipality} onChange={(e) => set('municipality', e.target.value)} className={inputClassName} />}</FormField>
+            <FormField id="dep" label={t('hf.department')} error={errors.department}>{(c) => <select {...c} value={draft.department} onChange={(e) => set('department', e.target.value)} className={selectClassName}><option value="">{t('xp.choose')}</option>{DEPARTMENTS.map((d) => <option key={d}>{d}</option>)}</select>}</FormField>
+            <FormField id="mun" label={t('hd.municipalityShort')} error={errors.municipality}>{(c) => <input {...c} value={draft.municipality} onChange={(e) => set('municipality', e.target.value)} className={inputClassName} />}</FormField>
           </div>
-          <FormField id="addr" label="Referencia del punto de encuentro">{(c) => <input {...c} value={draft.addressReference} maxLength={300} onChange={(e) => set('addressReference', e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="addr" label={t('hf.meetingRef')}>{(c) => <input {...c} value={draft.addressReference} maxLength={300} onChange={(e) => set('addressReference', e.target.value)} className={inputClassName} />}</FormField>
           <LocationPicker lat={draft.lat} lon={draft.lon} onChange={(la, lo) => setDraft((d) => ({ ...d, lat: la, lon: lo }))} error={errors.lat} searchHint={draft.municipality} />
         </Section>
 
-        <Section title="Fotografías"><PhotoUploader photos={photos} onChange={setPhotos} minRecommended={1} />{errors.photoCount && <Alert>{errors.photoCount}</Alert>}</Section>
+        <Section title={t('hf.photos')}><PhotoUploader photos={photos} onChange={setPhotos} minRecommended={1} />{errors.photoCount && <Alert>{errors.photoCount}</Alert>}</Section>
 
-        <Section title="Duración, precio y cupos">
+        <Section title={t('hf.durationPrice')}>
           <div className="grid gap-4 sm:grid-cols-2">
-            {num('dur', 'Duración (minutos)', 'durationMinutes', 15)}
-            {num('price', 'Precio por persona (COP)', 'pricePerPerson', 1000)}
-            {num('cap', 'Cupo máximo por sesión', 'capacity', 1, 'Personas que caben en cada horario.')}
-            {num('age', 'Edad mínima (0 = sin límite)', 'minAge')}
+            {num('dur', t('hf.duration'), 'durationMinutes', 15)}
+            {num('price', t('hf.pricePerPerson'), 'pricePerPerson', 1000)}
+            {num('cap', t('hf.maxSpots'), 'capacity', 1, t('hf.maxSpotsHint'))}
+            {num('age', t('hf.minAge'), 'minAge')}
           </div>
           <fieldset>
-            <legend className="text-sm font-semibold text-ink">Idiomas</legend>
+            <legend className="text-sm font-semibold text-ink">{t('xp.languages').replace(/:$/, '')}</legend>
             <div className="mt-2 flex flex-wrap gap-2">{Object.entries(LANGS).map(([k, l]) => <label key={k} className="flex items-center gap-2 rounded-full border border-line px-3 py-1.5 text-sm"><input type="checkbox" checked={draft.languages.includes(k)} onChange={() => set('languages', toggle(draft.languages, k))} className="accent-[var(--primary)]" /> {l}</label>)}</div>
           </fieldset>
         </Section>
 
-        <Section title="Horarios">
+        <Section title={t('hf.schedule')}>
           <fieldset>
-            <legend className="text-sm font-semibold text-ink">Días en que se ofrece</legend>
+            <legend className="text-sm font-semibold text-ink">{t('hf.days')}</legend>
             <div className="mt-2 flex flex-wrap gap-2">{DAYS.map((d, i) => <label key={d} className={`cursor-pointer rounded-full border px-4 py-1.5 text-sm font-semibold ${draft.weekdays.includes(i) ? 'border-teal bg-teal/15' : 'border-line'}`}><input type="checkbox" className="sr-only" checked={draft.weekdays.includes(i)} onChange={() => set('weekdays', toggle(draft.weekdays, i).sort())} />{d}</label>)}</div>
             {errors.weekdays && <p className="mt-1 text-sm font-medium text-danger">{errors.weekdays}</p>}
           </fieldset>
           <div>
-            <p className="text-sm font-semibold text-ink">Horas de inicio</p>
+            <p className="text-sm font-semibold text-ink">{t('hf.startTimes')}</p>
             <ul className="mt-2 flex flex-wrap gap-2">
-              {draft.startTimes.map((t) => <li key={t} className="flex items-center gap-1 rounded-full border border-line px-3 py-1 text-sm">{t}<button type="button" aria-label={`Quitar ${t}`} onClick={() => set('startTimes', draft.startTimes.filter((x) => x !== t))} className="text-danger">✕</button></li>)}
+              {draft.startTimes.map((tm) => <li key={tm} className="flex items-center gap-1 rounded-full border border-line px-3 py-1 text-sm">{tm}<button type="button" aria-label={t('iv.remove', { name: tm })} onClick={() => set('startTimes', draft.startTimes.filter((x) => x !== tm))} className="text-danger">✕</button></li>)}
             </ul>
-            <div className="mt-2 flex gap-2"><input type="time" aria-label="Nueva hora de inicio" value={newTime} onChange={(e) => setNewTime(e.target.value)} className={`${inputClassName} max-w-40`} /><Button variant="secondary" onClick={() => { if (newTime && !draft.startTimes.includes(newTime) && draft.startTimes.length < 8) { set('startTimes', [...draft.startTimes, newTime]); setNewTime('') } }}>Agregar</Button></div>
+            <div className="mt-2 flex gap-2"><input type="time" aria-label={t('hf.newTime')} value={newTime} onChange={(e) => setNewTime(e.target.value)} className={`${inputClassName} max-w-40`} /><Button variant="secondary" onClick={() => { if (newTime && !draft.startTimes.includes(newTime) && draft.startTimes.length < 8) { set('startTimes', [...draft.startTimes, newTime]); setNewTime('') } }}>{t('bc.add')}</Button></div>
             {errors.startTimes && <p className="mt-1 text-sm font-medium text-danger">{errors.startTimes}</p>}
           </div>
         </Section>
 
-        <Section title="Requisitos y políticas">
-          <FormField id="req" label="Qué deben llevar o saber los participantes">{(c) => <textarea {...c} rows={3} maxLength={1500} value={draft.requirements} onChange={(e) => set('requirements', e.target.value)} className={inputClassName} />}</FormField>
-          <FormField id="pol" label="Política de cancelación" hint={CANCELLATION_POLICIES[draft.cancellationPolicy].description}>{(c) => <select {...c} value={draft.cancellationPolicy} onChange={(e) => set('cancellationPolicy', e.target.value as ExperienceDraft['cancellationPolicy'])} className={selectClassName}>{Object.entries(CANCELLATION_POLICIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>}</FormField>
+        <Section title={t('hf.reqPolicies')}>
+          <FormField id="req" label={t('hf.requirements')}>{(c) => <textarea {...c} rows={3} maxLength={1500} value={draft.requirements} onChange={(e) => set('requirements', e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="pol" label={t('hf.cancelPolicy')} hint={CANCELLATION_POLICIES[draft.cancellationPolicy].description}>{(c) => <select {...c} value={draft.cancellationPolicy} onChange={(e) => set('cancellationPolicy', e.target.value as ExperienceDraft['cancellationPolicy'])} className={selectClassName}>{Object.entries(CANCELLATION_POLICIES).map(([k, v]) => <option key={k} value={k}>{v.label}</option>)}</select>}</FormField>
         </Section>
 
         <div className="flex flex-wrap justify-end gap-3">
-          <Button variant="ghost" className="border border-line" onClick={() => navigate('/anfitrion')} disabled={saving}>Cancelar</Button>
-          {keepsStatus ? <Button onClick={() => save('draft')} disabled={saving}>{saving ? 'Guardando…' : 'Guardar cambios'}</Button> : (
+          <Button variant="ghost" className="border border-line" onClick={() => navigate('/anfitrion')} disabled={saving}>{t('common.cancel')}</Button>
+          {keepsStatus ? <Button onClick={() => save('draft')} disabled={saving}>{saving ? t('trips.detail.saving') : t('trips.detail.saveChanges')}</Button> : (
             <>
-              <Button variant="secondary" onClick={() => save('draft')} disabled={saving}>{saving ? 'Guardando…' : 'Guardar borrador'}</Button>
-              {canSubmitReview && <Button onClick={() => save('pending')} disabled={saving}>Enviar a revisión</Button>}
+              <Button variant="secondary" onClick={() => save('draft')} disabled={saving}>{saving ? t('trips.detail.saving') : t('hf.saveDraft')}</Button>
+              {canSubmitReview && <Button onClick={() => save('pending')} disabled={saving}>{t('hd.sendReview')}</Button>}
             </>
           )}
         </div>

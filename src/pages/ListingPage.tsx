@@ -18,26 +18,28 @@ import { conflictingNights, quoteStay, validateStay } from '../lib/domain/pricin
 import { AMENITIES, CANCELLATION_POLICIES, LISTING_TYPES, type Listing } from '../lib/domain/types'
 import { db } from '../lib/firebase/client'
 import { formatCOP, formatDate, todayISO } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { LocusMap } from '../lib/maps/MapLazy'
 import { useAsync } from '../lib/useAsync'
 
 const STATUS_LABEL: Record<string, string> = {
-  draft: 'Borrador', pending: 'Pendiente de revisión', rejected: 'Rechazado', suspended: 'Suspendido', published: 'Publicado',
+  draft: 'ls.draft', pending: 'ls.pending', rejected: 'ls.rejected', suspended: 'ls.suspended', published: 'ls.published',
 }
 
 function Gallery({ listing }: { listing: Listing }) {
+  const { t } = useI18n()
   const photos = useAsync(() => fetchPhotos(db, 'listings', listing.id), [listing.id])
   const [index, setIndex] = useState(0)
   const urls = photos.data && photos.data.length > 0 ? photos.data.map((p) => p.dataUrl) : listing.cover && listing.photoCount > 0 ? [listing.cover] : []
-  if (urls.length === 0) return <div className="grid aspect-[16/9] place-items-center rounded-3xl bg-surface-2 text-muted">Este alojamiento aún no tiene fotos</div>
+  if (urls.length === 0) return <div className="grid aspect-[16/9] place-items-center rounded-3xl bg-surface-2 text-muted">{t('lp.noPhotos')}</div>
   return (
     <div>
-      <img src={urls[Math.min(index, urls.length - 1)]} alt={`Foto ${index + 1} de ${urls.length} de ${listing.title}`} className="aspect-[16/9] w-full rounded-3xl object-cover" />
+      <img src={urls[Math.min(index, urls.length - 1)]} alt={t('lp.photoAlt', { n: index + 1, total: urls.length, title: listing.title })} className="aspect-[16/9] w-full rounded-3xl object-cover" />
       {urls.length > 1 && (
         <ul className="mt-2 flex gap-2 overflow-x-auto pb-1">
           {urls.map((u, i) => (
             <li key={i} className="shrink-0">
-              <button type="button" onClick={() => setIndex(i)} aria-label={`Ver foto ${i + 1}`} aria-current={i === index} className={`overflow-hidden rounded-xl border-2 ${i === index ? 'border-teal' : 'border-transparent'}`}>
+              <button type="button" onClick={() => setIndex(i)} aria-label={t('lp.viewPhoto', { n: i + 1 })} aria-current={i === index} className={`overflow-hidden rounded-xl border-2 ${i === index ? 'border-teal' : 'border-transparent'}`}>
                 <img src={u} alt="" className="h-16 w-24 object-cover" />
               </button>
             </li>
@@ -49,6 +51,7 @@ function Gallery({ listing }: { listing: Listing }) {
 }
 
 export default function ListingPage() {
+  const { t } = useI18n()
   const { id = '' } = useParams()
   const [params] = useSearchParams()
   const navigate = useNavigate()
@@ -82,14 +85,14 @@ export default function ListingPage() {
     const problem = validateStay(listing, request, today)
     if (problem) return { problem, quote: null, ready: false }
     if (conflictingNights(checkIn, checkOut, booked, blocked).length > 0) {
-      return { problem: 'Alguna de esas noches no está disponible. Elige otras fechas en el calendario.', quote: null, ready: false }
+      return { problem: t('lp.unavailableNights'), quote: null, ready: false }
     }
     return { problem: null, quote: quoteStay(listing, request), ready: true }
-  }, [listing, checkIn, checkOut, guests, today, booked, blocked])
+  }, [listing, checkIn, checkOut, guests, today, booked, blocked, t])
 
-  if (listingState.loading) return <Container className="py-10"><Spinner label="Cargando el alojamiento…" /></Container>
+  if (listingState.loading) return <Container className="py-10"><Spinner label={t('lp.loading')} /></Container>
   if (!listing) {
-    return <Container className="py-12"><EmptyState title="No encontramos este alojamiento" action={<ButtonLink to="/explorar">Ver alojamientos</ButtonLink>}>Puede que ya no esté publicado.</EmptyState></Container>
+    return <Container className="py-12"><EmptyState title={t('lp.notFound')} action={<ButtonLink to="/explorar">{t('lp.seeStays')}</ButtonLink>}>{t('lp.notFoundText')}</EmptyState></Container>
   }
 
   const rating = averageRating(reviews.data ?? [])
@@ -110,14 +113,14 @@ export default function ListingPage() {
       const bookingId = await placeStayBooking(db, {
         listing,
         guestId: user.uid,
-        guestName: profile?.displayName || user.displayName || 'Huésped',
+        guestName: profile?.displayName || user.displayName || t('lp.guestDefault'),
         request: { checkIn, checkOut, guests },
         today,
       })
       navigate(`/reservas?nueva=${bookingId}`)
     } catch (e) {
       setConfirming(false)
-      setError(e instanceof BookingError ? e.message : 'No pudimos completar la reserva.')
+      setError(e instanceof BookingError ? e.message : t('lp.bookError'))
       calendar.reload()
     } finally {
       setBusy(false)
@@ -130,15 +133,15 @@ export default function ListingPage() {
   return (
     <Container className="py-8 sm:py-10">
       {listing.status !== 'published' && (
-        <div className="mb-4"><Alert tone="info">Vista previa para ti: este alojamiento está en estado «{STATUS_LABEL[listing.status]}» y no es visible para otros huéspedes.</Alert></div>
+        <div className="mb-4"><Alert tone="info">{t('lp.preview', { status: t(STATUS_LABEL[listing.status] ?? listing.status) })}</Alert></div>
       )}
       <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wider text-teal-soft">{LISTING_TYPES[listing.type]} · {listing.municipality}, {listing.department}</p>
           <h1 id="page-title" tabIndex={-1} className="mt-1 text-3xl font-semibold text-navy focus:outline-none sm:text-4xl">{listing.title}</h1>
           <p className="mt-1 text-muted">
-            {rating !== null ? `★ ${rating} (${reviews.data?.length} ${reviews.data?.length === 1 ? 'reseña' : 'reseñas'})` : 'Aún sin reseñas'}
-            {listing.isTestData && <> · <Badge tone="warn">Dato de prueba</Badge></>}
+            {rating !== null ? t('lp.reviewsCount', { rating, count: reviews.data?.length ?? 0 }) : t('lp.noReviewsYet')}
+            {listing.isTestData && <> · <Badge tone="warn">{t('cat.testData')}</Badge></>}
           </p>
         </div>
         <FavoriteButton className="border border-line" item={{ kind: 'listing', refId: listing.id, title: listing.title, subtitle: listing.municipality }} />
@@ -149,16 +152,16 @@ export default function ListingPage() {
           <Gallery listing={listing} />
 
           <section aria-labelledby="about">
-            <h2 id="about" className="text-2xl font-semibold text-navy">Sobre este alojamiento</h2>
+            <h2 id="about" className="text-2xl font-semibold text-navy">{t('lp.about')}</h2>
             <p className="mt-1 text-muted">
-              {listing.capacity} huéspedes · {listing.bedrooms} {listing.bedrooms === 1 ? 'habitación' : 'habitaciones'} · {listing.beds} {listing.beds === 1 ? 'cama' : 'camas'} · {listing.bathrooms} {listing.bathrooms === 1 ? 'baño' : 'baños'}
+              {t('lc.guestsCount', { count: listing.capacity })} · {t('lc.bedrooms', { count: listing.bedrooms })} · {t('lc.beds', { count: listing.beds })} · {t('lc.bathrooms', { count: listing.bathrooms })}
             </p>
-            <p className="mt-3 whitespace-pre-line text-ink">{listing.description || 'El anfitrión aún no agregó una descripción.'}</p>
+            <p className="mt-3 whitespace-pre-line text-ink">{listing.description || t('lp.noDescription')}</p>
           </section>
 
           {listing.amenities.length > 0 && (
             <section aria-labelledby="amen">
-              <h2 id="amen" className="text-2xl font-semibold text-navy">Comodidades</h2>
+              <h2 id="amen" className="text-2xl font-semibold text-navy">{t('lp.amenities')}</h2>
               <ul className="mt-3 grid gap-2 sm:grid-cols-2">
                 {listing.amenities.map((a) => <li key={a} className="rounded-xl bg-surface-2 px-3 py-2 text-sm">✓ {AMENITIES[a] ?? a}</li>)}
               </ul>
@@ -166,44 +169,44 @@ export default function ListingPage() {
           )}
 
           <section aria-labelledby="where">
-            <h2 id="where" className="text-2xl font-semibold text-navy">Dónde está</h2>
+            <h2 id="where" className="text-2xl font-semibold text-navy">{t('lp.where')}</h2>
             <p className="mt-1 text-muted">{listing.addressReference || `${listing.municipality}, ${listing.department}`}</p>
             <div className="mt-3">
-              <LocusMap markers={[{ id: listing.id, lat: listing.lat, lon: listing.lon, kind: 'listing' }]} center={[listing.lat, listing.lon]} zoom={14} className="h-72" ariaLabel="Ubicación del alojamiento" />
+              <LocusMap markers={[{ id: listing.id, lat: listing.lat, lon: listing.lon, kind: 'listing' }]} center={[listing.lat, listing.lon]} zoom={14} className="h-72" ariaLabel={t('lp.locationLabel')} />
             </div>
           </section>
 
           <StreetPhotos lat={listing.lat} lon={listing.lon} />
-          <WeatherPanel lat={listing.lat} lon={listing.lon} title={`El clima en ${listing.municipality}`} />
+          <WeatherPanel lat={listing.lat} lon={listing.lon} title={t('lp.weatherIn', { place: listing.municipality })} />
 
           <section aria-labelledby="rules">
-            <h2 id="rules" className="text-2xl font-semibold text-navy">Reglas y políticas</h2>
+            <h2 id="rules" className="text-2xl font-semibold text-navy">{t('lp.rules')}</h2>
             <ul className="mt-3 flex flex-col gap-2 text-sm text-ink">
-              <li><strong>Llegada:</strong> {listing.checkInTime || 'a convenir'} · <strong>Salida:</strong> {listing.checkOutTime || 'a convenir'}</li>
-              <li><strong>Estadía:</strong> de {listing.minNights} a {listing.maxNights} noches</li>
-              <li><strong>Cancelación {policy.label.toLowerCase()}:</strong> {policy.description}</li>
-              {listing.rules && <li className="whitespace-pre-line"><strong>Reglas del anfitrión:</strong> {listing.rules}</li>}
+              <li><strong>{t('lp.checkInLabel')}</strong> {listing.checkInTime || t('lp.toArrange')} · <strong>{t('lp.checkOutLabel')}</strong> {listing.checkOutTime || t('lp.toArrange')}</li>
+              <li><strong>{t('lp.stayLabel')}</strong> {t('lp.stayRange', { min: listing.minNights, max: listing.maxNights })}</li>
+              <li><strong>{t('lp.cancellation', { policy: policy.label.toLowerCase() })}</strong> {policy.description}</li>
+              {listing.rules && <li className="whitespace-pre-line"><strong>{t('lp.hostRules')}</strong> {listing.rules}</li>}
             </ul>
           </section>
 
           <section aria-labelledby="host">
-            <h2 id="host" className="text-2xl font-semibold text-navy">Tu anfitrión</h2>
+            <h2 id="host" className="text-2xl font-semibold text-navy">{t('lp.yourHost')}</h2>
             <p className="mt-2 text-ink">
-              <strong>{host.data?.displayName ?? 'Anfitrión de LOCUS'}</strong>{' '}
-              {host.data?.verified ? <Badge tone="teal">Verificado por LOCUS</Badge> : <Badge>Aún sin verificar</Badge>}
+              <strong>{host.data?.displayName ?? t('lp.hostDefault')}</strong>{' '}
+              {host.data?.verified ? <Badge tone="teal">{t('lp.verified')}</Badge> : <Badge>{t('lp.notVerified')}</Badge>}
             </p>
             {host.data?.bio && <p className="mt-1 text-muted">{host.data.bio}</p>}
           </section>
 
           <section aria-labelledby="reviews">
-            <h2 id="reviews" className="text-2xl font-semibold text-navy">Reseñas</h2>
+            <h2 id="reviews" className="text-2xl font-semibold text-navy">{t('lp.reviews')}</h2>
             {(reviews.data ?? []).length === 0 ? (
-              <p className="mt-2 text-muted">Todavía no hay reseñas. Solo pueden reseñar quienes completaron una estadía.</p>
+              <p className="mt-2 text-muted">{t('lp.noReviews')}</p>
             ) : (
               <ul className="mt-3 flex flex-col gap-3">
                 {reviews.data!.map((r) => (
                   <li key={r.id} className="rounded-2xl border border-line bg-surface p-4">
-                    <p className="font-semibold text-ink">{r.guestName || 'Huésped'} · {'★'.repeat(r.rating)}<span className="text-muted">{'★'.repeat(5 - r.rating)}</span></p>
+                    <p className="font-semibold text-ink">{r.guestName || t('lp.guestDefault')} · {'★'.repeat(r.rating)}<span className="text-muted">{'★'.repeat(5 - r.rating)}</span></p>
                     {r.text && <p className="mt-1 text-sm text-ink">{r.text}</p>}
                   </li>
                 ))}
@@ -213,38 +216,38 @@ export default function ListingPage() {
         </div>
 
         {/* Reserva */}
-        <aside aria-label="Reservar" className="lg:sticky lg:top-24 lg:self-start">
+        <aside aria-label={t('lp.book')} className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-3xl border border-line bg-surface p-5 shadow-lg">
-            <p className="text-2xl font-semibold text-ink">{formatCOP(listing.pricePerNight)} <span className="text-base font-normal text-muted">por noche</span></p>
+            <p className="text-2xl font-semibold text-ink">{formatCOP(listing.pricePerNight)} <span className="text-base font-normal text-muted">{t('common.perNight')}</span></p>
 
             <div className="mt-4">
               {calendar.loading ? (
-                <Spinner label="Cargando disponibilidad…" />
+                <Spinner label={t('lp.loadingAvailability')} />
               ) : (
                 <MonthCalendar
                   today={today}
                   focusDate={checkIn || undefined}
-                  ariaLabel="Disponibilidad: elige llegada y salida"
+                  ariaLabel={t('lp.calendarLabel')}
                   onSelect={pickDay}
                   cellState={(iso) => {
                     const occupied = iso in booked || iso in blocked
                     const choosingCheckout = Boolean(checkIn && !checkOut)
                     if (iso === checkIn || iso === checkOut) return { tone: 'selected' }
                     if (checkIn && checkOut && iso > checkIn && iso < checkOut) return { tone: 'range' }
-                    if (occupied) return { tone: iso in booked ? 'booked' : 'blocked', disabled: !choosingCheckout, hint: 'no disponible' }
+                    if (occupied) return { tone: iso in booked ? 'booked' : 'blocked', disabled: !choosingCheckout, hint: t('lp.unavailable') }
                     return { tone: 'free' }
                   }}
                 />
               )}
-              <p className="mt-2 text-xs text-muted">Tachado = noche no disponible. Elige la llegada y luego la salida.</p>
+              <p className="mt-2 text-xs text-muted">{t('lp.calendarHint')}</p>
             </div>
 
             <div className="mt-4 grid grid-cols-2 gap-3 text-sm">
-              <div><p className="font-semibold">Llegada</p><p>{checkIn ? formatDate(checkIn) : 'Elige una fecha'}</p></div>
-              <div><p className="font-semibold">Salida</p><p>{checkOut ? formatDate(checkOut) : 'Elige una fecha'}</p></div>
+              <div><p className="font-semibold">{t('lp.arrival')}</p><p>{checkIn ? formatDate(checkIn) : t('lp.pickDate')}</p></div>
+              <div><p className="font-semibold">{t('lp.departure')}</p><p>{checkOut ? formatDate(checkOut) : t('lp.pickDate')}</p></div>
             </div>
             <div className="mt-3">
-              <Counter label="Huéspedes" icon={Users} unit="un huésped" value={guests} min={1} max={listing.capacity} onChange={setGuests} hint={guests > listing.includedGuests ? `Incluye ${listing.includedGuests}; cada huésped extra cuesta ${formatCOP(listing.extraGuestFee)} por noche.` : undefined} />
+              <Counter label={t('ex.guests')} icon={Users} unit={t('ex.oneGuest')} value={guests} min={1} max={listing.capacity} onChange={setGuests} hint={guests > listing.includedGuests ? t('lp.extraGuestHint', { included: listing.includedGuests, fee: formatCOP(listing.extraGuestFee) }) : undefined} />
             </div>
 
             {stay.problem && <div className="mt-3"><Alert tone="info">{stay.problem}</Alert></div>}
@@ -252,36 +255,36 @@ export default function ListingPage() {
 
             {stay.quote && (
               <dl className="mt-4 flex flex-col gap-1 border-t border-line pt-3 text-sm">
-                <div className="flex justify-between"><dt>{formatCOP(stay.quote.nightly)} × {stay.quote.nights} {stay.quote.nights === 1 ? 'noche' : 'noches'}</dt><dd>{formatCOP(stay.quote.subtotal)}</dd></div>
-                {stay.quote.cleaningFee > 0 && <div className="flex justify-between"><dt>Tarifa de limpieza</dt><dd>{formatCOP(stay.quote.cleaningFee)}</dd></div>}
-                {stay.quote.extraGuestsFee > 0 && <div className="flex justify-between"><dt>Huéspedes extra</dt><dd>{formatCOP(stay.quote.extraGuestsFee)}</dd></div>}
-                <div className="mt-1 flex justify-between border-t border-line pt-2 text-base font-semibold"><dt>Total</dt><dd>{formatCOP(stay.quote.total)}</dd></div>
+                <div className="flex justify-between"><dt>{t('lp.nights', { price: formatCOP(stay.quote.nightly), count: stay.quote.nights })}</dt><dd>{formatCOP(stay.quote.subtotal)}</dd></div>
+                {stay.quote.cleaningFee > 0 && <div className="flex justify-between"><dt>{t('lp.cleaningFee')}</dt><dd>{formatCOP(stay.quote.cleaningFee)}</dd></div>}
+                {stay.quote.extraGuestsFee > 0 && <div className="flex justify-between"><dt>{t('lp.extraGuests')}</dt><dd>{formatCOP(stay.quote.extraGuestsFee)}</dd></div>}
+                <div className="mt-1 flex justify-between border-t border-line pt-2 text-base font-semibold"><dt>{t('lp.total')}</dt><dd>{formatCOP(stay.quote.total)}</dd></div>
               </dl>
             )}
 
             <div className="mt-4">
               {isOwner ? (
-                <ButtonLink to={`/anfitrion/alojamientos/${listing.id}`} variant="secondary" className="w-full">Editar mi alojamiento</ButtonLink>
+                <ButtonLink to={`/anfitrion/alojamientos/${listing.id}`} variant="secondary" className="w-full">{t('lp.editMine')}</ButtonLink>
               ) : !user ? (
-                <ButtonLink to={`/ingresar?next=${encodeURIComponent(location.pathname + location.search)}`} className="w-full">Ingresa para reservar</ButtonLink>
+                <ButtonLink to={`/ingresar?next=${encodeURIComponent(location.pathname + location.search)}`} className="w-full">{t('lp.signInToBook')}</ButtonLink>
               ) : (
                 <Button className="w-full" disabled={!stay.ready || listing.status !== 'published'} onClick={() => setConfirming(true)}>
-                  {listing.bookingMode === 'instant' ? 'Reservar' : 'Solicitar reserva'}
+                  {listing.bookingMode === 'instant' ? t('lp.book') : t('lp.requestBooking')}
                 </Button>
               )}
               <p className="mt-2 text-center text-xs text-muted">
-                {listing.bookingMode === 'instant' ? 'Reserva inmediata.' : 'El anfitrión debe aceptar tu solicitud.'} No se te cobra nada todavía: los pagos están en modo de prueba.
+                {listing.bookingMode === 'instant' ? t('lp.instant') : t('lp.hostMustAccept')} {t('lp.noChargeYet')}
               </p>
             </div>
           </div>
-          {!isOwner && <p className="mt-3 text-center text-xs text-muted">¿Dudas? <Link to="/perfil" className="underline">Habla con tu compañero LOCUS</Link> (botón flotante).</p>}
+          {!isOwner && <p className="mt-3 text-center text-xs text-muted">{t('lp.questions')} <Link to="/perfil" className="underline">{t('lp.talkToCompanion')}</Link> {t('lp.floatingButton')}</p>}
         </aside>
       </div>
 
       <ConfirmDialog
         open={confirming}
-        title={listing.bookingMode === 'instant' ? 'Confirma tu reserva' : 'Confirma tu solicitud'}
-        confirmLabel={listing.bookingMode === 'instant' ? 'Confirmar reserva' : 'Enviar solicitud'}
+        title={listing.bookingMode === 'instant' ? t('lp.confirmBooking') : t('lp.confirmRequest')}
+        confirmLabel={listing.bookingMode === 'instant' ? t('lp.confirmBookingBtn') : t('lp.sendRequest')}
         busy={busy}
         onConfirm={reserve}
         onCancel={() => setConfirming(false)}
@@ -289,10 +292,10 @@ export default function ListingPage() {
         {stay.quote && (
           <div className="flex flex-col gap-2">
             <p><strong>{listing.title}</strong></p>
-            <p>{formatDate(checkIn)} → {formatDate(checkOut)} · {nightsSelected} {nightsSelected === 1 ? 'noche' : 'noches'} · {guests} {guests === 1 ? 'huésped' : 'huéspedes'}</p>
-            <p>Total: <strong>{formatCOP(stay.quote.total)}</strong></p>
-            <p className="rounded-xl bg-surface-2 p-3"><strong>Pago simulado:</strong> LOCUS aún no cobra dinero real. Esta reserva sirve para probar el flujo.</p>
-            <p><strong>Cancelación {policy.label.toLowerCase()}:</strong> {policy.description}</p>
+            <p>{formatDate(checkIn)} → {formatDate(checkOut)} · {t('common.nights', { count: nightsSelected })} · {t('common.guests', { count: guests })}</p>
+            <p>{t('lp.totalLine')} <strong>{formatCOP(stay.quote.total)}</strong></p>
+            <p className="rounded-xl bg-surface-2 p-3"><strong>{t('lp.simulatedPayment')}</strong> {t('lp.simulatedBody')}</p>
+            <p><strong>{t('lp.cancellation', { policy: policy.label.toLowerCase() })}</strong> {policy.description}</p>
           </div>
         )}
       </ConfirmDialog>

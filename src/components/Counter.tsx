@@ -1,5 +1,6 @@
 import type { LucideIcon } from 'lucide-react'
 import { useId } from 'react'
+import { useI18n } from '../lib/i18n/I18nProvider'
 
 interface CounterProps {
   label: string
@@ -18,6 +19,7 @@ interface CounterProps {
 /** Contador con botones − / +. El valor se anuncia a lectores de pantalla al cambiar. */
 export function Counter({ label, icon: Icon, value, min, max, onChange, unit, hint, disabled }: CounterProps) {
   const id = useId()
+  const { t } = useI18n()
   const buttonClass =
     'grid size-11 place-items-center rounded-full border border-line text-xl font-semibold text-ink transition-colors hover:bg-surface-2 disabled:cursor-not-allowed disabled:opacity-40'
 
@@ -32,7 +34,7 @@ export function Counter({ label, icon: Icon, value, min, max, onChange, unit, hi
           type="button"
           onClick={() => onChange(value - 1)}
           disabled={disabled || value <= min}
-          aria-label={`Quitar ${unit}`}
+          aria-label={t('ct.remove', { unit })}
           className={buttonClass}
         >
           <span aria-hidden="true">−</span>
@@ -44,7 +46,7 @@ export function Counter({ label, icon: Icon, value, min, max, onChange, unit, hi
           type="button"
           onClick={() => onChange(value + 1)}
           disabled={disabled || value >= max}
-          aria-label={`Agregar ${unit}`}
+          aria-label={t('ct.add', { unit })}
           className={buttonClass}
         >
           <span aria-hidden="true">+</span>

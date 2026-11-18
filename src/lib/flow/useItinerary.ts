@@ -10,7 +10,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { TripDetails, TripPace } from '../../types/flow'
 import type { CategoryId, Excursion, Itinerary } from '../../types/itinerary'
 import { placesClient } from '../itinerary/fallbackClient'
-import { ItineraryError } from '../itinerary/errors'
+import { ItineraryError, describeItineraryError } from '../itinerary/errors'
 import { planItinerary } from '../itinerary/generateItinerary'
 import { PACES } from './pace'
 
@@ -110,7 +110,7 @@ export function useItinerary(
       (error: unknown) => {
         if (cancelled) return
         const message =
-          error instanceof ItineraryError ? error.message : 'Ocurrió un error inesperado al armar tu itinerario.'
+          describeItineraryError(error, 'ie.unexpectedPlan')
         const code = error instanceof ItineraryError ? error.code : undefined
         setResult({ key, state: { status: 'error', message, code } })
       },

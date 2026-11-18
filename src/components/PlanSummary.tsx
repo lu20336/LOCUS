@@ -22,10 +22,12 @@ import { downloadItineraryPdf } from '../lib/flow/itineraryPdf'
 import { extrasForDay, venueMapUrl } from '../lib/flow/tripBudget'
 import { addToPhoneCalendar, detectPlatform, phoneCalendarLabel } from '../lib/flow/phoneCalendar'
 import { formatCOP, formatDateRange } from '../lib/format'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import type { TripDetails } from '../types/flow'
 import type { Itinerary } from '../types/itinerary'
 
 export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: TripDetails }) {
+  const { t } = useI18n()
   const [shared, setShared] = useState<string | null>(null)
   const [makingPdf, setMakingPdf] = useState(false)
   const [platform] = useState(() => detectPlatform())
@@ -36,14 +38,14 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
     const text = itineraryToText(itinerary)
     try {
       if (navigator.share) {
-        await navigator.share({ title: `Mi viaje a ${city}`, text })
+        await navigator.share({ title: t('it.myTripTo', { place: city }), text })
         return
       }
       await navigator.clipboard.writeText(text)
-      setShared('Copiamos tu plan: pégalo en WhatsApp o en un correo.')
+      setShared(t('sum.copied'))
     } catch (error) {
       // Cerrar el menú de compartir no es un error.
-      if ((error as Error).name !== 'AbortError') setShared('No pudimos compartir el plan desde este navegador.')
+      if ((error as Error).name !== 'AbortError') setShared(t('sum.shareError'))
     }
   }
 
@@ -51,9 +53,9 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
     setMakingPdf(true)
     try {
       await downloadItineraryPdf(itinerary, trip)
-      setShared('Listo: descargamos el PDF de tu plan.')
+      setShared(t('sum.pdfDone'))
     } catch {
-      setShared('No pudimos crear el PDF. Inténtalo de nuevo.')
+      setShared(t('sum.pdfError'))
     } finally {
       setMakingPdf(false)
     }
@@ -67,10 +69,10 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
     })
     setShared(
       action === 'ios-invite'
-        ? 'Si Safari pregunta, toca "Permitir" y luego "Agregar todos".'
+        ? t('sum.iosInvite')
         : action === 'android-intent'
-          ? 'Revisa el evento y toca "Guardar" en tu calendario.'
-          : 'Abrimos Google Calendar: toca "Guardar".',
+          ? t('sum.androidIntent')
+          : t('sum.googleOpened'),
     )
   }
 
@@ -79,14 +81,12 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
 
   return (
     <section aria-labelledby="plan-summary-title" className="locus-print rounded-3xl border border-line bg-surface p-6 shadow-sm sm:p-8">
-      <p className="hidden text-sm font-semibold text-muted print:block">LOCUS · Tu plan de viaje por Colombia</p>
+      <p className="hidden text-sm font-semibold text-muted print:block">{t('sum.printHeader')}</p>
       <h2 id="plan-summary-title" className="text-2xl font-semibold text-navy">
-        Tu plan en {city}
+        {t('it.yourPlanIn', { place: city })}
       </h2>
       <p className="mt-1 text-sm text-muted">
-        {formatDateRange(trip.startDate, trip.endDate)} · {itinerary.days.length}{' '}
-        {itinerary.days.length === 1 ? 'día' : 'días'} · {places} lugares · {trip.travelers}{' '}
-        {trip.travelers === 1 ? 'viajero' : 'viajeros'} · presupuesto {formatCOP(trip.budgetCOP)}
+        {formatDateRange(trip.startDate, trip.endDate)} · {t('act.daysCount', { count: itinerary.days.length })} · {t('common.places', { count: places })} · {t('act.travelersCount', { count: trip.travelers })} · {t('sum.budget', { budget: formatCOP(trip.budgetCOP) })}
       </p>
 
       <div className="mt-4 flex flex-wrap gap-2 print:hidden">
@@ -96,16 +96,16 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
           ) : (
             <FileDown aria-hidden="true" className="size-4" />
           )}
-          {makingPdf ? 'Creando PDF…' : 'Descargar PDF'}
+          {makingPdf ? t('sum.makingPdf') : t('sum.downloadPdf')}
         </button>
         <button type="button" onClick={share} className={button}>
           <Share2 aria-hidden="true" className="size-4" />
-          Compartir
+          {t('sum.share')}
         </button>
         <a href={googleCalendarUrl(itinerary)} target="_blank" rel="noreferrer" className={button}>
           <CalendarPlus aria-hidden="true" className="size-4" />
           Google Calendar
-          <span className="sr-only">(se abre en otra pestaña)</span>
+          <span className="sr-only">{t('common.newTabHint')}</span>
         </a>
         {platform !== 'desktop' && (
           <button type="button" onClick={saveToPhone} className={button}>
@@ -136,7 +136,7 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
                 </p>
               )}
               {day.places.length === 0 && extras.length === 0 ? (
-                <p className="mt-2 text-sm text-muted">Día libre para recorrer a tu ritmo.</p>
+                <p className="mt-2 text-sm text-muted">{t('sum.freeDay')}</p>
               ) : (
                 <dl className="mt-2 flex flex-col gap-1.5 text-sm">
                   {stopsByPart(day).map(([part, names]) => (
@@ -148,12 +148,12 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
                 </dl>
               )}
               {extras.length > 0 && (
-                <ul aria-label="Planes extra" className="mt-2 flex flex-col gap-1.5">
+                <ul aria-label={t('sum.extras')} className="mt-2 flex flex-col gap-1.5">
                   {extras.map((extra) => (
                     <li key={extra.id} className="rounded-xl border border-teal/40 bg-teal/10 px-3 py-2 text-sm">
                       <p className="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wider text-teal-soft">
                         <Sparkles aria-hidden="true" className="size-3.5" />
-                        Plan extra · {extra.part ?? 'tarde'}
+                        {t('it.extraPlan', { part: t(`it.part.${extra.part ?? 'tarde'}`) })}
                       </p>
                       <p className="font-semibold text-ink">{extra.title}</p>
                       {extra.venue && (
@@ -166,7 +166,7 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
                             className="font-semibold text-teal-soft underline-offset-2 hover:underline"
                           >
                             {extra.venue.name}
-                            <span className="sr-only"> (ver en el mapa, se abre en otra pestaña)</span>
+                            <span className="sr-only"> ({t('it.viewOnMap')}, {t('common.newTabHint').replace(/[()]/g, '')})</span>
                           </a>
                         </p>
                       )}
@@ -179,8 +179,7 @@ export function PlanSummary({ itinerary, trip }: { itinerary: Itinerary; trip: T
         })}
       </ol>
       <p className="mt-4 hidden text-xs text-muted print:block">
-        Lugares de OpenStreetMap. Distancias en línea recta; revisa horarios y precios antes de ir. Planeado con LOCUS ·
-        locus-bb57e.firebaseapp.com
+        {t('sum.printFooter')}
       </p>
     </section>
   )

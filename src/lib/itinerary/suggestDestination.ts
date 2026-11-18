@@ -38,6 +38,7 @@
  * ============================================================================
  */
 import type { CategoryId, Destination, GeoPoint } from '../../types/itinerary'
+import { getT } from '../i18n/store'
 import type { ElevationLookup } from './elevationClient'
 import { ItineraryError } from './errors'
 import type { OverpassResponse } from './osm'
@@ -59,10 +60,31 @@ export interface ClimateDefinition {
 }
 
 export const CLIMATES: Record<ClimateId, ClimateDefinition> = {
-  calido: { id: 'calido', label: 'Cálido', temperature: 'más de 24 °C', minElevation: -Infinity, maxElevation: 1000 },
-  templado: { id: 'templado', label: 'Templado', temperature: '17 a 24 °C', minElevation: 1000, maxElevation: 2000 },
+  calido: {
+    id: 'calido',
+    get label() {
+      return getT()('climate.calido')
+    },
+    get temperature() {
+      return getT()('climate.calido.temp')
+    }, minElevation: -Infinity, maxElevation: 1000 },
+  templado: {
+    id: 'templado',
+    get label() {
+      return getT()('climate.templado')
+    },
+    get temperature() {
+      return getT()('climate.templado.temp')
+    }, minElevation: 1000, maxElevation: 2000 },
   // Por encima de ~3.300 m es páramo: no hay pueblos para turismo convencional.
-  frio: { id: 'frio', label: 'Frío', temperature: '12 a 17 °C', minElevation: 2000, maxElevation: 3300 },
+  frio: {
+    id: 'frio',
+    get label() {
+      return getT()('climate.frio')
+    },
+    get temperature() {
+      return getT()('climate.frio.temp')
+    }, minElevation: 2000, maxElevation: 3300 },
 }
 
 export const CLIMATE_IDS: ClimateId[] = ['frio', 'templado', 'calido']

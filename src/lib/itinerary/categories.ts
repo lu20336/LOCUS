@@ -1,3 +1,4 @@
+import { getT } from '../i18n/store'
 import type { CategoryId } from '../../types/itinerary'
 
 /**
@@ -30,7 +31,9 @@ export interface CategoryDefinition {
 export const CATEGORIES: Record<CategoryId, CategoryDefinition> = {
   playa: {
     id: 'playa',
-    label: 'Playa',
+    get label() {
+      return getT()('cat.playa')
+    },
     filters: [
       { key: 'natural', values: ['beach'] },
       { key: 'leisure', values: ['beach_resort'] },
@@ -38,7 +41,9 @@ export const CATEGORIES: Record<CategoryId, CategoryDefinition> = {
   },
   cultura: {
     id: 'cultura',
-    label: 'Cultura',
+    get label() {
+      return getT()('cat.cultura')
+    },
     filters: [
       { key: 'tourism', values: ['museum', 'gallery'] },
       { key: 'historic', values: ['monument', 'castle', 'fort', 'archaeological_site'] },
@@ -49,12 +54,16 @@ export const CATEGORIES: Record<CategoryId, CategoryDefinition> = {
   },
   gastronomia: {
     id: 'gastronomia',
-    label: 'Gastronomía',
+    get label() {
+      return getT()('cat.gastronomia')
+    },
     filters: [{ key: 'amenity', values: ['restaurant', 'cafe'] }],
   },
   aventura: {
     id: 'aventura',
-    label: 'Aventura',
+    get label() {
+      return getT()('cat.aventura')
+    },
     filters: [
       { key: 'tourism', values: ['viewpoint', 'theme_park'] },
       { key: 'leisure', values: ['nature_reserve', 'water_park'] },
@@ -64,12 +73,16 @@ export const CATEGORIES: Record<CategoryId, CategoryDefinition> = {
   },
   vidaNocturna: {
     id: 'vidaNocturna',
-    label: 'Vida nocturna',
+    get label() {
+      return getT()('cat.vidaNocturna')
+    },
     filters: [{ key: 'amenity', values: ['bar', 'nightclub', 'pub'] }],
   },
   compras: {
     id: 'compras',
-    label: 'Compras',
+    get label() {
+      return getT()('cat.compras')
+    },
     filters: [
       { key: 'shop', values: ['mall', 'department_store'] },
       { key: 'amenity', values: ['marketplace'] },

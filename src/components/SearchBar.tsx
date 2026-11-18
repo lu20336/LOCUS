@@ -1,3 +1,4 @@
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { useState, type KeyboardEvent, type Ref } from 'react'
 import type { DestinationOption } from '../lib/flow/destinationOptions'
 
@@ -43,6 +44,7 @@ export function SearchBar({
   error,
   disabled,
 }: SearchBarProps) {
+  const { t } = useI18n()
   // La lista se abre al escribir y se cierra al elegir, con Escape o al salir del campo.
   const [open, setOpen] = useState(false)
   const [activeIndex, setActiveIndex] = useState(-1)
@@ -99,7 +101,7 @@ export function SearchBar({
             <path d="m20 20-3.5-3.5" />
           </svg>
           <label htmlFor="destination" className="sr-only">
-            ¿A dónde quieres ir?
+            {t('search.whereTo')}
           </label>
           <input
             ref={inputRef}
@@ -107,7 +109,7 @@ export function SearchBar({
             type="text"
             name="destination"
             autoComplete="off"
-            placeholder="¿A dónde quieres ir?"
+            placeholder={t('search.whereTo')}
             value={value}
             onChange={(e) => {
               onChange(e.target.value)
@@ -138,7 +140,7 @@ export function SearchBar({
           aria-expanded={suggestActive}
           className="inline-flex shrink-0 items-center justify-center whitespace-nowrap rounded-2xl bg-coral px-6 py-3 text-base font-bold text-on-coral transition hover:brightness-105 active:brightness-95 sm:rounded-full"
         >
-          Sugiéreme un lugar
+          {t('search.suggestMe')}
         </button>
       </div>
 
@@ -146,7 +148,7 @@ export function SearchBar({
       <ul
         id={LISTBOX_ID}
         role="listbox"
-        aria-label="Destinos sugeridos"
+        aria-label={t('search.suggested')}
         hidden={!listVisible}
         className="absolute inset-x-0 top-full z-30 mt-2 max-h-80 overflow-y-auto rounded-2xl border border-line bg-surface p-1.5 text-left shadow-xl shadow-navy/10"
       >
@@ -180,7 +182,7 @@ export function SearchBar({
       {/* Anuncio para lectores de pantalla: cuántas sugerencias hay. */}
       <p className="sr-only" aria-live="polite">
         {listVisible
-          ? `${options.length} ${options.length === 1 ? 'sugerencia' : 'sugerencias'}. Usa las flechas para elegir.`
+          ? t('search.count', { count: options.length })
           : ''}
       </p>
 

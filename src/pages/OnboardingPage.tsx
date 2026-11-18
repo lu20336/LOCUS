@@ -1,5 +1,6 @@
 /** Bienvenida: encuesta conversacional de preferencias (primer ingreso o «Actualizar mis preferencias»). */
 import { useState } from 'react'
+import { useI18n } from '../lib/i18n/I18nProvider'
 import { useNavigate, useSearchParams } from 'react-router'
 import { SurveyChat } from '../components/agent/SurveyChat'
 import { Recommendations } from '../components/Recommendations'
@@ -11,6 +12,7 @@ import type { Answers } from '../lib/profile/survey'
 import { useAsync } from '../lib/useAsync'
 
 export default function OnboardingPage() {
+  const { t } = useI18n()
   const { user, profile, updateProfile } = useAuth()
   const [params] = useSearchParams()
   const editing = params.get('editar') === '1'
@@ -18,7 +20,7 @@ export default function OnboardingPage() {
   const existing = useAsync(() => loadProfile(db, user!.uid), [user?.uid])
   const [result, setResult] = useState<Answers | null>(null)
 
-  if (existing.loading || !profile) return <Container className="py-10"><Spinner label="Preparando tu bienvenida…" /></Container>
+  if (existing.loading || !profile) return <Container className="py-10"><Spinner label={t('ob.preparing')} /></Container>
   const firstName = (profile.displayName || user?.displayName || '').split(' ')[0]
 
   async function finish(answers: Answers, consent: boolean) {
@@ -31,14 +33,14 @@ export default function OnboardingPage() {
     return (
       <Container className="max-w-4xl py-8 sm:py-12">
         <Card>
-          <p className="text-sm font-semibold uppercase tracking-wider text-teal-soft">Tu perfil de viajero está listo</p>
-          <h1 id="page-title" tabIndex={-1} className="mt-1 text-3xl font-semibold text-navy focus:outline-none sm:text-4xl">Esto creemos que te va a gustar</h1>
-          <p className="mt-2 text-muted">Recomendaciones basadas en lo que me contaste. Puedes cambiar tus respuestas cuando quieras desde tu perfil.</p>
+          <p className="text-sm font-semibold uppercase tracking-wider text-teal-soft">{t('ob.readyEyebrow')}</p>
+          <h1 id="page-title" tabIndex={-1} className="mt-1 text-3xl font-semibold text-navy focus:outline-none sm:text-4xl">{t('ob.readyTitle')}</h1>
+          <p className="mt-2 text-muted">{t('ob.readyText')}</p>
           <div className="mt-6"><Recommendations answers={result} /></div>
           <div className="mt-8 flex flex-wrap gap-3">
-            <ButtonLink to="/">Planear un viaje</ButtonLink>
-            <ButtonLink to="/explorar" variant="secondary">Ver hospedajes</ButtonLink>
-            <ButtonLink to="/perfil" variant="ghost" className="border border-line">Ir a mi perfil</ButtonLink>
+            <ButtonLink to="/">{t('trips.planTrip')}</ButtonLink>
+            <ButtonLink to="/explorar" variant="secondary">{t('agent.guided.listings')}</ButtonLink>
+            <ButtonLink to="/perfil" variant="ghost" className="border border-line">{t('ob.goProfile')}</ButtonLink>
           </div>
         </Card>
       </Container>
@@ -48,9 +50,9 @@ export default function OnboardingPage() {
   return (
     <Container className="max-w-2xl py-8 sm:py-12">
       <h1 id="page-title" tabIndex={-1} className="mb-1 text-3xl font-semibold text-navy focus:outline-none sm:text-4xl">
-        {editing ? 'Actualiza tus preferencias' : `Bienvenido${firstName ? `, ${firstName}` : ''}`}
+        {editing ? t('ob.editTitle') : firstName ? t('ob.welcomeNamed', { name: firstName }) : t('ob.welcome')}
       </h1>
-      <p className="mb-6 text-muted">{editing ? 'Repasa tus respuestas: mantén las que siguen igual y cambia las demás.' : 'Cuéntame cómo te gusta viajar y te recomiendo mejor. Son pocas preguntas y puedes omitir las que quieras.'}</p>
+      <p className="mb-6 text-muted">{editing ? t('ob.editIntro') : t('ob.intro')}</p>
       <Card>
         <SurveyChat
           name={firstName}

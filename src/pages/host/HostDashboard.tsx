@@ -15,19 +15,20 @@ import { useAsync } from '../../lib/useAsync'
 import { STATUS_LABELS, bookingLink, bookingWhen } from '../TripsPage'
 
 export const LISTING_STATUS: Record<ListingStatus, { label: string; tone: 'teal' | 'warn' | 'danger' | 'neutral' }> = {
-  draft: { label: 'Borrador', tone: 'neutral' },
-  pending: { label: 'En revisión', tone: 'warn' },
-  published: { label: 'Publicado', tone: 'teal' },
-  rejected: { label: 'Rechazado', tone: 'danger' },
-  suspended: { label: 'Suspendido', tone: 'danger' },
+  draft: { label: 'ls.draft', tone: 'neutral' },
+  pending: { label: 'hd.inReview', tone: 'warn' },
+  published: { label: 'ls.published', tone: 'teal' },
+  rejected: { label: 'ls.rejected', tone: 'danger' },
+  suspended: { label: 'ls.suspended', tone: 'danger' },
 }
 
 function HostRegistration() {
+  const { t, meta } = useI18n()
   const { user, profile, becomeHost } = useAuth()
   const [name, setName] = useState(profile?.displayName || user?.displayName || '')
   const [bio, setBio] = useState('')
   const [municipality, setMunicipality] = useState('')
-  const [languages, setLanguages] = useState('Español')
+  const [languages, setLanguages] = useState(meta.nativeName)
   const [rnt, setRnt] = useState('')
   const [accepted, setAccepted] = useState(false)
   const [busy, setBusy] = useState(false)
@@ -35,14 +36,14 @@ function HostRegistration() {
 
   async function submit(e: FormEvent) {
     e.preventDefault()
-    if (name.trim().length < 2) return setError('Escribe tu nombre o el de tu negocio.')
-    if (!accepted) return setError('Confirma que entiendes tus responsabilidades como anfitrión.')
+    if (name.trim().length < 2) return setError(t('hd.errName'))
+    if (!accepted) return setError(t('hd.errAccept'))
     setBusy(true)
     setError(null)
     try {
       await becomeHost({ displayName: name.trim(), bio: bio.trim().slice(0, 1000), municipality: municipality.trim(), languages: languages.split(',').map((l) => l.trim()).filter(Boolean).slice(0, 6), rnt: rnt.trim().slice(0, 30) })
     } catch {
-      setError('No pudimos crear tu perfil de anfitrión. Inténtalo de nuevo.')
+      setError(t('hd.errCreate'))
     } finally {
       setBusy(false)
     }
@@ -50,22 +51,22 @@ function HostRegistration() {
 
   return (
     <Container className="max-w-2xl py-8 sm:py-10">
-      <PageHeader eyebrow="Modo anfitrión" title="Publica tu alojamiento o experiencia en LOCUS">
-        Crea tu perfil de anfitrión. Usas la misma cuenta con la que viajas: puedes ser huésped y anfitrión a la vez.
+      <PageHeader eyebrow={t('hb.eyebrow')} title={t('hd.regTitle')}>
+        {t('hd.regIntro')}
       </PageHeader>
       <Card>
         <form onSubmit={submit} className="flex flex-col gap-4" noValidate>
-          <FormField id="h-name" label="Nombre público (tuyo o de tu negocio)">{(c) => <input {...c} value={name} onChange={(e) => setName(e.target.value)} className={inputClassName} />}</FormField>
-          <FormField id="h-mun" label="Municipio donde operas">{(c) => <input {...c} value={municipality} onChange={(e) => setMunicipality(e.target.value)} className={inputClassName} />}</FormField>
-          <FormField id="h-bio" label="Cuéntales a los huéspedes quién eres" hint="Opcional. Máx. 1.000 caracteres.">{(c) => <textarea {...c} rows={3} maxLength={1000} value={bio} onChange={(e) => setBio(e.target.value)} className={inputClassName} />}</FormField>
-          <FormField id="h-lang" label="Idiomas (separados por coma)">{(c) => <input {...c} value={languages} onChange={(e) => setLanguages(e.target.value)} className={inputClassName} />}</FormField>
-          <FormField id="h-rnt" label="Número de Registro Nacional de Turismo (RNT)" hint="Opcional por ahora, pero la ley colombiana exige RNT activo a los prestadores de servicios turísticos. Sin él, LOCUS podría tener que retirar tus anuncios.">{(c) => <input {...c} value={rnt} onChange={(e) => setRnt(e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="h-name" label={t('hd.publicName')}>{(c) => <input {...c} value={name} onChange={(e) => setName(e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="h-mun" label={t('hd.municipality')}>{(c) => <input {...c} value={municipality} onChange={(e) => setMunicipality(e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="h-bio" label={t('hd.bio')} hint={t('hd.bioHint')}>{(c) => <textarea {...c} rows={3} maxLength={1000} value={bio} onChange={(e) => setBio(e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="h-lang" label={t('hd.languages')}>{(c) => <input {...c} value={languages} onChange={(e) => setLanguages(e.target.value)} className={inputClassName} />}</FormField>
+          <FormField id="h-rnt" label={t('hd.rnt')} hint={t('hd.rntHint')}>{(c) => <input {...c} value={rnt} onChange={(e) => setRnt(e.target.value)} className={inputClassName} />}</FormField>
           <label className="flex items-start gap-3 text-sm">
             <input type="checkbox" checked={accepted} onChange={(e) => setAccepted(e.target.checked)} className="mt-1 size-4 accent-[var(--primary)]" />
-            <span>Entiendo que soy responsable de la veracidad de mis publicaciones, de cumplir la normativa turística aplicable (incluido el RNT) y de atender las reservas que acepte.</span>
+            <span>{t('hd.accept')}</span>
           </label>
           {error && <Alert>{error}</Alert>}
-          <Button type="submit" disabled={busy}>{busy ? 'Creando…' : 'Crear mi perfil de anfitrión'}</Button>
+          <Button type="submit" disabled={busy}>{busy ? t('hd.creating') : t('hd.createProfile')}</Button>
         </form>
       </Card>
     </Container>
@@ -73,6 +74,7 @@ function HostRegistration() {
 }
 
 function ItemRow({ kind, item, onChanged }: { kind: CatalogKind; item: Listing | Experience; onChanged: () => void }) {
+  const { t } = useI18n()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const s = LISTING_STATUS[item.status]
@@ -86,7 +88,7 @@ function ItemRow({ kind, item, onChanged }: { kind: CatalogKind; item: Listing |
       await action()
       onChanged()
     } catch {
-      setError('No pudimos completar la acción. Inténtalo de nuevo.')
+      setError(t('hb.actionError'))
     } finally {
       setBusy(false)
     }
@@ -95,25 +97,25 @@ function ItemRow({ kind, item, onChanged }: { kind: CatalogKind; item: Listing |
   return (
     <li className="rounded-2xl border border-line bg-surface p-4">
       <div className="flex flex-wrap items-center gap-3">
-        {item.cover ? <img src={item.cover} alt="" className="size-16 rounded-xl object-cover" /> : <div className="grid size-16 place-items-center rounded-xl bg-surface-2 text-xs text-muted">Sin foto</div>}
+        {item.cover ? <img src={item.cover} alt="" className="size-16 rounded-xl object-cover" /> : <div className="grid size-16 place-items-center rounded-xl bg-surface-2 text-xs text-muted">{t('hd.noPhoto')}</div>}
         <div className="min-w-0 flex-1">
           <p className="truncate font-semibold text-ink">{item.title}</p>
-          <p className="text-sm text-muted">{item.municipality} · {kind === 'listings' ? `${formatCOP((item as Listing).pricePerNight)}/noche` : `${formatCOP((item as Experience).pricePerPerson)}/persona`}</p>
+          <p className="text-sm text-muted">{item.municipality} · {kind === 'listings' ? t('hd.perNightShort', { price: formatCOP((item as Listing).pricePerNight) }) : t('hd.perPersonShort', { price: formatCOP((item as Experience).pricePerPerson) })}</p>
         </div>
-        <Badge tone={s.tone}>{s.label}</Badge>
+        <Badge tone={s.tone}>{t(s.label)}</Badge>
       </div>
-      {item.status === 'rejected' && item.rejectionReason && <p className="mt-2 text-sm text-danger">Motivo del rechazo: {item.rejectionReason}</p>}
-      {item.status === 'suspended' && <p className="mt-2 text-sm text-danger">Esta publicación fue suspendida por moderación. Escríbenos si crees que es un error.</p>}
+      {item.status === 'rejected' && item.rejectionReason && <p className="mt-2 text-sm text-danger">{t('hd.rejectionReason', { reason: item.rejectionReason })}</p>}
+      {item.status === 'suspended' && <p className="mt-2 text-sm text-danger">{t('hd.suspended')}</p>}
       {error && <div className="mt-2"><Alert>{error}</Alert></div>}
       <div className="mt-3 flex flex-wrap gap-2">
-        {item.status !== 'suspended' && <ButtonLink to={base} variant="secondary" className="px-3 py-1.5 text-sm">Editar</ButtonLink>}
-        {kind === 'listings' && item.status !== 'suspended' && <ButtonLink to={`${base}/calendario`} variant="secondary" className="px-3 py-1.5 text-sm">Calendario</ButtonLink>}
-        <ButtonLink to={view} variant="ghost" className="border border-line px-3 py-1.5 text-sm">Ver ficha</ButtonLink>
-        {item.status === 'draft' && <Button variant="ghost" className="border border-line px-3 py-1.5 text-sm" disabled={busy} onClick={() => run(() => setItemStatus(db, kind, item.id, 'pending'))}>Enviar a revisión</Button>}
-        {item.status === 'pending' && <Button variant="ghost" className="border border-line px-3 py-1.5 text-sm" disabled={busy} onClick={() => run(() => setItemStatus(db, kind, item.id, 'draft'))}>Volver a borrador</Button>}
-        {item.status === 'published' && <Button variant="ghost" className="border border-line px-3 py-1.5 text-sm" disabled={busy} onClick={() => run(() => setItemStatus(db, kind, item.id, 'draft'))}>Despublicar</Button>}
+        {item.status !== 'suspended' && <ButtonLink to={base} variant="secondary" className="px-3 py-1.5 text-sm">{t('common.edit')}</ButtonLink>}
+        {kind === 'listings' && item.status !== 'suspended' && <ButtonLink to={`${base}/calendario`} variant="secondary" className="px-3 py-1.5 text-sm">{t('hd.calendar')}</ButtonLink>}
+        <ButtonLink to={view} variant="ghost" className="border border-line px-3 py-1.5 text-sm">{t('ex.viewListing')}</ButtonLink>
+        {item.status === 'draft' && <Button variant="ghost" className="border border-line px-3 py-1.5 text-sm" disabled={busy} onClick={() => run(() => setItemStatus(db, kind, item.id, 'pending'))}>{t('hd.sendReview')}</Button>}
+        {item.status === 'pending' && <Button variant="ghost" className="border border-line px-3 py-1.5 text-sm" disabled={busy} onClick={() => run(() => setItemStatus(db, kind, item.id, 'draft'))}>{t('hd.backToDraft')}</Button>}
+        {item.status === 'published' && <Button variant="ghost" className="border border-line px-3 py-1.5 text-sm" disabled={busy} onClick={() => run(() => setItemStatus(db, kind, item.id, 'draft'))}>{t('hd.unpublish')}</Button>}
         {(item.status === 'draft' || item.status === 'rejected') && (
-          <Button variant="danger" className="px-3 py-1.5 text-sm" disabled={busy} onClick={() => { if (window.confirm('¿Eliminar esta publicación? No se puede deshacer.')) void run(() => deleteItem(db, kind, item.id)) }}>Eliminar</Button>
+          <Button variant="danger" className="px-3 py-1.5 text-sm" disabled={busy} onClick={() => { if (window.confirm(t('hd.confirmDelete'))) void run(() => deleteItem(db, kind, item.id)) }}>{t('common.delete')}</Button>
         )}
       </div>
     </li>
@@ -121,6 +123,7 @@ function ItemRow({ kind, item, onChanged }: { kind: CatalogKind; item: Listing |
 }
 
 function Stats({ bookings }: { bookings: Booking[] }) {
+  const { t } = useI18n()
   const today = todayISO()
   const active = bookings.filter((b) => b.status === 'confirmed' || b.status === 'completed')
   const income = active.reduce((s, b) => s + (b.pricing as { total: number }).total, 0)
@@ -131,10 +134,10 @@ function Stats({ bookings }: { bookings: Booking[] }) {
   )
   return (
     <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-      {stat('Solicitudes por responder', String(pending))}
-      {stat('Reservas próximas', String(upcoming))}
-      {stat('Reservas totales', String(bookings.length))}
-      {stat('Ingresos (simulados)', formatCOP(income))}
+      {stat(t('hd.statPending'), String(pending))}
+      {stat(t('trips.upcomingBookings'), String(upcoming))}
+      {stat(t('hd.statTotal'), String(bookings.length))}
+      {stat(t('hd.statIncome'), formatCOP(income))}
     </dl>
   )
 }
@@ -194,16 +197,16 @@ export default function HostDashboard() {
   const recent = (bookings.data ?? []).slice(0, 8)
   return (
     <Container className="py-8 sm:py-10">
-      <PageHeader eyebrow="Modo anfitrión" title="Tu panel de anfitrión">Administra tus publicaciones y reservas. Los pagos están en modo de prueba.</PageHeader>
+      <PageHeader eyebrow={t('hb.eyebrow')} title={t('hd.title')}>{t('hd.intro')}</PageHeader>
 
       <p className="-mt-4 mb-6 text-sm text-muted">
         {t('host.modeNotice')} <Link to="/mis-viajes" className="font-semibold text-teal-soft underline">{t('host.switchToTraveler')}</Link>
       </p>
 
       <div className="mb-8 flex flex-wrap gap-3">
-        <ButtonLink to="/anfitrion/alojamientos/nuevo">+ Nuevo alojamiento</ButtonLink>
-        <ButtonLink to="/anfitrion/experiencias/nueva" variant="secondary">+ Nueva experiencia</ButtonLink>
-        <ButtonLink to="/anfitrion/reservas" variant="ghost" className="border border-line">Reservas y solicitudes</ButtonLink>
+        <ButtonLink to="/anfitrion/alojamientos/nuevo">{t('hd.newListing')}</ButtonLink>
+        <ButtonLink to="/anfitrion/experiencias/nueva" variant="secondary">{t('hd.newExperience')}</ButtonLink>
+        <ButtonLink to="/anfitrion/reservas" variant="ghost" className="border border-line">{t('hb.title')}</ButtonLink>
       </div>
 
       <HostStrip used={(listings.data?.length ?? 0) + (experiences.data?.length ?? 0)} pending={(bookings.data ?? []).filter((b) => b.status === 'pending').length} />
@@ -212,22 +215,22 @@ export default function HostDashboard() {
 
       <div className="grid gap-10 lg:grid-cols-2">
         <section aria-labelledby="my-listings">
-          <h2 id="my-listings" className="mb-3 text-2xl font-semibold text-navy">Alojamientos</h2>
-          {listings.loading ? <CardGridSkeleton count={1} label="Cargando tus alojamientos" /> : (listings.data ?? []).length === 0 ? <EmptyState title="Aún no publicas alojamientos">Crea el primero: casa, cabaña, finca, hostal…</EmptyState> : (
+          <h2 id="my-listings" className="mb-3 text-2xl font-semibold text-navy">{t('nav.stays')}</h2>
+          {listings.loading ? <CardGridSkeleton count={1} label={t('hd.loadingListings')} /> : (listings.data ?? []).length === 0 ? <EmptyState title={t('hd.noListings')}>{t('hd.noListingsText')}</EmptyState> : (
             <ul className="flex flex-col gap-3">{listings.data!.map((l) => <ItemRow key={l.id} kind="listings" item={l} onChanged={listings.reload} />)}</ul>
           )}
         </section>
         <section aria-labelledby="my-exps">
-          <h2 id="my-exps" className="mb-3 text-2xl font-semibold text-navy">Experiencias</h2>
-          {experiences.loading ? <CardGridSkeleton count={1} label="Cargando tus experiencias" /> : (experiences.data ?? []).length === 0 ? <EmptyState title="Aún no publicas experiencias">Tours, caminatas, clases de cocina, avistamiento de aves…</EmptyState> : (
+          <h2 id="my-exps" className="mb-3 text-2xl font-semibold text-navy">{t('nav.experiences')}</h2>
+          {experiences.loading ? <CardGridSkeleton count={1} label={t('hd.loadingExperiences')} /> : (experiences.data ?? []).length === 0 ? <EmptyState title={t('hd.noExperiences')}>{t('hd.noExperiencesText')}</EmptyState> : (
             <ul className="flex flex-col gap-3">{experiences.data!.map((x) => <ItemRow key={x.id} kind="experiences" item={x} onChanged={experiences.reload} />)}</ul>
           )}
         </section>
       </div>
 
       <section aria-labelledby="activity" className="mt-10">
-        <h2 id="activity" className="mb-3 text-2xl font-semibold text-navy">Actividad reciente</h2>
-        {recent.length === 0 ? <p className="text-muted">Todavía no hay reservas.</p> : (
+        <h2 id="activity" className="mb-3 text-2xl font-semibold text-navy">{t('hd.recent')}</h2>
+        {recent.length === 0 ? <p className="text-muted">{t('hd.noBookings')}</p> : (
           <ul className="flex flex-col gap-2">
             {recent.map((b) => (
               <li key={b.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-line bg-surface px-4 py-3 text-sm">

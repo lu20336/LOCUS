@@ -23,7 +23,7 @@ export function ActivityCards({ onChoose }: { onChoose: (category: CategoryId) =
         <PhotoCard
           image={ACTIVITY_IMAGES[category]}
           title={CATEGORIES[category].label}
-          srPrefix="Buscar destinos para"
+          srPrefix={t('pc.searchFor')}
           titleClassName="text-xl"
           className="h-60 w-44 sm:h-64 sm:w-52 lg:h-72 lg:w-56"
           badge={

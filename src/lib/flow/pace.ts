@@ -3,6 +3,7 @@
  * El motor lo recibe como `activitiesPerDay` (ver generateItinerary.ts).
  */
 import type { TripPace } from '../../types/flow'
+import { getT } from '../i18n/store'
 
 export interface PaceDefinition {
   id: TripPace
@@ -12,9 +13,36 @@ export interface PaceDefinition {
 }
 
 export const PACES: Record<TripPace, PaceDefinition> = {
-  tranquilo: { id: 'tranquilo', label: 'Tranquilo', placesPerDay: 3, description: 'Más tiempo en cada lugar' },
-  normal: { id: 'normal', label: 'Equilibrado', placesPerDay: 4, description: 'Lo recomendado para la mayoría' },
-  intenso: { id: 'intenso', label: 'Intenso', placesPerDay: 5, description: 'Ver lo máximo posible' },
+  tranquilo: {
+    id: 'tranquilo',
+    get label() {
+      return getT()('pace.tranquilo')
+    },
+    placesPerDay: 3,
+    get description() {
+      return getT()('pace.tranquilo.desc')
+    },
+  },
+  normal: {
+    id: 'normal',
+    get label() {
+      return getT()('pace.normal')
+    },
+    placesPerDay: 4,
+    get description() {
+      return getT()('pace.normal.desc')
+    },
+  },
+  intenso: {
+    id: 'intenso',
+    get label() {
+      return getT()('pace.intenso')
+    },
+    placesPerDay: 5,
+    get description() {
+      return getT()('pace.intenso.desc')
+    },
+  },
 }
 
 export const PACE_IDS = Object.keys(PACES) as TripPace[]

@@ -1,3 +1,5 @@
+import { getT } from '../i18n/store'
+import { localizedRecord } from '../i18n/localized'
 /**
  * Tipos del dominio de LOCUS (marketplace + perfil del viajero).
  * Los documentos de Firestore se leen y escriben con estas formas; las
@@ -9,46 +11,23 @@ export type ListingType = 'casa' | 'apartamento' | 'habitacion' | 'hotel' | 'hos
 export type CancellationPolicy = 'flexible' | 'moderada' | 'estricta'
 export type BookingMode = 'instant' | 'request'
 
-export const LISTING_TYPES: Record<ListingType, string> = {
-  casa: 'Casa',
-  apartamento: 'Apartamento',
-  habitacion: 'Habitación',
-  hotel: 'Hotel',
-  hostal: 'Hostal',
-  cabana: 'Cabaña',
-  finca: 'Finca',
-  glamping: 'Glamping',
-}
+export const LISTING_TYPES: Record<ListingType, string> = localizedRecord('lt', ['casa', 'apartamento', 'habitacion', 'hotel', 'hostal', 'cabana', 'finca', 'glamping'])
 
-export const AMENITIES: Record<string, string> = {
-  wifi: 'Wi-Fi',
-  cocina: 'Cocina',
-  piscina: 'Piscina',
-  estacionamiento: 'Estacionamiento',
-  aire: 'Aire acondicionado',
-  mascotas: 'Admite mascotas',
-  lavadora: 'Lavadora',
-  tv: 'Televisión',
-  desayuno: 'Desayuno incluido',
-  terraza: 'Terraza o balcón',
-  accesible: 'Accesible (movilidad reducida)',
-  vistas: 'Vistas panorámicas',
-}
+export const AMENITIES: Record<string, string> = localizedRecord('am', ['wifi', 'cocina', 'piscina', 'estacionamiento', 'aire', 'mascotas', 'lavadora', 'tv', 'desayuno', 'terraza', 'accesible', 'vistas'])
 
-export const CANCELLATION_POLICIES: Record<CancellationPolicy, { label: string; description: string }> = {
-  flexible: {
-    label: 'Flexible',
-    description: 'Reembolso total si cancelas hasta 1 día antes de la llegada. Después, se cobra la primera noche.',
-  },
-  moderada: {
-    label: 'Moderada',
-    description: 'Reembolso total si cancelas hasta 5 días antes de la llegada. Después, se reembolsa el 50 %.',
-  },
-  estricta: {
-    label: 'Estricta',
-    description: 'Reembolso del 50 % si cancelas hasta 14 días antes de la llegada. Después, no hay reembolso.',
-  },
-}
+export const CANCELLATION_POLICIES = Object.fromEntries(
+  (['flexible', 'moderada', 'estricta'] as const).map((id) => [
+    id,
+    {
+      get label() {
+        return getT()(`cp.${id}`)
+      },
+      get description() {
+        return getT()(`cp.${id}.desc`)
+      },
+    },
+  ]),
+) as Record<CancellationPolicy, { label: string; description: string }>
 
 export interface Listing {
   id: string
@@ -114,17 +93,7 @@ export type ExperienceCategory =
   | 'rural'
   | 'bienestar'
 
-export const EXPERIENCE_CATEGORIES: Record<ExperienceCategory, string> = {
-  caminata: 'Caminata ecológica',
-  tour: 'Tour turístico',
-  gastronomia: 'Experiencia gastronómica',
-  acuatica: 'Actividad acuática',
-  cultural: 'Recorrido cultural',
-  aves: 'Avistamiento de aves',
-  aventura: 'Aventura',
-  rural: 'Experiencia rural',
-  bienestar: 'Bienestar',
-}
+export const EXPERIENCE_CATEGORIES: Record<ExperienceCategory, string> = localizedRecord('ec', ['caminata', 'tour', 'gastronomia', 'acuatica', 'cultural', 'aves', 'aventura', 'rural', 'bienestar'])
 
 export interface Experience {
   id: string

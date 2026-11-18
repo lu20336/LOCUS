@@ -15,6 +15,7 @@ import {
   UtensilsCrossed,
   type LucideIcon,
 } from 'lucide-react'
+import { getT } from '../lib/i18n/store'
 import { CATEGORIES, CATEGORY_IDS } from '../lib/itinerary/categories'
 import { CLIMATES, CLIMATE_IDS, type ClimateId } from '../lib/itinerary/suggestDestination'
 import type { CategoryId } from '../types/itinerary'
@@ -45,14 +46,27 @@ export const ACTIVITY_IMAGES: Record<CategoryId, string> = {
  * Qué incluye cada actividad. Corresponde a las etiquetas de OpenStreetMap que
  * busca el motor (lib/itinerary/categories.ts): si cambian allá, cambiar aquí.
  */
-export const CATEGORY_DESCRIPTIONS: Record<CategoryId, string> = {
-  playa: 'Playas y clubes de playa',
-  cultura: 'Museos, monumentos, fuertes y teatros',
-  gastronomia: 'Restaurantes y cafés',
-  aventura: 'Miradores, cascadas y reservas naturales',
-  vidaNocturna: 'Bares, pubs y discotecas',
-  compras: 'Mercados y centros comerciales',
-}
+/** Descripción de cada actividad (se lee al renderizar para seguir el idioma activo). */
+export const CATEGORY_DESCRIPTIONS = {
+  get playa() {
+    return getT()('catdesc.playa')
+  },
+  get cultura() {
+    return getT()('catdesc.cultura')
+  },
+  get gastronomia() {
+    return getT()('catdesc.gastronomia')
+  },
+  get aventura() {
+    return getT()('catdesc.aventura')
+  },
+  get vidaNocturna() {
+    return getT()('catdesc.vidaNocturna')
+  },
+  get compras() {
+    return getT()('catdesc.compras')
+  },
+} as Record<CategoryId, string>
 
 export const CLIMATE_ICONS: Record<ClimateId, Icon> = {
   frio: ThermometerSnowflake,
@@ -62,13 +76,19 @@ export const CLIMATE_ICONS: Record<ClimateId, Icon> = {
 
 export const CATEGORY_OPTIONS: ChipOption<CategoryId>[] = CATEGORY_IDS.map((id) => ({
   value: id,
-  label: CATEGORIES[id].label,
+  get label() {
+    return CATEGORIES[id].label
+  },
   icon: CATEGORY_ICONS[id],
 }))
 
 export const CLIMATE_OPTIONS: ChipOption<ClimateId>[] = CLIMATE_IDS.map((id) => ({
   value: id,
-  label: CLIMATES[id].label,
+  get label() {
+    return CLIMATES[id].label
+  },
   icon: CLIMATE_ICONS[id],
-  description: CLIMATES[id].temperature,
+  get description() {
+    return CLIMATES[id].temperature
+  },
 }))
