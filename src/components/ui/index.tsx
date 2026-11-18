@@ -3,7 +3,8 @@
  * redondeadas con borde `line`, titulares serif en navy, teal como color de
  * marca y coral SOLO para la llamada a la acción principal de cada pantalla.
  */
-import type { ButtonHTMLAttributes, ReactNode } from 'react'
+import type { LucideIcon } from 'lucide-react'
+import { createContext, useContext, type ButtonHTMLAttributes, type ReactNode } from 'react'
 import { Link, type LinkProps } from 'react-router'
 
 type Variant = 'primary' | 'secondary' | 'ghost' | 'danger'
@@ -31,7 +32,12 @@ export function ButtonLink({ variant = 'primary', className = '', ...props }: Li
   return <Link {...props} className={buttonClass(variant, className)} />
 }
 
+/** Dentro del área de cuenta (con barra lateral) los contenedores no se centran ni agregan margen lateral. */
+export const EmbeddedContext = createContext(false)
+
 export function Container({ children, className = '' }: { children: ReactNode; className?: string }) {
+  const embedded = useContext(EmbeddedContext)
+  if (embedded) return <div className={`w-full ${className.replace(/max-w-\S+/g, '')}`}>{children}</div>
   return <div className={`mx-auto w-full max-w-6xl px-4 ${className}`}>{children}</div>
 }
 
@@ -88,12 +94,41 @@ export function Alert({ children, tone = 'error' }: { children: ReactNode; tone?
   )
 }
 
-export function EmptyState({ title, children, action }: { title: string; children?: ReactNode; action?: ReactNode }) {
+export function EmptyState({ title, children, action, icon: Icon }: { title: string; children?: ReactNode; action?: ReactNode; icon?: LucideIcon }) {
   return (
-    <div className="rounded-3xl border border-dashed border-line bg-surface p-8 text-center">
+    <div className="anim-rise rounded-3xl border border-dashed border-line bg-surface p-8 text-center">
+      {Icon && (
+        <span aria-hidden="true" className="mx-auto mb-3 grid size-14 place-items-center rounded-2xl bg-teal/15 text-teal-soft">
+          <Icon className="size-7" />
+        </span>
+      )}
       <h2 className="text-xl font-semibold text-navy">{title}</h2>
       {children && <div className="mx-auto mt-2 max-w-xl text-muted">{children}</div>}
       {action && <div className="mt-5 flex justify-center">{action}</div>}
+    </div>
+  )
+}
+
+/** Marcador de carga con brillo (mejor que un giro cuando se conoce la forma del contenido). */
+export function Skeleton({ className = '' }: { className?: string }) {
+  return <div aria-hidden="true" className={`skeleton ${className}`} />
+}
+
+/** Rejilla de tarjetas "fantasma" mientras cargan los datos. */
+export function CardGridSkeleton({ count = 3, label = 'Cargando…' }: { count?: number; label?: string }) {
+  return (
+    <div role="status" aria-label={label} className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+      {Array.from({ length: count }, (_, i) => (
+        <div key={i} className="overflow-hidden rounded-3xl border border-line bg-surface">
+          <Skeleton className="aspect-[4/3] rounded-none" />
+          <div className="space-y-2 p-4">
+            <Skeleton className="h-3 w-1/3" />
+            <Skeleton className="h-5 w-4/5" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+        </div>
+      ))}
+      <span className="sr-only">{label}</span>
     </div>
   )
 }

@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react'
 import { Link, Navigate } from 'react-router'
 import { CompleteTrip } from '../components/CompleteTrip'
 import { PlanSummary } from '../components/PlanSummary'
+import { useToast } from '../components/Toast'
 import { StaysSection } from '../components/StaysSection'
 import { Stepper } from '../components/Stepper'
 import { ActivitiesStep } from './ActivitiesStep'
@@ -23,6 +24,7 @@ import { saveNewItinerary, toPayload } from '../lib/itinerary/itineraryStore'
 function ConfirmStep() {
   const { trip, itinerary, goToStep } = useTripFlow()
   const { user } = useAuth()
+  const toast = useToast()
   const [saving, setSaving] = useState(false)
   const [savedId, setSavedId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
@@ -33,7 +35,9 @@ function ConfirmStep() {
     setSaving(true)
     setError(null)
     try {
-      setSavedId(await saveNewItinerary(db, user.uid, toPayload(itinerary, trip.travelers, 'planner')))
+      const id = await saveNewItinerary(db, user.uid, toPayload(itinerary, trip.travelers, 'planner'))
+      setSavedId(id)
+      toast('Guardado en Mis viajes', { action: { label: 'Ver viaje', to: `/mis-viajes/${id}` } })
     } catch {
       setError('No pudimos guardar tu itinerario. Revisa tu conexión e inténtalo de nuevo.')
     } finally {
@@ -58,7 +62,7 @@ function ConfirmStep() {
         <div className="mt-6 flex flex-col gap-3">
           {savedId ? (
             <Alert tone="success">
-              ¡Listo! Guardamos tu itinerario. Puedes <Link className="font-semibold underline" to={`/itinerarios/${savedId}`}>verlo y editarlo</Link> cuando quieras.
+              ¡Listo! Guardamos tu itinerario. Puedes <Link className="font-semibold underline" to={`/mis-viajes/${savedId}`}>verlo y editarlo</Link> cuando quieras, o encontrarlo siempre en <Link className="font-semibold underline" to="/mis-viajes">Mis viajes</Link>.
             </Alert>
           ) : user ? (
             <Button onClick={save} disabled={saving} className="self-start">{saving ? 'Guardando…' : 'Guardar en mi cuenta'}</Button>

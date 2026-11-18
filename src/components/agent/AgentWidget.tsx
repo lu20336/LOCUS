@@ -7,6 +7,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react'
 import { useLocation } from 'react-router'
 import { AgentSession, AgentUnavailableError, describeAiError, toHistory } from '../../lib/agent/agent'
+import { AGENT_OPEN_EVENT } from '../../lib/agent/openAgent'
 import { UsageLimitError, appendMessage, countMessage, createChat, deleteChat, listChats, loadMessages, type ChatSummary } from '../../lib/agent/chatStore'
 import { runTool } from '../../lib/agent/tools'
 import type { ChatMessage, ToolContext } from '../../lib/agent/types'
@@ -81,6 +82,17 @@ export default function AgentWidget() {
     setMessages([])
     setChats([])
   }, [uid, aiConsent])
+
+  // Otras pantallas pueden abrir el compañero (opcionalmente con una pregunta lista).
+  useEffect(() => {
+    const onOpen = (e: Event) => {
+      setOpen(true)
+      const prompt = (e as CustomEvent<{ prompt?: string }>).detail?.prompt
+      if (prompt) setInput(prompt)
+    }
+    window.addEventListener(AGENT_OPEN_EVENT, onOpen)
+    return () => window.removeEventListener(AGENT_OPEN_EVENT, onOpen)
+  }, [])
 
   useEffect(() => {
     if (!open) return
@@ -195,7 +207,7 @@ export default function AgentWidget() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-controls="agent-panel"
-        className="fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-full bg-navy px-4 py-3 font-semibold text-surface shadow-xl transition hover:scale-105 focus-visible:outline-offset-4 sm:bottom-6 sm:right-6"
+        className="fixed bottom-20 right-4 z-40 flex items-center gap-2 rounded-full bg-navy px-4 py-3 font-semibold text-surface shadow-xl transition hover:scale-105 focus-visible:outline-offset-4 lg:bottom-6 lg:right-6"
       >
         <span aria-hidden="true" className="grid size-7 place-items-center rounded-full bg-teal font-serif text-base font-bold text-on-coral">L</span>
         <span className={open ? 'hidden' : 'hidden sm:inline'}>Tu compañero LOCUS</span>
@@ -207,7 +219,7 @@ export default function AgentWidget() {
           id="agent-panel"
           role="dialog"
           aria-label="Tu compañero LOCUS: asistente de viajes"
-          className="fixed inset-x-0 bottom-0 z-40 flex h-[85dvh] flex-col overflow-hidden rounded-t-3xl border border-line bg-surface shadow-2xl sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[36rem] sm:w-[26rem] sm:rounded-3xl"
+          className="anim-sheet fixed inset-x-0 bottom-0 z-40 flex h-[85dvh] flex-col overflow-hidden rounded-t-3xl border border-line bg-surface shadow-2xl sm:inset-x-auto sm:bottom-24 sm:right-6 sm:h-[36rem] sm:w-[26rem] sm:rounded-3xl"
         >
           <header className="flex items-center justify-between gap-2 border-b border-line bg-surface-2 px-4 py-3">
             <div>

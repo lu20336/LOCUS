@@ -1,11 +1,15 @@
 import { lazy, Suspense, useEffect, type ReactNode } from 'react'
-import { BrowserRouter, Link, Navigate, Route, Routes, useLocation, useSearchParams } from 'react-router'
+import { BrowserRouter, Link, Navigate, Outlet, Route, Routes, useLocation, useParams, useSearchParams } from 'react-router'
+import { AccountShell } from './components/account/AccountShell'
 import { Header } from './components/Header'
+import { BottomNav } from './components/nav/BottomNav'
+import { ToastProvider } from './components/Toast'
 import { Spinner } from './components/ui'
 import { AuthProvider } from './lib/auth/AuthProvider'
 import { useAuth } from './lib/auth/authContext'
 import { TripFlowProvider } from './lib/flow/TripFlowProvider'
 import { usesGeoapify } from './lib/itinerary/browserClient'
+import { PlanProvider } from './lib/plans/planContext'
 import { FavoritesProvider } from './lib/profile/favorites'
 import { HomePage } from './pages/HomePage'
 import { PlannerPage } from './pages/PlannerPage'
@@ -21,7 +25,9 @@ const ExperiencePage = lazy(() => import('./pages/ExperiencePage'))
 const DestinationPage = lazy(() => import('./pages/DestinationPage'))
 const ComparePage = lazy(() => import('./pages/ComparePage'))
 const LegalPage = lazy(() => import('./pages/LegalPage'))
-const ItinerariesPage = lazy(() => import('./pages/ItinerariesPage'))
+const MyTripsPage = lazy(() => import('./pages/MyTripsPage'))
+const TripDetailPage = lazy(() => import('./pages/TripDetailPage'))
+const PlansPage = lazy(() => import('./pages/PlansPage'))
 const FavoritesPage = lazy(() => import('./pages/FavoritesPage'))
 const TripsPage = lazy(() => import('./pages/TripsPage'))
 const ProfilePage = lazy(() => import('./pages/ProfilePage'))
@@ -39,11 +45,31 @@ const TITLES: Record<string, string> = {
   '/comparar': 'Compara hospedaje, vuelos y experiencias',
   '/explorar': 'Explora hospedajes en Colombia',
   '/experiencias': 'Experiencias en Colombia',
-  '/itinerarios': 'Itinerarios',
+  '/mis-viajes': 'Mis viajes',
+  '/favoritos': 'Favoritos',
+  '/reservas': 'Mis reservas',
+  '/perfil': 'Perfil y preferencias',
+  '/planes': 'Planes y suscripción',
   '/como-ganamos-dinero': 'Cómo ganamos dinero',
   '/privacidad': 'Privacidad',
   '/terminos': 'Términos de uso',
   '/anfitrion': 'Publica tu alojamiento',
+}
+
+/** /itinerarios/:id (enlace anterior) → /mis-viajes/:id */
+function LegacyTripRedirect() {
+  const { id } = useParams()
+  return <Navigate to={`/mis-viajes/${id ?? ''}`} replace />
+}
+
+/** Funde la pantalla nueva al cambiar de ruta (los pasos del planificador comparten ruta y no se reinician). */
+function PageTransition() {
+  const { pathname } = useLocation()
+  return (
+    <div key={pathname} className="anim-page">
+      <Outlet />
+    </div>
+  )
 }
 
 function RouteEffects() {
@@ -117,6 +143,7 @@ function Footer() {
       </p>
       <nav aria-label="Información" className="mt-3 flex flex-wrap gap-x-4 gap-y-1 font-semibold">
         <Link to="/comparar" className="underline-offset-2 hover:text-ink hover:underline">Comparador</Link>
+        <Link to="/planes" className="underline-offset-2 hover:text-ink hover:underline">Planes</Link>
         <Link to="/como-ganamos-dinero" className="underline-offset-2 hover:text-ink hover:underline">Cómo ganamos dinero</Link>
         <Link to="/privacidad" className="underline-offset-2 hover:text-ink hover:underline">Privacidad</Link>
         <Link to="/terminos" className="underline-offset-2 hover:text-ink hover:underline">Términos</Link>
@@ -134,6 +161,8 @@ export default function App() {
     <BrowserRouter>
       <AuthProvider>
         <FavoritesProvider>
+        <PlanProvider>
+        <ToastProvider>
         <TripFlowProvider>
           <a
             href="#contenido"
@@ -147,6 +176,7 @@ export default function App() {
           <main id="contenido">
             <Suspense fallback={<div className="mx-auto max-w-6xl px-4"><Spinner /></div>}>
               <Routes>
+               <Route element={<PageTransition />}>
                 <Route path="/" element={<HomePage />} />
                 <Route path="/planear" element={<PlannerPage />} />
                 <Route path="/ingresar" element={<LoginPage />} />
@@ -161,11 +191,18 @@ export default function App() {
                 <Route path="/como-ganamos-dinero" element={<LegalPage />} />
                 <Route path="/privacidad" element={<LegalPage />} />
                 <Route path="/terminos" element={<LegalPage />} />
-                <Route path="/itinerarios" element={<ItinerariesPage />} />
-                <Route path="/itinerarios/:id" element={<RequireAuth><ItinerariesPage /></RequireAuth>} />
-                <Route path="/favoritos" element={<RequireAuth><FavoritesPage /></RequireAuth>} />
-                <Route path="/reservas" element={<RequireAuth><TripsPage /></RequireAuth>} />
-                <Route path="/perfil" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+                {/* Espacio del viajero: barra lateral en escritorio, navegación inferior en el celular. */}
+                <Route element={<RequireAuth><AccountShell /></RequireAuth>}>
+                  <Route path="/mis-viajes" element={<MyTripsPage />} />
+                  <Route path="/favoritos" element={<FavoritesPage />} />
+                  <Route path="/reservas" element={<TripsPage />} />
+                  <Route path="/perfil" element={<ProfilePage />} />
+                </Route>
+                <Route path="/mis-viajes/:id" element={<RequireAuth><TripDetailPage /></RequireAuth>} />
+                <Route path="/planes" element={<PlansPage />} />
+                {/* Rutas anteriores: se conservan para enlaces guardados. */}
+                <Route path="/itinerarios" element={<Navigate to="/mis-viajes" replace />} />
+                <Route path="/itinerarios/:id" element={<LegacyTripRedirect />} />
                 <Route path="/anfitrion" element={<RequireAuth><HostDashboard /></RequireAuth>} />
                 <Route path="/anfitrion/alojamientos/nuevo" element={<RequireAuth><ListingForm /></RequireAuth>} />
                 <Route path="/anfitrion/alojamientos/:id" element={<RequireAuth><ListingForm /></RequireAuth>} />
@@ -175,14 +212,18 @@ export default function App() {
                 <Route path="/anfitrion/reservas" element={<RequireAuth><HostBookings /></RequireAuth>} />
                 <Route path="/admin" element={<RequireAuth><AdminPage /></RequireAuth>} />
                 <Route path="*" element={<NotFoundPage />} />
+               </Route>
               </Routes>
             </Suspense>
           </main>
           <Footer />
+          <BottomNav />
           <Suspense fallback={null}>
             <AgentWidget />
           </Suspense>
         </TripFlowProvider>
+        </ToastProvider>
+        </PlanProvider>
         </FavoritesProvider>
       </AuthProvider>
     </BrowserRouter>

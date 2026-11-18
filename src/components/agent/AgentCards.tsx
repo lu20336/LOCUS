@@ -3,12 +3,15 @@ import { Link } from 'react-router'
 import { useAuth } from '../../lib/auth/authContext'
 import { db } from '../../lib/firebase/client'
 import { saveNewItinerary, toPayload } from '../../lib/itinerary/itineraryStore'
+import { FavoriteButton } from '../FavoriteButton'
+import { useToast } from '../Toast'
 import type { AgentCard } from '../../lib/agent/types'
 
 const cardBox = 'rounded-2xl border border-line bg-surface p-3 text-sm text-ink shadow-sm'
 
 function ItineraryCardView({ card }: { card: Extract<AgentCard, { kind: 'itinerary' }> }) {
   const { user } = useAuth()
+  const toast = useToast()
   const [state, setState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle')
   const [savedId, setSavedId] = useState<string | null>(null)
 
@@ -16,8 +19,10 @@ function ItineraryCardView({ card }: { card: Extract<AgentCard, { kind: 'itinera
     if (!user) return
     setState('saving')
     try {
-      setSavedId(await saveNewItinerary(db, user.uid, toPayload(card.itinerary, 1, 'agent')))
+      const id = await saveNewItinerary(db, user.uid, toPayload(card.itinerary, 1, 'agent'))
+      setSavedId(id)
       setState('saved')
+      toast('Guardado en Mis viajes', { action: { label: 'Ver viaje', to: `/mis-viajes/${id}` } })
     } catch {
       setState('error')
     }
@@ -34,9 +39,12 @@ function ItineraryCardView({ card }: { card: Extract<AgentCard, { kind: 'itinera
       </ol>
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {state === 'saved' ? (
-          <Link to={`/itinerarios/${savedId}`} className="font-semibold text-teal-soft underline">Guardado: ver y editar</Link>
+          <>
+            <Link to={`/mis-viajes/${savedId}`} className="font-semibold text-teal-soft underline">Guardado en Mis viajes: ver y editar</Link>
+            <Link to="/mis-viajes" className="text-muted underline">Todos mis viajes</Link>
+          </>
         ) : user ? (
-          <button type="button" onClick={save} disabled={state === 'saving'} className="rounded-xl bg-coral px-3 py-1.5 font-bold text-on-coral disabled:opacity-60">{state === 'saving' ? 'Guardando…' : 'Guardar itinerario'}</button>
+          <button type="button" onClick={save} disabled={state === 'saving'} className="rounded-xl bg-coral px-3 py-1.5 font-bold text-on-coral disabled:opacity-60">{state === 'saving' ? 'Guardando…' : 'Guardar en Mis viajes'}</button>
         ) : (
           <Link to="/ingresar" className="font-semibold underline">Ingresa para guardarlo</Link>
         )}
@@ -51,7 +59,8 @@ export function AgentCardView({ card }: { card: AgentCard }) {
     case 'listing':
     case 'experience':
       return (
-        <Link to={card.href} className={`${cardBox} flex gap-3 transition-colors hover:bg-surface-2`}>
+        <Link to={card.href} className={`${cardBox} relative flex gap-3 pr-12 transition-colors hover:bg-surface-2`}>
+          <FavoriteButton className="absolute right-2 top-2 border border-line" item={{ kind: card.kind, refId: card.id, title: card.title, subtitle: card.subtitle }} />
           {card.cover ? <img src={card.cover} alt="" className="size-16 shrink-0 rounded-xl object-cover" /> : <div className="grid size-16 shrink-0 place-items-center rounded-xl bg-surface-2 text-xs text-muted">Sin foto</div>}
           <span className="min-w-0">
             <span className="block text-xs font-semibold uppercase tracking-wider text-teal-soft">{card.kind === 'listing' ? 'Alojamiento LOCUS' : 'Experiencia LOCUS'}</span>
@@ -63,7 +72,8 @@ export function AgentCardView({ card }: { card: AgentCard }) {
       )
     case 'destination':
       return (
-        <Link to={card.href} className={`${cardBox} flex gap-3 transition-colors hover:bg-surface-2`}>
+        <Link to={card.href} className={`${cardBox} relative flex gap-3 pr-12 transition-colors hover:bg-surface-2`}>
+          <FavoriteButton className="absolute right-2 top-2 border border-line" item={{ kind: 'destination', refId: card.id, title: card.title, subtitle: card.subtitle }} />
           <img src={card.image} alt="" className="size-16 shrink-0 rounded-xl object-cover" />
           <span className="min-w-0"><span className="block font-serif text-lg font-semibold text-navy">{card.title}</span><span className="block text-muted">{card.subtitle}</span></span>
         </Link>

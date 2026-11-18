@@ -1,57 +1,84 @@
-import { useEffect, useRef, useState } from 'react'
+import { ChevronDown, LogOut, ShieldCheck, Store } from 'lucide-react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link, NavLink, useLocation, useNavigate } from 'react-router'
 import { useAuth } from '../lib/auth/authContext'
+import { usePlans } from '../lib/plans/planContext'
+import { useFavorites } from '../lib/profile/favorites'
+import { ACCOUNT_ITEMS, EXPLORE_ITEMS, SPACE_ITEMS } from './nav/navItems'
+import { useDismiss } from './nav/useDismiss'
 import { ThemeToggle } from './ThemeToggle'
 
-const NAV = [
-  { to: '/comparar', label: 'Comparar' },
-  { to: '/explorar', label: 'Hospedajes' },
-  { to: '/experiencias', label: 'Experiencias' },
-  { to: '/itinerarios', label: 'Itinerarios' },
-]
-
 const linkClass = ({ isActive }: { isActive: boolean }) =>
-  `rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:bg-surface-2 ${isActive ? 'text-teal-soft' : 'text-ink'}`
+  `relative rounded-lg px-3 py-2 text-sm font-semibold transition-colors hover:bg-surface-2 ${isActive ? 'text-teal-soft after:absolute after:inset-x-3 after:-bottom-px after:h-0.5 after:rounded-full after:bg-teal' : 'text-ink'}`
 
-function initials(name: string | null | undefined, email: string | null | undefined) {
+export function initials(name: string | null | undefined, email: string | null | undefined) {
   const source = (name || email || '?').trim()
   return source.slice(0, 1).toUpperCase()
 }
 
-function UserMenu() {
-  const { user, profile, isAdmin, signOutUser } = useAuth()
-  const navigate = useNavigate()
-  const location = useLocation()
+/** "Explorar ▾": descubrir hospedajes, experiencias, comparador y planificador. */
+function ExploreMenu() {
   const [open, setOpen] = useState(false)
   const ref = useRef<HTMLDivElement | null>(null)
+  const { pathname } = useLocation()
+  const close = useCallback(() => setOpen(false), [])
+  useEffect(close, [pathname, close])
+  useDismiss(ref, open, close)
 
-  useEffect(() => setOpen(false), [location.pathname])
-  useEffect(() => {
-    if (!open) return
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false)
-    }
-    const onKey = (e: KeyboardEvent) => e.key === 'Escape' && setOpen(false)
-    document.addEventListener('mousedown', onClick)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onClick)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
+  return (
+    <div ref={ref} className="relative">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+        aria-haspopup="menu"
+        className="inline-flex items-center gap-1 rounded-lg px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-2"
+      >
+        Explorar
+        <ChevronDown aria-hidden="true" className={`size-4 transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+      {open && (
+        <div role="menu" className="anim-menu absolute left-0 top-12 z-30 w-80 rounded-2xl border border-line bg-surface p-2 shadow-xl">
+          {EXPLORE_ITEMS.map((item) => (
+            <Link key={item.to} role="menuitem" to={item.to} className="flex items-center gap-3 rounded-xl px-3 py-2.5 transition-colors hover:bg-surface-2">
+              <span aria-hidden="true" className="grid size-10 shrink-0 place-items-center rounded-xl bg-teal/15 text-teal-soft">
+                <item.icon className="size-5" />
+              </span>
+              <span>
+                <span className="block text-sm font-semibold text-ink">{item.label}</span>
+                <span className="block text-xs text-muted">{item.description}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+/** Menú de la cuenta: atajos a lo personal, perfil, planes y modo anfitrión. */
+function AccountMenu() {
+  const { user, profile, isAdmin, signOutUser } = useAuth()
+  const { planFor } = usePlans()
+  const navigate = useNavigate()
+  const { pathname } = useLocation()
+  const [open, setOpen] = useState(false)
+  const ref = useRef<HTMLDivElement | null>(null)
+  const close = useCallback(() => setOpen(false), [])
+  useEffect(close, [pathname, close])
+  useDismiss(ref, open, close)
 
   if (!user) {
     return (
-      <Link
-        to="/ingresar"
-        className="rounded-xl border border-line px-4 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-2"
-      >
+      <Link to="/ingresar" className="rounded-xl bg-navy px-4 py-2 text-sm font-bold text-surface transition hover:brightness-110">
         Ingresar
       </Link>
     )
   }
 
-  const item = 'block w-full rounded-lg px-3 py-2 text-left text-sm font-medium text-ink hover:bg-surface-2'
+  const name = profile?.displayName || user.displayName || ''
+  const plan = planFor('guest')
+  const item = 'flex items-center gap-3 rounded-xl px-3 py-2 text-sm font-medium text-ink transition-colors hover:bg-surface-2'
   return (
     <div ref={ref} className="relative">
       <button
@@ -60,32 +87,48 @@ function UserMenu() {
         aria-expanded={open}
         aria-haspopup="menu"
         aria-label="Menú de tu cuenta"
-        className="grid size-10 place-items-center rounded-full bg-navy text-sm font-bold text-surface"
+        className="grid size-10 place-items-center rounded-full bg-navy text-sm font-bold text-surface ring-2 ring-transparent transition hover:ring-teal/50"
       >
-        {initials(profile?.displayName || user.displayName, user.email)}
+        {initials(name, user.email)}
       </button>
       {open && (
-        <div role="menu" className="absolute right-0 top-12 z-30 w-64 rounded-2xl border border-line bg-surface p-2 shadow-xl">
-          <p className="truncate px-3 py-2 text-xs text-muted">{user.email}</p>
-          <Link role="menuitem" className={item} to="/reservas">Mis reservas</Link>
-          <Link role="menuitem" className={item} to="/favoritos">Favoritos</Link>
-          <Link role="menuitem" className={item} to="/itinerarios">Mis itinerarios</Link>
-          <Link role="menuitem" className={item} to="/perfil">Mi perfil y preferencias</Link>
+        <div role="menu" className="anim-menu absolute right-0 top-12 z-30 w-72 rounded-2xl border border-line bg-surface p-2 shadow-xl">
+          <div className="px-3 py-2">
+            <p className="truncate font-semibold text-ink">{name || 'Tu cuenta'}</p>
+            <p className="truncate text-xs text-muted">{user.email}</p>
+            <Link to="/planes" role="menuitem" className="mt-2 inline-flex items-center gap-1 rounded-full border border-teal/40 bg-teal/10 px-2.5 py-0.5 text-xs font-bold text-ink">
+              {plan.name}
+            </Link>
+          </div>
+          <div className="my-1 border-t border-line" />
+          {[...SPACE_ITEMS, ...ACCOUNT_ITEMS].map((n) => (
+            <Link key={n.to} role="menuitem" to={n.to} className={item}>
+              <n.icon aria-hidden="true" className="size-4 text-teal-soft" />
+              {n.label}
+            </Link>
+          ))}
           <div className="my-1 border-t border-line" />
           <Link role="menuitem" className={item} to="/anfitrion">
+            <Store aria-hidden="true" className="size-4 text-teal-soft" />
             {profile?.isHost ? 'Modo anfitrión' : 'Publica tu alojamiento'}
           </Link>
-          {isAdmin && <Link role="menuitem" className={item} to="/admin">Moderación</Link>}
+          {isAdmin && (
+            <Link role="menuitem" className={item} to="/admin">
+              <ShieldCheck aria-hidden="true" className="size-4 text-teal-soft" />
+              Moderación
+            </Link>
+          )}
           <div className="my-1 border-t border-line" />
           <button
             role="menuitem"
             type="button"
-            className={item}
+            className={`${item} w-full text-left`}
             onClick={async () => {
               await signOutUser()
               navigate('/')
             }}
           >
+            <LogOut aria-hidden="true" className="size-4 text-muted" />
             Cerrar sesión
           </button>
         </div>
@@ -95,53 +138,46 @@ function UserMenu() {
 }
 
 export function Header() {
-  const [mobileOpen, setMobileOpen] = useState(false)
-  const location = useLocation()
-  useEffect(() => setMobileOpen(false), [location.pathname])
+  const { user, profile } = useAuth()
+  const { favorites } = useFavorites()
 
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-header backdrop-blur">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-4 px-4">
-        <Link to="/" className="font-serif text-2xl font-semibold text-navy" aria-label="Locus, ir al inicio">
-          Locus<span className="text-teal" aria-hidden="true">.</span>
-        </Link>
+        <div className="flex items-center gap-6">
+          <Link to="/" className="font-serif text-2xl font-semibold text-navy" aria-label="Locus, ir al inicio">
+            Locus<span className="text-teal" aria-hidden="true">.</span>
+          </Link>
 
-        <nav aria-label="Principal" className="hidden items-center gap-1 md:flex">
-          {NAV.map((n) => (
-            <NavLink key={n.to} to={n.to} className={linkClass}>{n.label}</NavLink>
-          ))}
-        </nav>
+          <nav aria-label="Principal" className="hidden items-center gap-1 lg:flex">
+            <ExploreMenu />
+            <NavLink to="/comparar" className={linkClass}>Comparar</NavLink>
+            {user ? (
+              <>
+                <span aria-hidden="true" className="mx-2 h-5 w-px bg-line" />
+                {SPACE_ITEMS.map((n) => (
+                  <NavLink key={n.to} to={n.to} className={linkClass}>
+                    {n.label}
+                    {n.to === '/favoritos' && favorites.length > 0 && (
+                      <span className="ml-1.5 rounded-full bg-coral px-1.5 py-0.5 text-[0.65rem] font-bold text-on-coral">{favorites.length}</span>
+                    )}
+                  </NavLink>
+                ))}
+              </>
+            ) : (
+              <NavLink to="/planes" className={linkClass}>Planes</NavLink>
+            )}
+          </nav>
+        </div>
 
         <div className="flex items-center gap-2">
+          <Link to="/anfitrion" className="hidden rounded-lg px-3 py-2 text-sm font-semibold text-ink transition-colors hover:bg-surface-2 lg:block">
+            {profile?.isHost ? 'Modo anfitrión' : 'Ofrecer'}
+          </Link>
           <ThemeToggle />
-          <UserMenu />
-          <button
-            type="button"
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-expanded={mobileOpen}
-            aria-controls="mobile-nav"
-            aria-label="Abrir menú"
-            className="grid size-10 place-items-center rounded-full border border-line bg-surface text-ink md:hidden"
-          >
-            <svg aria-hidden="true" viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <path d={mobileOpen ? 'M6 6l12 12M18 6 6 18' : 'M4 7h16M4 12h16M4 17h16'} />
-            </svg>
-          </button>
+          <AccountMenu />
         </div>
       </div>
-      {mobileOpen && (
-        <nav id="mobile-nav" aria-label="Principal (móvil)" className="border-t border-line bg-surface px-4 py-3 md:hidden">
-          <ul className="flex flex-col">
-            {NAV.map((n) => (
-              <li key={n.to}>
-                <NavLink to={n.to} className={({ isActive }) => `block rounded-lg px-3 py-3 font-semibold ${isActive ? 'text-teal-soft' : 'text-ink'}`}>
-                  {n.label}
-                </NavLink>
-              </li>
-            ))}
-          </ul>
-        </nav>
-      )}
     </header>
   )
 }
