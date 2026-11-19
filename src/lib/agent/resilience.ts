@@ -23,6 +23,11 @@ export interface Failure {
   retryable: boolean
   /** Espera sugerida por el servidor (Retry-After), en ms. */
   retryAfterMs?: number
+  /**
+   * Cuota DIARIA agotada (p. ej. el nivel gratuito de Gemini: N consultas al día por modelo).
+   * Reintentar con el mismo modelo no sirve hasta el día siguiente.
+   */
+  daily?: boolean
 }
 
 const text = (error: unknown) =>
@@ -39,11 +44,22 @@ function statusOf(error: unknown): number | undefined {
 }
 
 function retryAfterOf(error: unknown): number | undefined {
-  const m = /retry[- ]?after[^0-9]{0,6}(\d+(?:\.\d+)?)\s*(ms|s)?/i.exec(error instanceof Error ? error.message : String(error))
-  if (!m) return undefined
-  const value = Number(m[1])
-  return m[2]?.toLowerCase() === 'ms' ? value : value * 1000
+  const message = error instanceof Error ? error.message : String(error)
+  const m = /retry[- ]?after[^0-9]{0,6}(\d+(?:\.\d+)?)\s*(ms|s)?/i.exec(message)
+  if (m) {
+    const value = Number(m[1])
+    return m[2]?.toLowerCase() === 'ms' ? value : value * 1000
+  }
+  // Gemini: "Please retry in 7h12m24.66s." / "retry in 38.2s"
+  const g = /retry in ((?:\d+(?:\.\d+)?[hms])+)/i.exec(message)
+  if (!g) return undefined
+  let ms = 0
+  for (const [, n, unit] of g[1].matchAll(/(\d+(?:\.\d+)?)([hms])/gi)) ms += Number(n) * (unit.toLowerCase() === 'h' ? 3_600_000 : unit.toLowerCase() === 'm' ? 60_000 : 1000)
+  return Math.round(ms)
 }
+
+/** El 429 es de una cuota por día (no por minuto): "requests per day", "free_tier_requests… per day", "PerDay". */
+const DAILY_QUOTA = /per ?day|perday|requests_per_day|daily/
 
 export function classifyError(error: unknown): Failure {
   const t = text(error)
@@ -60,6 +76,8 @@ export function classifyError(error: unknown): Failure {
   }
   if (/safety|prohibited|blocked|recitation/.test(t)) return { ...base, kind: 'blocked', retryable: false }
   if (status === 429 || /429|quota|rate limit|resource_exhausted|too many requests/.test(t)) {
+    // Cuota diaria: esperar segundos no la recupera, así que no se reintenta (el agente cambia de modelo).
+    if (DAILY_QUOTA.test(t)) return { ...base, kind: 'rate-limit', retryable: false, daily: true, retryAfterMs: retryAfterOf(error) }
     return { ...base, kind: 'rate-limit', retryable: true, retryAfterMs: retryAfterOf(error) }
   }
   if (status === 401 || status === 403 || /permission_denied|permission denied|unauthenticated|unauthorized/.test(t)) {
