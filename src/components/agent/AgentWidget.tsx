@@ -25,7 +25,7 @@ import { useI18n } from '../../lib/i18n/I18nProvider'
 import type { Locale } from '../../lib/i18n/locales'
 import { loadProfile } from '../../lib/profile/profileService'
 import { summarize } from '../../lib/profile/survey'
-import { detectLanguage, isRecognitionSupported } from '../../lib/voice/speech'
+import { detectLanguage, isRecognitionSupported, primeSpeech } from '../../lib/voice/speech'
 import { useToast } from '../Toast'
 import { AgentCardView } from './AgentCards'
 import { VoiceMode, type VoiceHandle } from './VoiceMode'
@@ -203,9 +203,11 @@ export default function AgentWidget() {
     } catch (e) {
       const err = e instanceof UsageLimitError ? e : describeAiError(e)
       const reason = err instanceof AgentUnavailableError ? err.reason : null
-      if (reason === 'not-enabled' || reason === 'app-check') setUnavailable(err as AgentUnavailableError)
+      const dailyQuota = reason === 'quota' && (err as AgentUnavailableError).failure?.daily === true
+      if (reason === 'not-enabled' || reason === 'app-check' || dailyQuota) setUnavailable(err as AgentUnavailableError)
       const retryable = err instanceof AgentUnavailableError ? err.retryable && reason !== 'cancelled' : false
-      setMessages((m) => [...m, { id: crypto.randomUUID(), role: 'model', text: err.message, error: true, retryText: retryable ? text : undefined, retryable }])
+      // Tras un 403 de App Check el SDK bloquea este navegador por un día; recargar la página lo reinicia.
+      setMessages((m) => [...m, { id: crypto.randomUUID(), role: 'model', text: err.message, error: true, retryText: retryable ? text : undefined, retryable, reload: reason === 'app-check' }])
       if (fromVoice && reason !== 'cancelled') spoken = err.message
     } finally {
       busyRef.current = false
@@ -296,6 +298,9 @@ export default function AgentWidget() {
                 {m.retryText && (
                   <button type="button" onClick={() => send('', { retryText: m.retryText })} disabled={busy} className="rounded-lg bg-coral px-3 py-1 text-xs font-bold text-on-coral disabled:opacity-60">{t('agent.retry')}</button>
                 )}
+                {m.reload && (
+                  <button type="button" onClick={() => window.location.reload()} className="rounded-lg bg-coral px-3 py-1 text-xs font-bold text-on-coral">{t('agent.reload')}</button>
+                )}
                 <button type="button" onClick={copyDiagnostics} className="rounded-lg border border-danger/40 px-3 py-1 text-xs font-semibold text-danger hover:bg-danger/10">{t('agent.copyDiagnostics')}</button>
               </div>
             )}
@@ -353,7 +358,10 @@ export default function AgentWidget() {
               {!voiceMode && (
                 <button
                   type="button"
-                  onClick={() => setVoiceMode(true)}
+                  onClick={() => {
+                    primeSpeech()
+                    setVoiceMode(true)
+                  }}
                   aria-label={t('voice.start')}
                   title={isRecognitionSupported() ? t('voice.start') : t('voice.hint.unsupported')}
                   className="grid size-8 place-items-center rounded-full text-teal-soft hover:bg-surface"

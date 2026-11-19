@@ -25,7 +25,7 @@ export interface AgentLogEntry {
   /** Código HTTP o del SDK. */
   errorCode?: string | number
   retries: number
-  cause?: FailureKind | 'empty-response' | 'unsupported'
+  cause?: FailureKind | 'empty-response' | 'unsupported' | 'fallback'
 }
 
 const KEY = 'locus:agent:log:v1'

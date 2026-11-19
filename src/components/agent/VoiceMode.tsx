@@ -5,6 +5,7 @@
  */
 import { useEffect, useImperativeHandle, useState, type ReactNode, type Ref } from 'react'
 import type { Locale } from '../../lib/i18n/locales'
+import { primeSpeech } from '../../lib/voice/speech'
 import { useVoiceConversation, type VoiceApi } from '../../lib/voice/useVoiceConversation'
 import { VoicePanel } from './VoicePanel'
 
@@ -53,6 +54,7 @@ export function VoiceMode({
   }, [consent])
 
   const accept = () => {
+    primeSpeech()
     try {
       localStorage.setItem(CONSENT_KEY, '1')
     } catch {

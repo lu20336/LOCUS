@@ -29,6 +29,8 @@ export interface ChatMessage {
   retryText?: string
   /** El error permite reintentar. */
   retryable?: boolean
+  /** El error se arregla recargando la página (App Check bloquea el navegador hasta recargar). */
+  reload?: boolean
 }
 
 export interface ToolContext {

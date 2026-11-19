@@ -152,3 +152,14 @@ describe('telemetría', () => {
     expect(getAgentLog()).toHaveLength(0)
   })
 })
+
+describe('cuota diaria de Gemini', () => {
+  it('distingue la cuota DIARIA (no se reintenta) de la de por minuto, y lee "retry in 7h12m24s"', () => {
+    const daily = classifyError(Object.assign(new Error('[429 ] Generate content requests per day limit exceeded on Free Tier. Please retry in 7h12m24.66s.'), { customErrorData: { status: 429 } }))
+    expect(daily).toMatchObject({ kind: 'rate-limit', retryable: false, daily: true })
+    expect(daily.retryAfterMs).toBe(Math.round((7 * 3600 + 12 * 60 + 24.66) * 1000))
+    const minute = classifyError(Object.assign(new Error('[429 ] Too many requests per minute. Please retry in 38.2s.'), { customErrorData: { status: 429 } }))
+    expect(minute).toMatchObject({ kind: 'rate-limit', retryable: true, retryAfterMs: 38200 })
+    expect(minute.daily).toBeUndefined()
+  })
+})

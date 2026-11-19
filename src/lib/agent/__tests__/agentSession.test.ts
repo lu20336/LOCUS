@@ -12,8 +12,10 @@ interface Script {
   calls: unknown[]
   chatsCreated: number
   lastSystemInstruction: string
+  /** Modelo de cada llamada a sendMessage. */
+  models: string[]
 }
-const script: Script = { steps: [], calls: [], chatsCreated: 0, lastSystemInstruction: '' }
+const script: Script = { steps: [], calls: [], chatsCreated: 0, lastSystemInstruction: '', models: [] }
 
 const ok = (text: string, extra: { functionCalls?: { name: string; args: unknown }[]; finishReason?: string } = {}) => ({
   response: {
@@ -28,8 +30,10 @@ vi.mock('firebase/ai', () => {
   class FakeChat {
     history: unknown[]
     poisoned: Error | null = null
-    constructor(history: unknown[]) {
+    model: string
+    constructor(history: unknown[], model: string) {
       this.history = [...history]
+      this.model = model
       script.chatsCreated++
     }
     async getHistory() {
@@ -39,6 +43,7 @@ vi.mock('firebase/ai', () => {
       // Reproduce el defecto del SDK: tras un fallo, la sesión queda envenenada.
       if (this.poisoned) throw this.poisoned
       script.calls.push(request)
+      script.models.push(this.model)
       const step = script.steps.shift()
       if (!step) throw new Error('sin guion')
       try {
@@ -53,9 +58,9 @@ vi.mock('firebase/ai', () => {
   }
   return {
     getAI: () => ({}),
-    getGenerativeModel: (_ai: unknown, params: { systemInstruction: string }) => {
+    getGenerativeModel: (_ai: unknown, params: { systemInstruction: string; model: string }) => {
       script.lastSystemInstruction = params.systemInstruction
-      return { startChat: ({ history }: { history: unknown[] }) => new FakeChat(history ?? []) }
+      return { startChat: ({ history }: { history: unknown[] }) => new FakeChat(history ?? [], params.model) }
     },
     GoogleAIBackend: class {},
     Schema: { object: () => ({}), string: () => ({}), integer: () => ({}), array: () => ({}), boolean: () => ({}), number: () => ({}), enumString: () => ({}) },
@@ -66,7 +71,7 @@ vi.mock('../../firebase/client', () => ({ app: {}, db: {}, auth: {} }))
 const runToolMock = vi.fn()
 vi.mock('../tools', () => ({ TOOL_DECLARATIONS: [], runTool: (...a: unknown[]) => runToolMock(...a) }))
 
-import { AgentSession, AgentUnavailableError, buildSystemInstruction, toHistory } from '../agent'
+import { AgentSession, AgentUnavailableError, MODEL_CHAIN, buildSystemInstruction, resetModelQuota, toHistory } from '../agent'
 import { clearAgentLog, getAgentLog } from '../telemetry'
 
 const ctx = { uid: null, aiConsent: false, today: '2026-12-01', locale: 'es' as const }
@@ -76,6 +81,8 @@ beforeEach(() => {
   script.steps = []
   script.calls = []
   script.chatsCreated = 0
+  script.models = []
+  resetModelQuota()
   runToolMock.mockReset()
   AgentSession.tuning = { retry: fast, toolTimeoutMs: 50 }
   clearAgentLog()
@@ -120,14 +127,15 @@ describe('causa raíz: la sesión envenenada', () => {
 })
 
 describe('reintentos', () => {
-  it('se recupera de un 503 y de un 429 temporales sin que el usuario haga nada', async () => {
+  it('se recupera de un 503 (reintento) y de un 429 (otro modelo) sin que el usuario haga nada', async () => {
     script.steps = [() => Promise.reject(httpError(503)), () => Promise.reject(httpError(429, 'quota')), () => ok('Listo')]
     const onRetry = vi.fn()
     const reply = await new AgentSession(ctx, null).send('hola', { onRetry })
     expect(reply.text).toBe('Listo')
-    expect(onRetry).toHaveBeenCalledTimes(2)
+    expect(onRetry).toHaveBeenCalledTimes(1)
     expect(onRetry.mock.calls[0][0]).toMatchObject({ nextAttempt: 2, maxAttempts: 3 })
-    expect(getAgentLog().at(-1)).toMatchObject({ status: 'ok', retries: 2 })
+    expect(script.models).toEqual([MODEL_CHAIN[0], MODEL_CHAIN[0], MODEL_CHAIN[1]])
+    expect(getAgentLog().at(-1)).toMatchObject({ status: 'ok', retries: 1, model: MODEL_CHAIN[1] })
   })
 
   it('NO reintenta errores permanentes (permisos, App Check, API apagada)', async () => {
@@ -152,6 +160,47 @@ describe('reintentos', () => {
     expect(entry).toMatchObject({ provider: 'gemini', status: 'error', errorCode: 503, retries: 2, cause: 'transient' })
     expect(JSON.stringify(getAgentLog())).not.toContain('secreto')
     expect(JSON.stringify(getAgentLog())).not.toContain('correo@x.com')
+  })
+})
+
+describe('cuota del nivel gratuito: modelos de respaldo', () => {
+  const daily = () => Promise.reject(httpError(429, 'You exceeded your current quota. Quota exceeded for metric: generate_content_free_tier_requests, limit: 20. Generate content requests per day limit exceeded on Free Tier. Please retry in 7h12m24.66s.'))
+
+  it('si el modelo principal agotó su cuota diaria, responde con el siguiente sin reintentar ni perder la conversación', async () => {
+    script.steps = [() => ok('Primera'), daily, () => ok('Segunda')]
+    const onRetry = vi.fn()
+    const session = new AgentSession(ctx, null)
+    await session.send('uno')
+    const reply = await session.send('dos', { onRetry })
+    expect(reply.text).toBe('Segunda')
+    expect(onRetry).not.toHaveBeenCalled()
+    expect(script.models).toEqual([MODEL_CHAIN[0], MODEL_CHAIN[0], MODEL_CHAIN[1]])
+    expect(session.modelName).toBe(MODEL_CHAIN[1])
+    expect(getAgentLog().some((e) => e.cause === 'fallback')).toBe(true)
+  })
+
+  it('el siguiente mensaje sigue con el modelo que tiene cuota', async () => {
+    script.steps = [daily, () => ok('A'), () => ok('B')]
+    const session = new AgentSession(ctx, null)
+    await session.send('uno')
+    await session.send('dos')
+    expect(script.models).toEqual([MODEL_CHAIN[0], MODEL_CHAIN[1], MODEL_CHAIN[1]])
+  })
+
+  it('con todos los modelos agotados avisa del límite de hoy (sin reintentos inútiles)', async () => {
+    script.steps = MODEL_CHAIN.map(() => daily)
+    const err = (await new AgentSession(ctx, null).send('hola').catch((e) => e)) as AgentUnavailableError
+    expect(err.reason).toBe('quota')
+    expect(err.retryable).toBe(false)
+    expect(err.failure?.daily).toBe(true)
+    expect(err.message).toMatch(/límite gratuito/)
+    expect(script.models).toEqual([...MODEL_CHAIN])
+  })
+
+  it('si un modelo ya no existe (404), usa el siguiente', async () => {
+    script.steps = [() => Promise.reject(httpError(404, 'This model models/x is no longer available to new users.')), () => ok('Hola')]
+    expect((await new AgentSession(ctx, null).send('hola')).text).toBe('Hola')
+    expect(script.models).toEqual([MODEL_CHAIN[0], MODEL_CHAIN[1]])
   })
 })
 

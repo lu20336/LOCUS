@@ -36,6 +36,62 @@ import type { AgentCard, ToolContext } from './types'
 
 export const GEMINI_MODEL = (import.meta.env.VITE_GEMINI_MODEL as string | undefined) || 'gemini-3.8-flash'
 
+/**
+ * Modelos de respaldo, en orden. En el nivel gratuito cada modelo tiene su PROPIA cuota
+ * diaria (gemini-3.8-flash: solo 20 consultas al día para todo el proyecto, y un mensaje
+ * gasta 2 o más). Cuando uno se agota (429) el agente sigue con el siguiente sin perder
+ * la conversación. Verificados con el proyecto en noviembre de 2026.
+ */
+export const FALLBACK_MODELS = ['gemini-3.5-flash', 'gemini-3.5-flash-lite'] as const
+export const MODEL_CHAIN: readonly string[] = [...new Set([GEMINI_MODEL, ...FALLBACK_MODELS])]
+
+const EXHAUSTED_KEY = 'locus:agent:exhausted:v1'
+/** Si el servidor no dice cuándo vuelve la cuota: 1 min (por minuto) o 6 h (diaria). */
+const MINUTE_PAUSE_MS = 60_000
+const DAILY_PAUSE_MS = 6 * 3_600_000
+const MAX_PAUSE_MS = 24 * 3_600_000
+
+/** Copia en memoria: sirve aunque el navegador no deje usar localStorage (modo privado). */
+let memoryExhausted: Record<string, number> = {}
+
+function readExhausted(): Record<string, number> {
+  try {
+    const raw = JSON.parse(localStorage.getItem(EXHAUSTED_KEY) ?? '{}') as Record<string, unknown>
+    const stored = Object.fromEntries(Object.entries(raw).filter((e): e is [string, number] => typeof e[1] === 'number'))
+    return { ...stored, ...memoryExhausted }
+  } catch {
+    return { ...memoryExhausted }
+  }
+}
+
+/** Olvida qué modelos estaban agotados (pruebas). */
+export function resetModelQuota(): void {
+  memoryExhausted = {}
+  try {
+    localStorage.removeItem(EXHAUSTED_KEY)
+  } catch {
+    // sin almacenamiento
+  }
+}
+
+/** Recuerda (en este navegador) que un modelo no tiene cuota hasta cierta hora, para no gastar una consulta en él. */
+export function markModelExhausted(model: string, failure: Pick<Failure, 'daily' | 'retryAfterMs'>, now = Date.now()): void {
+  const pause = Math.min(MAX_PAUSE_MS, Math.max(MINUTE_PAUSE_MS, failure.retryAfterMs ?? (failure.daily ? DAILY_PAUSE_MS : MINUTE_PAUSE_MS)))
+  memoryExhausted = { ...memoryExhausted, [model]: now + pause }
+  try {
+    localStorage.setItem(EXHAUSTED_KEY, JSON.stringify({ ...readExhausted(), [model]: now + pause }))
+  } catch {
+    // sin almacenamiento: queda la copia en memoria hasta recargar
+  }
+}
+
+/** Modelos con cuota, en orden de preferencia. Si todos están agotados se devuelve la lista completa (se intenta igual). */
+export function availableModels(now = Date.now()): string[] {
+  const exhausted = readExhausted()
+  const free = MODEL_CHAIN.filter((m) => !(exhausted[m] > now))
+  return free.length > 0 ? free : [...MODEL_CHAIN]
+}
+
 /** Máximo de rondas de herramientas por mensaje (acota costo y latencia). */
 const MAX_TOOL_ROUNDS = 4
 const MAX_TOOL_CALLS = 8
@@ -55,7 +111,7 @@ function ensureAppCheck() {
   appCheckReady = true
   const siteKey = import.meta.env.VITE_APPCHECK_SITE_KEY as string | undefined
   if (!siteKey) return
-  if (import.meta.env.DEV) (self as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true
+  if (import.meta.env.DEV) (globalThis as unknown as { FIREBASE_APPCHECK_DEBUG_TOKEN?: boolean }).FIREBASE_APPCHECK_DEBUG_TOKEN = true
   initializeAppCheck(app, { provider: new ReCaptchaEnterpriseProvider(siteKey), isTokenAutoRefreshEnabled: true })
 }
 
@@ -149,6 +205,7 @@ export function describeAiError(error: unknown): AgentUnavailableError {
       break
     case 'rate-limit':
       reason = 'quota'
+      if (failure.daily) return new AgentUnavailableError('quota', getT()('agent.error.quotaDay'), { attempts, failure, retryable: false })
       break
     case 'blocked':
       reason = 'blocked'
@@ -212,6 +269,10 @@ export class AgentSession {
   static tuning: { retry?: Partial<RetryOptions>; toolTimeoutMs?: number } = {}
   private model!: GenerativeModel
   private chat!: ChatSession
+  /** Modelo en uso; cambia al siguiente de MODEL_CHAIN si se agota su cuota. */
+  modelName: string = availableModels()[0]
+  /** Modelos que ya fallaron por cuota en esta sesión (aunque no haya localStorage). */
+  private spent = new Set<string>()
   private ctx: ToolContext
   private profileSummary: string | null
   private language: Locale
@@ -231,7 +292,7 @@ export class AgentSession {
     this.model = getGenerativeModel(
       ai,
       {
-        model: GEMINI_MODEL,
+        model: this.modelName,
         systemInstruction: buildSystemInstruction(this.ctx.today, this.profileSummary, this.language),
         tools: [{ functionDeclarations: TOOL_DECLARATIONS }],
         generationConfig: { temperature: 0.4, maxOutputTokens: MAX_OUTPUT_TOKENS },
@@ -264,6 +325,20 @@ export class AgentSession {
     return promise
   }
 
+  /**
+   * Pasa al siguiente modelo con cuota tras un 429 (o un modelo que ya no existe).
+   * Devuelve false si no queda ninguno.
+   */
+  private fallBack(failure: Failure): boolean {
+    this.spent.add(this.modelName)
+    if (failure.kind === 'rate-limit') markModelExhausted(this.modelName, failure)
+    const next = availableModels().find((m) => !this.spent.has(m))
+    if (!next) return false
+    logAgentEvent({ provider: 'gemini', model: this.modelName, kind: 'model', durationMs: 0, status: 'error', retries: 0, cause: 'fallback', errorCode: failure.status ?? failure.code })
+    this.modelName = next
+    return true
+  }
+
   /** Una llamada al modelo con tiempo máximo, reintentos y reconstrucción de la sesión si falla. */
   private async callModel(request: string | Part[], signal: AbortSignal, options: SendOptions): Promise<GenerateContentResult> {
     const snapshot = await this.chat.getHistory().catch(() => [] as Content[])
@@ -274,7 +349,17 @@ export class AgentSession {
         async (attemptSignal, attempt) => {
           // Tras un intento fallido la ChatSession queda inservible (promesa interna rechazada): se rehace desde lo confirmado.
           if (attempt > 1) this.chat = this.model.startChat({ history: snapshot })
-          return this.chat.sendMessage(request, { signal: attemptSignal, timeout: MODEL_TIMEOUT_MS })
+          for (;;) {
+            try {
+              return await this.chat.sendMessage(request, { signal: attemptSignal, timeout: MODEL_TIMEOUT_MS })
+            } catch (error) {
+              const failure = classifyError(error)
+              const modelGone = failure.kind === 'config' && /not found|no longer available|\[404/i.test(error instanceof Error ? error.message : String(error))
+              if (attemptSignal.aborted || !(failure.kind === 'rate-limit' || modelGone) || !this.fallBack(failure)) throw error
+              // Otro modelo, misma conversación confirmada; sin espera ni gastar un reintento.
+              this.build(snapshot)
+            }
+          }
         },
         {
           signal,
@@ -287,14 +372,14 @@ export class AgentSession {
           },
         },
       )
-      logAgentEvent({ provider: 'gemini', model: GEMINI_MODEL, kind: 'model', durationMs: Math.round(performance.now() - started), status: 'ok', retries: attempts - 1 })
+      logAgentEvent({ provider: 'gemini', model: this.modelName, kind: 'model', durationMs: Math.round(performance.now() - started), status: 'ok', retries: attempts - 1 })
       return value
     } catch (error) {
       this.chat = this.model.startChat({ history: snapshot })
       const failure = error instanceof AgentAttemptError ? error.failure : classifyError(error)
       logAgentEvent({
         provider: 'gemini',
-        model: GEMINI_MODEL,
+        model: this.modelName,
         kind: 'model',
         durationMs: Math.round(performance.now() - started),
         status: failure.kind === 'timeout' ? 'timeout' : failure.kind === 'cancelled' ? 'cancelled' : 'error',
@@ -333,6 +418,14 @@ export class AgentSession {
     const { signal, dispose } = anySignal([options.signal, deadline.signal])
     const cards: AgentCard[] = []
     try {
+      // Cada mensaje vuelve al mejor modelo con cuota (la pausa de uno agotado pudo vencer).
+      this.spent.clear()
+      const best = availableModels()[0]
+      if (best !== this.modelName) {
+        const history = await this.chat.getHistory().catch(() => [] as Content[])
+        this.modelName = best
+        this.build(history)
+      }
       let result = await this.callModel(text.slice(0, 2000), signal, options)
       let calls = 0
       for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
@@ -357,7 +450,7 @@ export class AgentSession {
       if (!reply) {
         // Respuesta vacía (p. ej. MAX_TOKENS): una segunda llamada breve pide cerrar con lo ya reunido.
         const finish = result.response.candidates?.[0]?.finishReason
-        logAgentEvent({ provider: 'gemini', model: GEMINI_MODEL, kind: 'model', durationMs: 0, status: 'error', retries: 0, cause: 'empty-response', errorCode: finish })
+        logAgentEvent({ provider: 'gemini', model: this.modelName, kind: 'model', durationMs: 0, status: 'error', retries: 0, cause: 'empty-response', errorCode: finish })
         if (cards.length === 0 || finish === 'MAX_TOKENS') {
           const retryResult = await this.callModel('Responde ahora en pocas frases con lo que ya sabes.', signal, options)
           reply = textOf(retryResult)

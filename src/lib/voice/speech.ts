@@ -42,6 +42,31 @@ export function getRecognitionCtor(win: Window | undefined = typeof window === '
 export const isRecognitionSupported = () => getRecognitionCtor() !== null
 export const isSynthesisSupported = () => typeof window !== 'undefined' && 'speechSynthesis' in window && typeof SpeechSynthesisUtterance !== 'undefined'
 
+/**
+ * Safari en iPhone/iPad solo deja hablar si la PRIMERA síntesis nace de un toque del usuario;
+ * la respuesta del agente llega segundos después (fuera del toque) y sonaba muda. Llamar a
+ * esto dentro del clic que abre la voz "desbloquea" la síntesis para el resto de la conversación.
+ */
+export function primeSpeech(): void {
+  if (!isSynthesisSupported()) return
+  try {
+    const u = new SpeechSynthesisUtterance(' ')
+    u.volume = 0
+    window.speechSynthesis.speak(u)
+    window.speechSynthesis.getVoices()
+  } catch {
+    // sin síntesis: se avisará al responder
+  }
+}
+
+/**
+ * Teléfonos y tabletas: el medidor de nivel (getUserMedia) y el reconocimiento de voz
+ * compiten por el micrófono y en Android/iOS el reconocimiento puede quedarse sin audio.
+ * Ahí la esfera usa su animación suave en lugar del nivel real.
+ */
+export const canMeterMic = (): boolean =>
+  typeof window !== 'undefined' && !!navigator.mediaDevices?.getUserMedia && !window.matchMedia?.('(pointer: coarse)').matches
+
 /* ───────────── Texto para hablar ───────────── */
 
 /** Quita marcas de formato, enlaces y símbolos que sonarían raro al leerlos en voz alta. */

@@ -14,7 +14,7 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState, type MutableRefObject } from 'react'
 import { LOCALE_META, type Locale } from '../i18n/locales'
 import { logAgentEvent } from '../agent/telemetry'
-import { cleanForSpeech, getRecognitionCtor, isRecognitionSupported, isSynthesisSupported, mapRecognitionError, pickVoice, splitForSpeech, type RecognitionLike } from './speech'
+import { canMeterMic, cleanForSpeech, getRecognitionCtor, isRecognitionSupported, isSynthesisSupported, mapRecognitionError, pickVoice, splitForSpeech, type RecognitionLike } from './speech'
 import { initialVoiceState, micIsActive, shouldListen, voiceReducer, type VoiceState } from './voiceMachine'
 
 export interface UseVoiceOptions {
@@ -138,7 +138,7 @@ export function useVoiceConversation({ language, onFinal }: UseVoiceOptions): Vo
   /* ── Nivel del micrófono (solo para animar la esfera; no se graba nada) ── */
   const micActive = micIsActive(state)
   useEffect(() => {
-    if (!micActive) return
+    if (!micActive || !canMeterMic()) return
     let cancelled = false
     let stream: MediaStream | null = null
     let ctx: AudioContext | null = null
@@ -185,8 +185,12 @@ export function useVoiceConversation({ language, onFinal }: UseVoiceOptions): Vo
       const cleaned = text ? cleanForSpeech(text).slice(0, 1400) : ''
       if (!cleaned || !stateRef.current.audioOn) return dispatch({ type: 'REPLY_READY', speak: false })
       if (!supported.synthesis) return dispatch({ type: 'REPLY_READY', speak: false, noVoice: true })
+      if (voicesRef.current.length === 0) voicesRef.current = window.speechSynthesis.getVoices()
       const voice = pickVoice(voicesRef.current, lang)
-      if (!voice) return dispatch({ type: 'REPLY_READY', speak: false, noVoice: true })
+      // Lista vacía (iPhone y algunos Android la cargan tarde o nunca avisan): se habla igual
+      // con el idioma pedido y el sistema elige la voz. Solo si HAY voces y ninguna sirve se avisa.
+      if (!voice && voicesRef.current.length > 0) return dispatch({ type: 'REPLY_READY', speak: false, noVoice: true })
+      const speechLang = voice?.lang ?? LOCALE_META[lang].speech
 
       cancelSpeech()
       dispatch({ type: 'REPLY_READY', speak: true })
@@ -194,8 +198,8 @@ export function useVoiceConversation({ language, onFinal }: UseVoiceOptions): Vo
       const started = performance.now()
       utterances.current = chunks.map((chunk, index) => {
         const u = new SpeechSynthesisUtterance(chunk)
-        u.voice = voice
-        u.lang = voice.lang
+        if (voice) u.voice = voice
+        u.lang = speechLang
         u.rate = 1
         u.pitch = 1
         u.onboundary = () => {
